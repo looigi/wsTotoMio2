@@ -110,7 +110,7 @@ Public Class clsGestioneDB
 						Ritorno = StringaErrore & " " & Ritorno
 					End If
 					If effettuaLog Then
-						ThreadScriveLog(Datella & ": " & Ritorno, nomeFileLogQuery)
+						ThreadScriveLog(Datella & ": " & Ritorno, nomeFileLogExec)
 					End If
 				Catch ex As Exception
 					If effettuaLog Then

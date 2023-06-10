@@ -114,6 +114,7 @@
     <Content Include="PathDB.txt" />
     <Content Include="Web.config" />
     <Content Include="wsTotoMIO2.asmx" />
+    <Content Include="wsUtenti.asmx" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Classi\clsMariaDB.vb" />
@@ -146,6 +147,10 @@
     </Compile>
     <Compile Include="wsTotoMIO2.asmx.vb">
       <DependentUpon>wsTotoMIO2.asmx</DependentUpon>
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="wsUtenti.asmx.vb">
+      <DependentUpon>wsUtenti.asmx</DependentUpon>
       <SubType>Component</SubType>
     </Compile>
   </ItemGroup>
