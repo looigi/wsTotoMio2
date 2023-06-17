@@ -1,0 +1,1 @@
+PathDati=/var/www/html/CartelleCondivise/MP3;;;MARIADB;Server^192.168.0.206*Uid^looigi*Pwd^looigi227*Database^TotoMio2*Allow User Variables^true;CartelleCondivise=http://looigi.ddns.net:1051/

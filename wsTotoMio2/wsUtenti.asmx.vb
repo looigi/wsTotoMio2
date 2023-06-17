@@ -12,11 +12,11 @@ Public Class wsUtenti
 
 	<WebMethod()>
 	Public Function AggiungeUtente(idAnno As String, NickName As String, Cognome As String, Nome As String,
-								   Password As String, Mail As String) As String
+								   Password As String, Mail As String, idTipologia As String) As String
 		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
 		Dim Conn As Object = New clsGestioneDB(TipoServer)
 		Dim Ritorno As String = ""
-		If ControllaValiditaMail(Mail) Then
+		If Not ControllaValiditaMail(Mail) Then
 			Ritorno = "ERROR: Mail non valida"
 		Else
 			If Cognome = "" Or Cognome.Length < 3 Then
@@ -52,6 +52,7 @@ Public Class wsUtenti
 							"'" & SistemaStringaPerDB(Nome) & "', " &
 							"'" & SistemaStringaPerDB(Password) & "', " &
 							"'" & SistemaStringaPerDB(Mail) & "', " &
+							" " & idTipologia & ", " &
 							"'N'" &
 							")"
 						Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
@@ -68,7 +69,7 @@ Public Class wsUtenti
 
 	<WebMethod()>
 	Public Function ModificaUtente(idAnno As String, idUtente As String, NickName As String, Cognome As String, Nome As String,
-								   Password As String, Mail As String) As String
+								   Password As String, Mail As String, idTipologia As String) As String
 		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
 		Dim Conn As Object = New clsGestioneDB(TipoServer)
 		Dim Ritorno As String = ""
@@ -90,7 +91,8 @@ Public Class wsUtenti
 				"Cognome='" & SistemaStringaPerDB(Cognome) & "', " &
 				"Nome='" & SistemaStringaPerDB(Nome) & "', " &
 				"Password='" & SistemaStringaPerDB(Password) & "', " &
-				"Mail='" & SistemaStringaPerDB(Mail) & "' " &
+				"Mail='" & SistemaStringaPerDB(Mail) & "', " &
+				"idTipologia=" & idTipologia & " " &
 				"Where idAnno=" & idAnno & " And idUtente=" & idUtente
 			Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 			If Not Ritorno.Contains(StringaErrore) Then
@@ -115,29 +117,37 @@ Public Class wsUtenti
 	End Function
 
 	<WebMethod()>
-	Public Function RitornaUtenti(idAnno As String) As String
+	Public Function RitornaUtentePerLogin(idAnno As String, NickName As String, Password As String) As String
 		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
 		Dim Conn As Object = New clsGestioneDB(TipoServer)
 		Dim Ritorno As String = ""
-		Dim Sql As String = "Select * From Utenti Where idAnno=" & idAnno & " And Eliminato='N' Order By idUtente"
+		Dim Sql As String = "Select * From Utenti As A " &
+			"Left Join UtentiTipologie As B On A.idTipologia = B.idTipologia " &
+			"Where idAnno=" & idAnno & " And Eliminato='N' And NickName='" & SistemaStringaPerDB(NickName) & "'"
 		Dim Rec As Object = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
 		If TypeOf (Rec) Is String Then
 			Ritorno = Rec
 		Else
-			Do Until Rec.Eof
-				Ritorno &= SistemaStringaPerRitorno(Rec("idUtente").Value) & ";"
-				Ritorno &= SistemaStringaPerRitorno(Rec("NickName").Value) & ";"
-				Ritorno &= SistemaStringaPerRitorno(Rec("Cognome").Value) & ";"
-				Ritorno &= SistemaStringaPerRitorno(Rec("Nome").Value) & ";"
-				Ritorno &= SistemaStringaPerRitorno(Rec("Password").Value) & ";"
-				Ritorno &= SistemaStringaPerRitorno(Rec("Mail").Value) & "§"
-
-				Rec.MoveNext
-			Loop
-			Rec.Close
-
-			If Ritorno = "" Then
+			If Rec.Eof Then
 				Ritorno = "ERROR: Nessun utente rilevato"
+			Else
+				If Rec("Password").Value <> Password Then
+					Ritorno = "ERROR: Password non valida"
+				Else
+					'Do Until Rec.Eof
+					Ritorno &= SistemaStringaPerRitorno(Rec("idUtente").Value) & ";"
+					Ritorno &= SistemaStringaPerRitorno(Rec("NickName").Value) & ";"
+					Ritorno &= SistemaStringaPerRitorno(Rec("Cognome").Value) & ";"
+					Ritorno &= SistemaStringaPerRitorno(Rec("Nome").Value) & ";"
+					Ritorno &= SistemaStringaPerRitorno(Rec("Password").Value) & ";"
+					Ritorno &= SistemaStringaPerRitorno(Rec("Mail").Value) & ";"
+					Ritorno &= SistemaStringaPerRitorno(Rec("idTipologia").Value) & ";"
+					Ritorno &= SistemaStringaPerRitorno(Rec("Descrizione").Value) & ";"
+
+					'	Rec.MoveNext
+					'Loop
+				End If
+				Rec.Close
 			End If
 		End If
 

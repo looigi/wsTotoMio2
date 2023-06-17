@@ -75,8 +75,8 @@ Public Class clsGestioneDB
 			Sql2 = Sql
 		End If
 
-		If effettuaLog And Not HttpContext.Current Is Nothing Then
-			nomeFileLogExec = MP & "\Logs\Exec_" & Now.Day & "_" & Now.Month & "_" & Now.Year & ".txt"
+		If effettuaLog Then
+			nomeFileLogExec = MP & "/Logs/Exec_" & Now.Day & "_" & Now.Month & "_" & Now.Year & ".txt"
 
 			ThreadScriveLog(Datella & "--------------------------------------------------------------------------", nomeFileLogExec)
 			ThreadScriveLog(Datella & ": Esecuzione SQL", nomeFileLogExec)
@@ -169,8 +169,8 @@ Public Class clsGestioneDB
 			Sql2 = Sql
 		End If
 
-		If effettuaLog And Not HttpContext.Current Is Nothing Then
-			nomeFileLogQuery = MP & "\Logs\Query_" & Now.Day & "_" & Now.Month & "_" & Now.Year & ".txt"
+		If effettuaLog Then
+			nomeFileLogQuery = MP & "/Logs/Query_" & Now.Day & "_" & Now.Month & "_" & Now.Year & ".txt"
 
 			ThreadScriveLog(Datella & "--------------------------------------------------------------------------", nomeFileLogQuery)
 			ThreadScriveLog(Datella & ": Lettura Query", nomeFileLogQuery)

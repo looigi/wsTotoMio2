@@ -19,14 +19,20 @@ Module mdlGenerale
 
 	Public Function SistemaStringaPerDB(Stringa As String) As String
 		Dim Ritorno As String = Stringa
+
 		Ritorno = Ritorno.Replace("'", "''")
+		Ritorno = Ritorno.Replace("*PV*", ";")
+		Ritorno = Ritorno.Replace("*SS*", "§")
+
 		Return Ritorno
 	End Function
 
 	Public Function SistemaStringaPerRitorno(Stringa As String) As String
 		Dim Ritorno As String = Stringa
+
 		Ritorno = Ritorno.Replace(";", "*PV*")
 		Ritorno = Ritorno.Replace("§", "*SS*")
+
 		Return Ritorno
 	End Function
 
@@ -120,5 +126,20 @@ Module mdlGenerale
 				End If
 			End If
 		End If
+	End Function
+
+	Public Function RitornaGiornata(MP As String, Conn As Object, Connessione As String, idAnno As String) As String
+		Dim Ritorno As String = ""
+		Dim Sql As String = "Select * From Globale Where idAnno=" & idAnno
+		Dim Rec As Object = CreaRecordset(MP, Conn, Sql, Connessione)
+		If TypeOf (Rec) Is String Then
+			Ritorno = Rec
+		Else
+			Dim idGiornata As String = Rec("idGiornata").Value
+			Rec.Close
+			Ritorno = idGiornata
+		End If
+
+		Return Ritorno
 	End Function
 End Module
