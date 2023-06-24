@@ -154,4 +154,77 @@ Public Class wsUtenti
 		Return Ritorno
 	End Function
 
+	<WebMethod()>
+	Public Function RitornaPronosticoUtente(idAnno As String, idUtente As String, idConcorso As String) As String
+		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
+		Dim Conn As Object = New clsGestioneDB(TipoServer)
+		Dim Ritorno As String = ""
+		Dim sql As String = "Select * From Pronostici Where idAnno=" & idAnno & " And idConcorso=" & idConcorso & " And idUtente=" & idUtente & " Order By idPartita"
+		Dim Rec As Object = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+		If TypeOf (Rec) Is String Then
+			Ritorno = Rec
+		Else
+			If Rec.Eof Then
+				Ritorno = "ERROR: Nessun utente rilevato"
+			Else
+				Do Until Rec.Eof
+					Ritorno &= Rec("idPartita").Value & ";" & Rec("Pronostico").Value & ";" & Rec("Segno").Value & "§"
+
+					Rec.MoveNext
+				Loop
+				Rec.Close
+			End If
+		End If
+
+		Return Ritorno
+	End Function
+
+	<WebMethod()>
+	Public Function SalvaPronosticoUtente(idAnno As String, idUtente As String, idConcorso As String, Dati As String) As String
+		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
+		Dim Conn As Object = New clsGestioneDB(TipoServer)
+		Dim Ritorno As String = ""
+		Dim sql As String = ""
+
+		sql = "Start transaction"
+		Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+		If Not Ritorno.Contains("ERROR:") Then
+			sql = "Delete From Pronostici Where idAnno=" & idAnno & " And idConcorso=" & idConcorso & " And idUtente=" & idUtente
+			Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+			If Not Ritorno.Contains("ERROR:") Then
+				Dim Righe() As String = Dati.Split("§")
+
+				For Each r As String In Righe
+					If r <> "" Then
+						Dim Campi() As String = r.Split(";")
+						sql = "Insert Into Pronostici Values (" &
+							" " & idAnno & ", " &
+							" " & idUtente & ", " &
+							" " & idConcorso & ", " &
+							" " & Campi(0) & ", " &
+							"'" & Campi(1) & "', " &
+							"'" & Campi(2) & "' " &
+							")"
+						Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+						If Ritorno.Contains("ERROR:") Then
+							Exit For
+						Else
+							Ritorno = "OK"
+						End If
+					End If
+				Next
+			End If
+
+			If Ritorno = "OK" Then
+				sql = "commit"
+				Dim Rit As String = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+			Else
+				sql = "rollback"
+				Dim Rit As String = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+			End If
+		End If
+
+		Return Ritorno
+	End Function
+
 End Class

@@ -142,4 +142,84 @@ Module mdlGenerale
 
 		Return Ritorno
 	End Function
+
+	Public Function ControllaPunti(idAnno As String, idUtente As String, idConcorso As String, NickName As String, Partite As List(Of String), Pronostici As List(Of String),
+								   Conn As Object, Connessione As String, MP As String) As String
+		Dim PuntiTotali As Integer = 0
+		Dim Ritorno As String = ""
+
+		For Each Partita As String In Partite
+			'Partite.Add(Rec("idPartita").Value & ";" & SistemaStringaPerRitorno(Rec("Prima").Value) & ";" &
+			'							SistemaStringaPerRitorno(Rec("Seconda").Value) & ";" &
+			'							Rec("Risultato").Value & ";" & Rec("Segno").Value)
+			Dim Campi2() As String = Partita.Split(";")
+			Dim idPartita2 As Integer = Campi2(0)
+			Dim Punti As Integer = 0
+			Dim Squadra1 As String = Campi2(1)
+			Dim Squadra2 As String = Campi2(2)
+			Dim Risultato As String = Campi2(3)
+			Dim r2() As String = Risultato.Split("-")
+			Dim RisultatoCasa As Integer = r2(0)
+			Dim RisultatoFuori As Integer = r2(1)
+			Dim RisultatoSegno As String = Campi2(4)
+			Dim PartitaTrovata As Boolean = False
+
+			For Each Pronostico As String In Pronostici
+				'Pronostici.Add(Rec("idPartita").Value & ";" & Rec("Risultato").Value & ";" & Rec("Segno").Value)
+				Dim Campi() As String = Pronostico.Split(";")
+				Dim idPartita As Integer = Campi(0)
+
+				If idPartita = idPartita2 Then
+					PartitaTrovata = True
+					Dim Pronostico2 As String = Campi(1)
+					Dim r() As String = Pronostico2.Split("-")
+					Dim PronosticoCasa As Integer = r(0)
+					Dim PronosticoFuori As Integer = r(1)
+					Dim PronosticoSegno As String = Campi(2)
+					Ritorno &= idPartita & ";" & Squadra1 & ";" & Squadra2 & ";" & Risultato & ";" & RisultatoSegno & ";" & Pronostico2 & ";" & PronosticoSegno & ";"
+
+					If RisultatoSegno = PronosticoSegno Then
+						Punti += 5
+					End If
+
+					If PronosticoCasa = RisultatoCasa And PronosticoFuori = RisultatoFuori Then
+						Punti += 10
+					Else
+						If PronosticoCasa = RisultatoCasa And PronosticoCasa <> RisultatoFuori Then
+							Punti += 3
+						Else
+							If PronosticoCasa <> RisultatoCasa And PronosticoFuori = RisultatoFuori Then
+								Punti += 3
+							End If
+						End If
+					End If
+
+					If PronosticoCasa + PronosticoFuori = RisultatoCasa + RisultatoFuori Then
+						Punti += 2
+					End If
+
+					If Math.Abs(PronosticoCasa - PronosticoFuori) = Math.Abs(RisultatoCasa - RisultatoFuori) Then
+						Punti += 2
+					End If
+
+					Ritorno &= Punti & "§"
+
+					PuntiTotali += Punti
+				End If
+			Next
+
+			If Not PartitaTrovata Then
+				Ritorno &= idPartita2 & ";" & Squadra1 & ";" & Squadra2 & ";" & Risultato & ";" & RisultatoSegno & ";" & ";" & ";0§"
+			End If
+		Next
+		Ritorno = idUtente & ";" & SistemaStringaPerRitorno(NickName) & ";" & PuntiTotali & "|" & Ritorno
+
+		Dim Sql As String = "Delete From Risultati Where idAnno=" & idAnno & " And idConcorso=" & idConcorso & " And idUtente=" & idUtente
+		Dim Ritorno2 As String = Conn.EsegueSql(MP, Sql, Connessione, False)
+
+		Sql = "Insert Into Risultati Values(" & idAnno & ", " & idConcorso & ", " & idUtente & ", " & PuntiTotali & ")"
+		Ritorno2 = Conn.EsegueSql(MP, Sql, Connessione, False)
+
+		Return Ritorno
+	End Function
 End Module
