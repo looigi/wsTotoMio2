@@ -147,6 +147,12 @@ Module mdlGenerale
 								   Conn As Object, Connessione As String, MP As String) As String
 		Dim PuntiTotali As Integer = 0
 		Dim Ritorno As String = ""
+		Dim SegniPresi As Integer = 0
+		Dim RisultatoEsatto As Integer = 0
+		Dim RisultatoCasaTot As Integer = 0
+		Dim RisultatoFuoriTot As Integer = 0
+		Dim SommaGoal As Integer = 0
+		Dim DifferenzaGoal As Integer = 0
 
 		For Each Partita As String In Partite
 			'Partite.Add(Rec("idPartita").Value & ";" & SistemaStringaPerRitorno(Rec("Prima").Value) & ";" &
@@ -164,6 +170,13 @@ Module mdlGenerale
 			Dim RisultatoSegno As String = Campi2(4)
 			Dim PartitaTrovata As Boolean = False
 
+			Dim SegnoPreso As Integer = 0
+			Dim RisultatoEsattoPartita As Integer = 0
+			Dim RisultatoCasaPartita As Integer = 0
+			Dim RisultatoFuoriPartita As Integer = 0
+			Dim SommaGoalPartita As Integer = 0
+			Dim DifferenzaGoalPartita As Integer = 0
+
 			For Each Pronostico As String In Pronostici
 				'Pronostici.Add(Rec("idPartita").Value & ";" & Rec("Risultato").Value & ";" & Rec("Segno").Value)
 				Dim Campi() As String = Pronostico.Split(";")
@@ -176,32 +189,51 @@ Module mdlGenerale
 					Dim PronosticoCasa As Integer = r(0)
 					Dim PronosticoFuori As Integer = r(1)
 					Dim PronosticoSegno As String = Campi(2)
-					Ritorno &= idPartita & ";" & Squadra1 & ";" & Squadra2 & ";" & Risultato & ";" & RisultatoSegno & ";" & Pronostico2 & ";" & PronosticoSegno & ";"
 
+					Punti += 1
 					If RisultatoSegno = PronosticoSegno Then
 						Punti += 5
+						SegniPresi += 1
+						SegnoPreso = 1
 					End If
 
 					If PronosticoCasa = RisultatoCasa And PronosticoFuori = RisultatoFuori Then
 						Punti += 10
+						RisultatoEsatto += 1
+						RisultatoCasaTot += 1
+						RisultatoFuoriTot += 1
+						RisultatoEsattoPartita = 1
+						RisultatoCasaPartita = 1
+						RisultatoFuoriPartita = 1
 					Else
 						If PronosticoCasa = RisultatoCasa And PronosticoCasa <> RisultatoFuori Then
 							Punti += 3
+							RisultatoCasaTot += 1
+							RisultatoCasaPartita = 1
 						Else
 							If PronosticoCasa <> RisultatoCasa And PronosticoFuori = RisultatoFuori Then
 								Punti += 3
+								RisultatoFuoriTot += 1
+								RisultatoFuoriPartita = 1
 							End If
 						End If
 					End If
 
 					If PronosticoCasa + PronosticoFuori = RisultatoCasa + RisultatoFuori Then
 						Punti += 2
+						SommaGoal += 1
+						SommaGoalPartita = 1
 					End If
 
 					If Math.Abs(PronosticoCasa - PronosticoFuori) = Math.Abs(RisultatoCasa - RisultatoFuori) Then
 						Punti += 2
+						DifferenzaGoal += 1
+						DifferenzaGoalPartita = 1
 					End If
 
+					Ritorno &= idPartita & ";" & Squadra1 & ";" & Squadra2 & ";" & Risultato & ";" & RisultatoSegno & ";" & Pronostico2 & ";" & PronosticoSegno & ";" &
+						SegnoPreso & ";" & RisultatoEsattoPartita & ";" & RisultatoCasaPartita & ";" & RisultatoFuoriPartita & ";" & SommaGoalPartita & ";" &
+						DifferenzaGoalPartita & ";"
 					Ritorno &= Punti & "§"
 
 					PuntiTotali += Punti
@@ -209,7 +241,7 @@ Module mdlGenerale
 			Next
 
 			If Not PartitaTrovata Then
-				Ritorno &= idPartita2 & ";" & Squadra1 & ";" & Squadra2 & ";" & Risultato & ";" & RisultatoSegno & ";" & ";" & ";0§"
+				Ritorno &= idPartita2 & ";" & Squadra1 & ";" & Squadra2 & ";" & Risultato & ";" & RisultatoSegno & ";;;;;;;;;0§"
 			End If
 		Next
 		Ritorno = idUtente & ";" & SistemaStringaPerRitorno(NickName) & ";" & PuntiTotali & "|" & Ritorno
@@ -217,7 +249,9 @@ Module mdlGenerale
 		Dim Sql As String = "Delete From Risultati Where idAnno=" & idAnno & " And idConcorso=" & idConcorso & " And idUtente=" & idUtente
 		Dim Ritorno2 As String = Conn.EsegueSql(MP, Sql, Connessione, False)
 
-		Sql = "Insert Into Risultati Values(" & idAnno & ", " & idConcorso & ", " & idUtente & ", " & PuntiTotali & ")"
+		Sql = "Insert Into Risultati Values(" & idAnno & ", " & idConcorso & ", " & idUtente & ", " & PuntiTotali & "," &
+			" " & SegniPresi & ", " & RisultatoEsatto & ", " & RisultatoCasaTot & ", " & RisultatoFuoriTot & "," &
+			" " & SommaGoal & ", " & DifferenzaGoal & ")"
 		Ritorno2 = Conn.EsegueSql(MP, Sql, Connessione, False)
 
 		Return Ritorno

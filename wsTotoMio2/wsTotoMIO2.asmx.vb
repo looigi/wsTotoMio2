@@ -30,6 +30,17 @@ Public Class wsTotoMIO2
 	End Function
 
 	<WebMethod()>
+	Public Function TestMail() As String
+		Dim Ritorno As String = "*"
+
+		Dim m As New mail()
+		m.SendEmail("looigi@gmail.com", "Prova invio mail", "Prova prova prova", Nothing)
+
+		Return Ritorno
+	End Function
+
+
+	<WebMethod()>
 	Public Function RitornaDatiGenerali(idAnno As String) As String
 		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
 		Dim Conn As Object = New clsGestioneDB(TipoServer)

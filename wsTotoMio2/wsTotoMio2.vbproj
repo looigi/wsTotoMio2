@@ -111,6 +111,7 @@
     <Import Include="System.Web.UI.HtmlControls" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="CredenzialiPosta.txt" />
     <Content Include="PathDB.txt" />
     <Content Include="Web.config" />
     <Content Include="wsAnni.asmx" />

@@ -97,20 +97,20 @@ Public Class mail
 				gf.ScriveTestoSuFileAperto(Datella & " - Inizio 1")
 			End If
 
-			Dim newNewBody As String = ""
-			Dim c() As String = newBody.Split(";")
-			For Each cc As String In c
-				If cc <> "" Then
-					newNewBody &= Chr(cc)
-				End If
-			Next
+			'Dim newNewBody As String = ""
+			'Dim c() As String = newBody.Split(";")
+			'For Each cc As String In c
+			'	If cc <> "" Then
+			'		newNewBody &= Chr(cc)
+			'	End If
+			'Next
 
 			mail.From = New MailAddress("looigi@gmail.com")
 			mail.[To].Add(New MailAddress(Destinatario))
 			mail.Subject = oggetto
 			mail.IsBodyHtml = True
 			If newBody <> "" Then
-				mail.Body = newNewBody ' CreaCorpoMail(Squadra, mail, newBody)
+				mail.Body = newBody ' CreaCorpoMail(Squadra, mail, newBody)
 			Else
 				mail.Body = ""
 			End If
