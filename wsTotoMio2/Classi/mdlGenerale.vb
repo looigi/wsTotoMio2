@@ -144,7 +144,7 @@ Module mdlGenerale
 	End Function
 
 	Public Function ControllaPunti(idAnno As String, idUtente As String, idConcorso As String, NickName As String, Partite As List(Of String), Pronostici As List(Of String),
-								   Conn As Object, Connessione As String, MP As String) As String
+								   Conn As Object, Connessione As String, MP As String, Modalita As String) As String
 		Dim PuntiTotali As Integer = 0
 		Dim Ritorno As String = ""
 		Dim SegniPresi As Integer = 0
@@ -246,13 +246,15 @@ Module mdlGenerale
 		Next
 		Ritorno = idUtente & ";" & SistemaStringaPerRitorno(NickName) & ";" & PuntiTotali & "|" & Ritorno
 
-		Dim Sql As String = "Delete From Risultati Where idAnno=" & idAnno & " And idConcorso=" & idConcorso & " And idUtente=" & idUtente
-		Dim Ritorno2 As String = Conn.EsegueSql(MP, Sql, Connessione, False)
+		If Modalita <> "Controllato" Then
+			Dim Sql As String = "Delete From Risultati Where idAnno=" & idAnno & " And idConcorso=" & idConcorso & " And idUtente=" & idUtente
+			Dim Ritorno2 As String = Conn.EsegueSql(MP, Sql, Connessione, False)
 
-		Sql = "Insert Into Risultati Values(" & idAnno & ", " & idConcorso & ", " & idUtente & ", " & PuntiTotali & "," &
-			" " & SegniPresi & ", " & RisultatoEsatto & ", " & RisultatoCasaTot & ", " & RisultatoFuoriTot & "," &
-			" " & SommaGoal & ", " & DifferenzaGoal & ")"
-		Ritorno2 = Conn.EsegueSql(MP, Sql, Connessione, False)
+			Sql = "Insert Into Risultati Values(" & idAnno & ", " & idConcorso & ", " & idUtente & ", " & PuntiTotali & "," &
+				" " & SegniPresi & ", " & RisultatoEsatto & ", " & RisultatoCasaTot & ", " & RisultatoFuoriTot & "," &
+				" " & SommaGoal & ", " & DifferenzaGoal & ")"
+			Ritorno2 = Conn.EsegueSql(MP, Sql, Connessione, False)
+		End If
 
 		Return Ritorno
 	End Function

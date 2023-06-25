@@ -90,6 +90,34 @@ Public Class wsConcorsi
 	End Function
 
 	<WebMethod()>
+	Public Function ChiudeConcorso(idAnno As String) As String
+		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
+		Dim Conn As Object = New clsGestioneDB(TipoServer)
+		Dim Ritorno As String = ""
+		Dim sql As String = "Select * From ModalitaConcorso Where Descrizione='Controllato'"
+		Dim Rec As Object = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+		If TypeOf (Rec) Is String Then
+			Ritorno = Rec
+		Else
+			If Rec.Eof Then
+				Ritorno = "ERROR: Nessuna tipologia rilevata"
+			Else
+				Dim idModalita As String = Rec("idModalitaConcorso").Value
+				Dim Descrizione As String = Rec("Descrizione").Value
+				Rec.Close
+
+				sql = "Update Globale Set idModalitaConcorso=" & idModalita & " Where idAnno=" & idAnno
+				Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+				If Not Ritorno.Contains("ERROR") Then
+					Ritorno = idModalita & ";" & Descrizione
+				End If
+			End If
+		End If
+
+		Return Ritorno
+	End Function
+
+	<WebMethod()>
 	Public Function impostaConcorsoPerControllo(idAnno As String) As String
 		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
 		Dim Conn As Object = New clsGestioneDB(TipoServer)
@@ -194,7 +222,7 @@ Public Class wsConcorsi
 	End Function
 
 	<WebMethod()>
-	Public Function controllaConcorso(idAnno As String, idUtente As String) As String
+	Public Function controllaConcorso(idAnno As String, idUtente As String, ModalitaConcorso As String) As String
 		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
 		Dim Conn As Object = New clsGestioneDB(TipoServer)
 		Dim Ritorno As String = ""
@@ -228,7 +256,9 @@ Public Class wsConcorsi
 						Loop
 						Rec.Close
 
-						sql = "Select A.NickName, B.idTipologia, B.Descrizione From Utenti A Left Join UtentiTipologie B On A.idTipologia = B.idTipologia Where idAnno=" & idAnno & " And idUtente=" & idUtente
+						sql = "Select A.NickName, B.idTipologia, B.Descrizione From Utenti A " &
+							"Left Join UtentiTipologie B On A.idTipologia = B.idTipologia " &
+							"Where idAnno=" & idAnno & " And idUtente=" & idUtente
 						Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
 						If TypeOf (Rec) Is String Then
 							Ritorno = Rec
@@ -241,7 +271,7 @@ Public Class wsConcorsi
 								Dim Tipologia As String = Rec("Descrizione").Value
 								Rec.Close
 
-								If idTipologia = 0 Then
+								If idTipologia = 0 Or ModalitaConcorso = "Controllato" Then
 									' Controllo per amministratore
 									sql = "Select * From Utenti Where idAnno=" & idAnno & " And Eliminato='N'"
 									Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
@@ -273,7 +303,8 @@ Public Class wsConcorsi
 												Else
 													If Rec.Eof Then
 														Dim Controllo As String = ControllaPunti(idAnno, id, idGiornata, NN,
-																								 Partite, New List(Of String), Conn, Connessione, Server.MapPath("."))
+																								 Partite, New List(Of String), Conn, Connessione, Server.MapPath("."),
+																								 ModalitaConcorso)
 														Ritorno &= Controllo & "%"
 													Else
 														Dim Pronostici As New List(Of String)
@@ -286,7 +317,8 @@ Public Class wsConcorsi
 														Rec.Close
 
 														Dim Controllo As String = ControllaPunti(idAnno, id, idGiornata, NN,
-																								 Partite, Pronostici, Conn, Connessione, Server.MapPath("."))
+																								 Partite, Pronostici, Conn, Connessione, Server.MapPath("."),
+																								 ModalitaConcorso)
 														Ritorno &= Controllo & "%"
 													End If
 												End If
@@ -302,7 +334,8 @@ Public Class wsConcorsi
 									Else
 										If Rec.Eof Then
 											Dim Controllo As String = ControllaPunti(idAnno, idUtente, idGiornata, NickName,
-																					Partite, New List(Of String), Conn, Connessione, Server.MapPath("."))
+																					Partite, New List(Of String), Conn, Connessione, Server.MapPath("."),
+																					ModalitaConcorso)
 											Ritorno &= Controllo & "%"
 										Else
 											Dim Pronostici As New List(Of String)
@@ -315,7 +348,8 @@ Public Class wsConcorsi
 											Rec.Close
 
 											Dim Controllo As String = ControllaPunti(idAnno, idUtente, idGiornata, NickName,
-																					 Partite, Pronostici, Conn, Connessione, Server.MapPath("."))
+																					 Partite, Pronostici, Conn, Connessione, Server.MapPath("."),
+																					 ModalitaConcorso)
 											Ritorno &= Controllo & "%"
 										End If
 									End If
