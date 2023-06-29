@@ -66,23 +66,78 @@ Public Class wsConcorsi
 		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
 		Dim Conn As Object = New clsGestioneDB(TipoServer)
 		Dim Ritorno As String = ""
-		Dim sql As String = "Select * From ModalitaConcorso Where Descrizione='Aperto'"
-		Dim Rec As Object = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
-		If TypeOf (Rec) Is String Then
-			Ritorno = Rec
-		Else
-			If Rec.Eof Then
-				Ritorno = "ERROR: Nessuna tipologia rilevata"
-			Else
-				Dim idModalita As String = Rec("idModalitaConcorso").Value
-				Dim Descrizione As String = Rec("Descrizione").Value
-				Rec.Close
 
-				sql = "Update Globale Set idModalitaConcorso=" & idModalita & ", idGiornata = idGiornata + 1 Where idAnno=" & idAnno
-				Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
-				If Not Ritorno.Contains("ERROR") Then
-					Ritorno = idModalita & ";" & Descrizione
+		Dim sql As String = "Start transaction"
+		Ritorno = Conn.EsegueSql(Server.MapPath("."), Sql, Connessione, False)
+		If Not Ritorno.Contains("ERROR:") Then
+			sql = "Select * From ModalitaConcorso Where Descrizione='Aperto'"
+			Dim Rec As Object = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+			If TypeOf (Rec) Is String Then
+				Ritorno = Rec
+			Else
+				If Rec.Eof Then
+					Ritorno = "ERROR: Nessuna tipologia rilevata"
+				Else
+					Dim idModalita As String = Rec("idModalitaConcorso").Value
+					Dim Descrizione As String = Rec("Descrizione").Value
+					Rec.Close
+
+					sql = "Update Globale Set idModalitaConcorso=" & idModalita & ", idGiornata = idGiornata + 1 Where idAnno=" & idAnno
+					Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+					If Not Ritorno.Contains("ERROR") Then
+						Ritorno = idModalita & ";" & Descrizione
+
+						sql = "Select * From Globale Where idAnno=" & idAnno
+						Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+						If TypeOf (Rec) Is String Then
+							Ritorno = Rec
+						Else
+							If Rec.Eof Then
+								Ritorno = "ERROR: Nessuna giornata rilevata"
+							Else
+								Dim idGiornata As Integer = Rec("idGiornata").Value
+								Rec.Close
+
+								sql = "Select * From Eventi Where InizioGiornata=" & idGiornata
+								Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+								If TypeOf (Rec) Is String Then
+									Ritorno = Rec
+								Else
+									sql = "Delete From EventiCalendario Where idAnno=" & idAnno & " And idGiornata=" & idGiornata
+									Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+									If Not Ritorno.Contains("ERROR") Then
+										If Rec.Eof Then
+										Else
+											Do Until Rec.Eof
+												sql = "Insert Into EventiCalendario Values (" & idAnno & ", " & idGiornata & ", " & Rec("idEvento").Value & ")"
+												Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+												If Ritorno.Contains("ERROR") Then
+													Exit Do
+												End If
+
+												Rec.MoveNext
+											Loop
+											Rec.Close
+										End If
+									End If
+
+									If Not Ritorno.Contains("ERROR") Then
+										sql = "Insert Into EventiCalendario Values (" & idAnno & ", " & idGiornata & ", 1)"
+										Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+									End If
+								End If
+							End If
+						End If
+					End If
 				End If
+			End If
+
+			If Ritorno = "OK" Then
+				sql = "commit"
+				Dim Rit As String = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+			Else
+				sql = "rollback"
+				Dim Rit As String = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 			End If
 		End If
 
@@ -94,23 +149,66 @@ Public Class wsConcorsi
 		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
 		Dim Conn As Object = New clsGestioneDB(TipoServer)
 		Dim Ritorno As String = ""
-		Dim sql As String = "Select * From ModalitaConcorso Where Descrizione='Controllato'"
-		Dim Rec As Object = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
-		If TypeOf (Rec) Is String Then
-			Ritorno = Rec
-		Else
-			If Rec.Eof Then
-				Ritorno = "ERROR: Nessuna tipologia rilevata"
-			Else
-				Dim idModalita As String = Rec("idModalitaConcorso").Value
-				Dim Descrizione As String = Rec("Descrizione").Value
-				Rec.Close
 
-				sql = "Update Globale Set idModalitaConcorso=" & idModalita & " Where idAnno=" & idAnno
-				Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
-				If Not Ritorno.Contains("ERROR") Then
-					Ritorno = idModalita & ";" & Descrizione
+		Dim sql As String = "Start transaction"
+		Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+		If Not Ritorno.Contains("ERROR:") Then
+			sql = "Select * From ModalitaConcorso Where Descrizione='Controllato'"
+			Dim Rec As Object = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+			If TypeOf (Rec) Is String Then
+				Ritorno = Rec
+			Else
+				If Rec.Eof Then
+					Ritorno = "ERROR: Nessuna tipologia rilevata"
+				Else
+					Dim idModalita As String = Rec("idModalitaConcorso").Value
+					Dim Descrizione As String = Rec("Descrizione").Value
+					Rec.Close
+
+					sql = "Update Globale Set idModalitaConcorso=" & idModalita & " Where idAnno=" & idAnno
+					Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+					If Not Ritorno.Contains("ERROR") Then
+						Ritorno = idModalita & ";" & Descrizione
+					Else
+						sql = "Select * From Globale Where idAnno=" & idAnno
+						Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+						If TypeOf (Rec) Is String Then
+							Ritorno = Rec
+						Else
+							If Rec.Eof Then
+								Ritorno = "ERROR: Nessuna giornata rilevata"
+							Else
+								Dim idGiornata As Integer = Rec("idGiornata").Value
+								Rec.Close
+
+								sql = "Select * From EventiCalendario Where idAnno=" & idAnno & " And idGiornata=" & idGiornata & " And idEvento<>1"
+								Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+								If TypeOf (Rec) Is String Then
+									Ritorno = Rec
+								Else
+									If Not Rec.Eof Then
+										Dim ev As New clsEventi
+
+										Do Until Rec.Eof
+											Ritorno = ev.GestioneEventi(Server.MapPath("."), idAnno, idGiornata, Rec("idEvento").Value, Conn, Connessione)
+
+											Rec.MoveNext
+										Loop
+										Rec.CLose
+									End If
+								End If
+							End If
+						End If
+					End If
 				End If
+			End If
+
+			If Ritorno = "OK" Then
+				sql = "commit"
+				Dim Rit As String = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+			Else
+				sql = "rollback"
+				Dim Rit As String = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 			End If
 		End If
 

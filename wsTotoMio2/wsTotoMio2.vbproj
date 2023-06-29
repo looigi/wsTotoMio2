@@ -122,6 +122,7 @@
     <Content Include="wsUtenti.asmx" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Classi\clsEventi.vb" />
     <Compile Include="Classi\clsMariaDB.vb" />
     <Compile Include="Classi\clsRecordset.vb">
       <SubType>Component</SubType>

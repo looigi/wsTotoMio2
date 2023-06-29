@@ -56,6 +56,8 @@ Public Class wsTotoMIO2
 			If Rec.Eof Then
 				Ritorno = "ERROR: Nessun valore ritornato"
 			Else
+				Dim idGiornata As Integer = Rec("idGiornata").Value
+
 				Ritorno = Rec("idGiornata").Value & ";" &
 						Rec("idModalitaConcorso").Value & ";" &
 						Rec("ModalitaConcorso").Value & ";" &
@@ -73,6 +75,22 @@ Public Class wsTotoMIO2
 						Rec.MoveNext
 					Loop
 					Rec.Close
+
+					Ritorno &= "|"
+					Sql = "Select * From EventiCalendario A " &
+						"Left Join Eventi B On A.idEvento = B.idEvento " &
+						"Where idAnno=" & idAnno & " And idGiornata=" & idGiornata
+					Rec = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
+					If TypeOf (Rec) Is String Then
+						Ritorno = Rec
+					Else
+						Do Until Rec.Eof
+							Ritorno &= Rec("Descrizione").Value & "§"
+
+							Rec.MoveNext
+						Loop
+						Rec.Close
+					End If
 				End If
 			End If
 		End If
