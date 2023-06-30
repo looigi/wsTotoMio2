@@ -258,4 +258,34 @@ Module mdlGenerale
 
 		Return Ritorno
 	End Function
+
+	Public Function RitornaClassificaGenerale(Mp As String, idAnno As Integer, idGiornata As Integer, Conn As Object, Connessione As String) As String
+		Dim Ritorno As String = ""
+		Dim sql As String = "SELECT A.idUtente, NickName, Sum(Punti) As Punti, Sum(RisultatiEsatti) As RisultatiEsatti, " &
+			"Sum(RisultatiCasaTot) As RisCasaTot, Sum(RisultatiFuoriTot) As RisFuoriTot, " &
+			"Sum(SegniPresi) As Segni, Sum(SommeGoal) As SommaGoal, Sum(DifferenzeGoal) As DifferenzeGoal " &
+			"FROM Risultati A Left Join Utenti B On A.idUtente = B.idUtente And A.idAnno = B.idAnno " &
+			"Where A.idAnno=" & idAnno & " And idConcorso <= " & idGiornata & " " &
+			"Group By A.idUtente, NickName " &
+			"Order By 3 Desc, 4 Desc, 7 Desc, 5 Desc, 6 Desc, 8 Desc, 9 Desc"
+		Dim Rec As Object = CreaRecordset(Mp, Conn, sql, Connessione)
+		If TypeOf (Rec) Is String Then
+			Ritorno = Rec
+		Else
+			If Rec.Eof Then
+				Ritorno = "ERROR: Nessun utente rilevato"
+			Else
+				Do Until Rec.Eof
+					Ritorno &= Rec("idUtente").Value & ";" & SistemaStringaPerRitorno(Rec("NickName").Value) & ";" & Rec("Punti").Value & ";" &
+						Rec("RisultatiEsatti").Value & ";" & Rec("RisCasaTot").Value & ";" & Rec("RisFuoriTot").Value & ";" &
+						Rec("Segni").Value & ";" & Rec("SommaGoal").Value & ";" & Rec("DifferenzeGoal").Value & "§"
+
+					Rec.MoveNext
+				Loop
+				Rec.Close
+			End If
+		End If
+
+		Return Ritorno
+	End Function
 End Module
