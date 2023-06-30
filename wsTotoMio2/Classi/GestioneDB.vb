@@ -11,7 +11,7 @@ Public Class clsGestioneDB
 
 	Private mdb As clsMariaDB
 	Private TipoDB As String
-	Private effettuaLog As Boolean = True
+	Private effettuaLog As Boolean = False
 	Private nomeFileLogExec As String = ""
 	Private nomeFileLogQuery As String = ""
 	Private listaLog As New List(Of LogStruct)

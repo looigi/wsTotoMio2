@@ -30,17 +30,38 @@ Public Class clsEventi
 				Dim Evento As String = Rec("Descrizione").Value
 				Rec.Close
 
-				Select Case Evento
-					Case "Creazione Rotolo di Coppa"
-						Ritorno = CreazioneCoppa(Mp, idAnno, idGiornata, QuantiGiocatori, Importanza, InizioGiornata, Conn, Connessione, "Rotolo di Coppa")
-					Case "Creazione Coppa Coppata"
-						Ritorno = CreazioneCoppa(Mp, idAnno, idGiornata, QuantiGiocatori, Importanza, InizioGiornata, Conn, Connessione, "Coppa Coppata")
-					Case "Creazione Coppa TotoMio"
-						Ritorno = CreazioneCoppa(Mp, idAnno, idGiornata, QuantiGiocatori, Importanza, InizioGiornata, Conn, Connessione, "Coppa TotoMio")
-					Case "Creazione Coppa dei Settimini"
-						Ritorno = CreazioneCoppa(Mp, idAnno, idGiornata, QuantiGiocatori, Importanza, InizioGiornata, Conn, Connessione, "Coppa dei Settimini")
-					Case "Creazione Pippettero"
-						Ritorno = CreazioneCoppa(Mp, idAnno, idGiornata, QuantiGiocatori, Importanza, Conn, InizioGiornata, Connessione, "Pippettero")
+				Dim Dettaglio As String = ""
+				Dim Dettaglio2 As String = ""
+				Dim Cosa As String = ""
+
+				If Evento.ToUpper.Contains("CREAZIONE ") Then
+					Cosa = "CREAZIONE"
+					Dettaglio = Mid(Evento, 10, Evento.Length).Trim()
+				End If
+
+				If Evento.ToUpper.Contains("PARTITA ") Then
+					Cosa = "PARTITA"
+					Dettaglio = Mid(Evento, 8, Evento.Length).Trim()
+					Dettaglio2 = Mid(Dettaglio, Dettaglio.Length - 3, Dettaglio.Length).Trim()
+					Dettaglio = Dettaglio.Replace(Dettaglio2, "").Trim()
+				End If
+
+				If Evento.ToUpper.Contains("SEMIFINALE ") Then
+					Cosa = "SEMIFINALE"
+					Dettaglio = Mid(Evento, 11, Evento.Length).Trim()
+				End If
+
+				If Evento.ToUpper.Contains("FINALE ") And Not Evento.ToUpper.Contains("SEMIFINALE") Then
+					Cosa = "FINALE"
+					Dettaglio = Mid(Evento, 7, Evento.Length).Trim()
+				End If
+
+				Select Case Cosa
+					Case "CREAZIONE"
+						Ritorno = CreazioneCoppa(Mp, idAnno, idGiornata, QuantiGiocatori, Importanza, InizioGiornata, Conn, Connessione, Dettaglio)
+					Case "PARTITA"
+					Case "SEMIFINALE"
+					Case "FINALE"
 				End Select
 			End If
 		End If
@@ -71,16 +92,53 @@ Public Class clsEventi
 		Return Ritorno
 	End Function
 
+	Private Function RitornaGiocatoriScelti(QuantiGiocatori As Integer, Importanza As Integer, Classifica As List(Of StrutturaGiocatore)) As List(Of StrutturaGiocatore)
+		Dim Scelti As New List(Of StrutturaGiocatore)
+		Dim Quanti As Integer = Math.Abs(QuantiGiocatori - 1)
+
+		If QuantiGiocatori > 0 Then
+			Dim Inizio As Integer = -1
+			Dim Fine As Integer = -1
+
+			Select Case Importanza
+				Case 1
+					Inizio = 1
+					Fine = Quanti
+				Case 2
+					Inizio = CInt((Classifica.Count - 1) / 3)
+					Fine = Inizio + Quanti
+				Case 3
+					Inizio = (Classifica.Count - 1) / 2
+					Fine = Inizio + Quanti
+				Case 4
+					Inizio = (Classifica.Count - 1) / 1.3
+					Fine = Inizio + Quanti
+			End Select
+
+			While Fine > Classifica.Count - 1
+				Fine -= 1
+				Inizio -= 1
+			End While
+
+			For i As Integer = Inizio To Fine
+				Scelti.Add(Classifica.Item(i))
+			Next
+		Else
+			For i As Integer = (Classifica.Count - 1) To (Classifica.Count - 1 - Quanti) Step -1
+				Scelti.Add(Classifica.Item(i))
+			Next
+		End If
+
+		Return Scelti
+	End Function
+
 	Private Function CreazioneCoppa(Mp As String, idAnno As Integer, idGiornata As Integer, QuantiGiocatori As Integer, Importanza As Integer,
 											InizioGiornata As Integer, Conn As Object, Connessione As String, Torneo As String) As String
 		Dim Ritorno As String = ""
 		Dim Classifica As List(Of StrutturaGiocatore) = PrendeGiocatori(Mp, idAnno, idGiornata, Conn, Connessione)
 		Dim QuantiGiocatoriPresenti As Integer = Classifica.Count - 1
 		If QuantiGiocatoriPresenti > QuantiGiocatori Then
-			Dim Scelti As New List(Of StrutturaGiocatore)
-			For i As Integer = 0 To QuantiGiocatori - 1
-				Scelti.Add(Classifica.Item(i))
-			Next
+			Dim Scelti As List(Of StrutturaGiocatore) = RitornaGiocatoriScelti(QuantiGiocatori, Importanza, Classifica)
 
 			Dim GiornateAndata As New List(Of Integer)
 			Dim idEventiAndata As New List(Of Integer)

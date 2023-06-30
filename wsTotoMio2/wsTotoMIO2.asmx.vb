@@ -1,4 +1,5 @@
 ﻿Imports System.ComponentModel
+Imports System.Diagnostics.Eventing.Reader
 Imports System.Web.Services
 Imports System.Web.Services.Protocols
 Imports ADODB
@@ -224,4 +225,219 @@ Public Class wsTotoMIO2
 
 		Return Ritorno
 	End Function
+
+	<WebMethod()>
+	Public Function PuliziaDatiDebug(idAnno As String) As String
+		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
+		Dim Conn As Object = New clsGestioneDB(TipoServer)
+		Dim Ritorno As String = ""
+
+		Dim Sql As String = "Start transaction"
+		Ritorno = Conn.EsegueSql(Server.MapPath("."), Sql, Connessione)
+		If Not Ritorno.Contains("Error:") Then
+
+			Sql = "Delete From Concorsi Where idAnno=" & idAnno
+			Ritorno = Conn.EsegueSql(Server.MapPath("."), Sql, Connessione, False)
+			If Not Ritorno.Contains(StringaErrore) Then
+
+				Sql = "Delete From EventiCalendario Where idAnno=" & idAnno
+				Ritorno = Conn.EsegueSql(Server.MapPath("."), Sql, Connessione, False)
+				If Not Ritorno.Contains(StringaErrore) Then
+
+					Sql = "Delete From EventiPartite Where idAnno=" & idAnno
+					Ritorno = Conn.EsegueSql(Server.MapPath("."), Sql, Connessione, False)
+					If Not Ritorno.Contains(StringaErrore) Then
+
+						Sql = "Update Globale Set idGiornata=0, idModalitaConcorso=0 Where idAnno=" & idAnno
+						Ritorno = Conn.EsegueSql(Server.MapPath("."), Sql, Connessione, False)
+						If Not Ritorno.Contains(StringaErrore) Then
+
+							Sql = "Delete From Pronostici Where idAnno=" & idAnno
+							Ritorno = Conn.EsegueSql(Server.MapPath("."), Sql, Connessione, False)
+							If Not Ritorno.Contains(StringaErrore) Then
+
+								Sql = "Delete From Bilancio Where idAnno=" & idAnno
+								Ritorno = Conn.EsegueSql(Server.MapPath("."), Sql, Connessione, False)
+								If Not Ritorno.Contains(StringaErrore) Then
+
+									Sql = "Delete From Risultati Where idAnno=" & idAnno
+									Ritorno = Conn.EsegueSql(Server.MapPath("."), Sql, Connessione, False)
+									If Not Ritorno.Contains(StringaErrore) Then
+
+										Sql = "Delete From Utenti Where idAnno=" & idAnno & " And Cognome Like '%Utente Cognome%'"
+										Ritorno = Conn.EsegueSql(Server.MapPath("."), Sql, Connessione, False)
+										If Not Ritorno.Contains(StringaErrore) Then
+
+										End If
+									End If
+								End If
+							End If
+						End If
+					End If
+				End If
+			End If
+
+			If Not Ritorno.Contains("Error") Then
+				Sql = "commit"
+				Dim Rit As String = Conn.EsegueSql(Server.MapPath("."), Sql, Connessione)
+			Else
+				Sql = "rollback"
+				Dim Rit As String = Conn.EsegueSql(Server.MapPath("."), Sql, Connessione)
+			End If
+		End If
+
+		Return Ritorno
+	End Function
+
+	<WebMethod()>
+	Public Function CreaDatiDiDebug(idAnno As String) As String
+		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
+		Dim Conn As Object = New clsGestioneDB(TipoServer)
+		Dim Ritorno As String = ""
+		Dim sql As String = ""
+
+		Dim Quanti As Integer = 10
+
+		Ritorno = PuliziaDatiDebug(idAnno)
+		If Not Ritorno.Contains("ERROR:") Then
+			sql = "Start transaction"
+			Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+			If Not Ritorno.Contains("ERROR") Then
+				For i As Integer = 1 To Quanti
+					sql = "Insert Into Utenti Values (" &
+						" " & idAnno & ", " &
+						" " & i + 1 & ", " &
+						"'Utente " & i & "', " &
+						"'Utente Cognome " & i & "', " &
+						"'Utente Nome " & i & "', " &
+						"'utente', " &
+						"'utente" & i & "@utente.it', " &
+						"1, " &
+						"'N' " &
+						")"
+					Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+					If Ritorno.Contains(StringaErrore) Then
+						Exit For
+					End If
+				Next
+
+				If Not Ritorno.Contains("ERROR") Then
+					sql = "Select Count(*) From Utenti Where Eliminato = 'N'"
+					Dim Rec As Object = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+					If TypeOf (Rec) Is String Then
+						Ritorno = Rec
+					Else
+						If Rec.Eof Then
+							Ritorno = "ERROR: Nessun utente rilevato"
+						Else
+							Dim QuantiGiocatori As Integer = Rec(0).Value
+							Rec.Close
+
+							' Creazione concorsi
+							sql = "Delete From Concorsi Where idAnno = " & idAnno
+							Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+							If Not Ritorno.Contains(StringaErrore) Then
+								For i = 1 To 38
+									For k = 1 To 10
+										Dim Ris1 As Integer = CInt(Int((4 * Rnd())))
+										Dim Ris2 As Integer = CInt(Int((4 * Rnd())))
+										Dim Risultato As String = Ris1 & "-" & Ris2
+										Dim Segno As String = ""
+										If Ris1 > Ris2 Then
+											Segno = "1"
+										Else
+											If Ris1 < Ris2 Then
+												Segno = "2"
+											Else
+												Segno = "X"
+											End If
+										End If
+										sql = "Insert Into Concorsi Values (" &
+											" " & idAnno & ", " &
+											" " & i & ", " &
+											" " & k & ", " &
+											"'Squadra Casa " & k & "', " &
+											"'Squadra Fuori " & k & "', " &
+											"'" & Risultato & "', " &
+											"'" & Segno & "' " &
+											")"
+										Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+										If Ritorno.Contains(StringaErrore) Then
+											Exit For
+										End If
+									Next k
+
+									If Ritorno.Contains(StringaErrore) Then
+										Exit For
+									End If
+								Next i
+							End If
+
+							If Not Ritorno.Contains(StringaErrore) Then
+								' Creazione Pronostici
+								sql = "Delete From Pronostici Where idAnno = " & idAnno
+								Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+								If Not Ritorno.Contains(StringaErrore) Then
+									For i = 1 To 38
+										For z = 1 To QuantiGiocatori
+											For k = 1 To 10
+												Dim Ris1 As Integer = CInt(Int((4 * Rnd())))
+												Dim Ris2 As Integer = CInt(Int((4 * Rnd())))
+												Dim Risultato As String = Ris1 & "-" & Ris2
+												Dim Segno As String = ""
+												If Ris1 > Ris2 Then
+													Segno = "1"
+												Else
+													If Ris1 < Ris2 Then
+														Segno = "2"
+													Else
+														Segno = "X"
+													End If
+												End If
+												sql = "Insert Into Pronostici Values (" &
+													" " & idAnno & ", " &
+													" " & z & ", " &
+													" " & i & ", " &
+													" " & k & ", " &
+													"'" & Risultato & "', " &
+													"'" & Segno & "' " &
+													")"
+												Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+												If Ritorno.Contains(StringaErrore) Then
+													Exit For
+												End If
+											Next k
+
+											If Ritorno.Contains(StringaErrore) Then
+												Exit For
+											End If
+										Next z
+									Next i
+								End If
+
+								If Not Ritorno.Contains("ERROR") Then
+									sql = "Update Globale Set idGiornata=0, idModalitaConcorso=0 Where idAnno=" & idAnno
+									Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+									If Not Ritorno.Contains(StringaErrore) Then
+										Ritorno = "OK"
+									End If
+								End If
+							End If
+						End If
+					End If
+				End If
+			End If
+
+			If Ritorno = "OK" Then
+				sql = "commit"
+				Dim Rit As String = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+			Else
+				sql = "rollback"
+				Dim Rit As String = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+			End If
+		End If
+
+		Return Ritorno
+	End Function
+
 End Class

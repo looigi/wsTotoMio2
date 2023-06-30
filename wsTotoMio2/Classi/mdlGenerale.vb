@@ -261,13 +261,20 @@ Module mdlGenerale
 
 	Public Function RitornaClassificaGenerale(Mp As String, idAnno As Integer, idGiornata As Integer, Conn As Object, Connessione As String) As String
 		Dim Ritorno As String = ""
-		Dim sql As String = "SELECT A.idUtente, NickName, Sum(Punti) As Punti, Sum(RisultatiEsatti) As RisultatiEsatti, " &
+		Dim sql As String = "Select * From (" &
+			"SELECT A.idUtente, NickName, Sum(Punti) As Punti, Sum(RisultatiEsatti) As RisultatiEsatti, " &
 			"Sum(RisultatiCasaTot) As RisCasaTot, Sum(RisultatiFuoriTot) As RisFuoriTot, " &
 			"Sum(SegniPresi) As Segni, Sum(SommeGoal) As SommaGoal, Sum(DifferenzeGoal) As DifferenzeGoal " &
 			"FROM Risultati A Left Join Utenti B On A.idUtente = B.idUtente And A.idAnno = B.idAnno " &
 			"Where A.idAnno=" & idAnno & " And idConcorso <= " & idGiornata & " " &
 			"Group By A.idUtente, NickName " &
-			"Order By 3 Desc, 4 Desc, 7 Desc, 5 Desc, 6 Desc, 8 Desc, 9 Desc"
+			"Union ALL " &
+			"Select idUtente, NickName, 0 As Punti, 0 As RisultatiEsatti, " &
+			"0 As RisCasaTot, 0 As RisFuoriTot, " &
+			"0 As Segni, 0 As SommaGoal, 0 As DifferenzeGoal " &
+			"From Utenti Where idUtente Not In (Select idUtente From Risultati) " &
+			") As A " &
+			"Order By 3 Desc, 4 Desc, 7 Desc, 5 Desc, 6 Desc, 8 Desc, 9 Desc, 2"
 		Dim Rec As Object = CreaRecordset(Mp, Conn, sql, Connessione)
 		If TypeOf (Rec) Is String Then
 			Ritorno = Rec
