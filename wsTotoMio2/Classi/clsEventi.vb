@@ -12,6 +12,7 @@ Public Class clsEventi
 		Dim Segni As Integer
 		Dim SommaGoal As Integer
 		Dim DifferenzaGoal As Integer
+		Dim Giocate As Integer
 	End Structure
 
 	Public Function GestioneEventi(Mp As String, idAnno As Integer, idGiornata As Integer, idEvento As Integer,
@@ -86,6 +87,7 @@ Public Class clsEventi
 				s.Segni = Val(Campi(6))
 				s.SommaGoal = Val(Campi(7))
 				s.DifferenzaGoal = Val(Campi(8))
+				s.Giocate = Val(Campi(9))
 				Ritorno.Add(s)
 			End If
 		Next
@@ -103,16 +105,16 @@ Public Class clsEventi
 			Select Case Importanza
 				Case 1
 					Inizio = 1
-					Fine = Quanti
+					Fine = Quanti + 1
 				Case 2
 					Inizio = CInt((Classifica.Count - 1) / 3)
-					Fine = Inizio + Quanti
+					Fine = Inizio + Quanti + 1
 				Case 3
 					Inizio = (Classifica.Count - 1) / 2
-					Fine = Inizio + Quanti
+					Fine = Inizio + Quanti + 1
 				Case 4
 					Inizio = (Classifica.Count - 1) / 1.3
-					Fine = Inizio + Quanti
+					Fine = Inizio + Quanti + 1
 			End Select
 
 			While Fine > Classifica.Count - 1
@@ -145,7 +147,7 @@ Public Class clsEventi
 			Dim GiornateRitorno As New List(Of Integer)
 			Dim idEventiRitorno As New List(Of Integer)
 
-			Dim Sql As String = "Select * From Eventi Where Upper(Descrizione) Like '%" & Torneo.ToUpper & "%' And UPPER(Descrizione) Like '% A%' Order By InizioGiornata"
+			Dim Sql As String = "Select * From Eventi Where Upper(Descrizione) Like '%" & Torneo.ToUpper & " A%' Order By InizioGiornata"
 			Dim Rec As Object = CreaRecordset(Mp, Conn, Sql, Connessione)
 			If TypeOf (Rec) Is String Then
 				Ritorno = Rec
@@ -161,7 +163,7 @@ Public Class clsEventi
 					Loop
 					Rec.Close
 
-					Sql = "Select * From Eventi Where Upper(Descrizione) Like '%" & Torneo.ToUpper & "%' And UPPER(Descrizione) Like '% R%' Order By InizioGiornata"
+					Sql = "Select * From Eventi Where Upper(Descrizione) Like '%" & Torneo.ToUpper & " R%' Order By InizioGiornata"
 					Rec = CreaRecordset(Mp, Conn, Sql, Connessione)
 					If TypeOf (Rec) Is String Then
 						Ritorno = Rec
@@ -180,7 +182,7 @@ Public Class clsEventi
 							Dim GiornataSemiFinale As Integer = -1
 							Dim idEventoSemifinale As Integer = -1
 
-							Sql = "Select * From Eventi Where Upper(Descrizione) Like '%" & Torneo.ToUpper & "%' And UPPER(Descrizione) Like '%SEMIFINALE%' Order By InizioGiornata"
+							Sql = "Select * From Eventi Where Upper(Descrizione) Like '%SEMIFINALE " & Torneo.ToUpper & "%' Order By InizioGiornata"
 							Rec = CreaRecordset(Mp, Conn, Sql, Connessione)
 							If TypeOf (Rec) Is String Then
 								Ritorno = Rec
@@ -199,7 +201,7 @@ Public Class clsEventi
 									Dim GiornataFinale As Integer = -1
 									Dim idEventoFinale As Integer = -1
 
-									Sql = "Select * From Eventi Where Upper(Descrizione) Like '%" & Torneo.ToUpper & "%' And UPPER(Descrizione) Like '%FINALE%' And UPPER(Descrizione) Not Like '%SEMIFINALE%' Order By InizioGiornata"
+									Sql = "Select * From Eventi Where Upper(Descrizione) Like '%FINALE " & Torneo.ToUpper & "%' And UPPER(Descrizione) Not Like '%SEMIFINALE " & Torneo.ToUpper & "%' Order By InizioGiornata"
 									Rec = CreaRecordset(Mp, Conn, Sql, Connessione)
 									If TypeOf (Rec) Is String Then
 										Ritorno = Rec
@@ -215,8 +217,8 @@ Public Class clsEventi
 											Loop
 											Rec.Close
 
-											For i As Integer = 1 To QuantiGiocatori - 1
-												Sql = "Select * From ScontriDiretti Where NumeroSquadre=" & QuantiGiocatori & " And Giornata=" & i & " Order By Progressivo"
+											For i As Integer = 0 To QuantiGiocatori - 1
+												Sql = "Select * From ScontriDiretti Where NumeroSquadre=" & QuantiGiocatori & " And Giornata=" & i + 1 & " Order By Progressivo"
 												Rec = CreaRecordset(Mp, Conn, Sql, Connessione)
 												If TypeOf (Rec) Is String Then
 													Ritorno = Rec
@@ -224,14 +226,25 @@ Public Class clsEventi
 													If Rec.Eof Then
 														Ritorno = "ERROR: Nessuna giornata rilevata"
 													Else
+														Dim Prima As New List(Of Integer)
+														Dim Seconda As New List(Of Integer)
+														Do Until Rec.Eof
+															Prima.Add(Rec("Squadra1").Value)
+															Seconda.Add(Rec("Squadra2").Value)
+
+															Rec.MoveNext
+														Loop
+														Rec.Close
+
 														Dim GiornataAndata As Integer = GiornateAndata.Item(i)
 														Dim idEventoAndata As Integer = idEventiAndata.Item(i)
 														Dim GiornataRitorno As Integer = GiornateRitorno.Item(i)
 														Dim idEventoRitorno As Integer = idEventiRitorno.Item(i)
 
-														Do Until Rec.Eof
-															Dim Squadra1 As Integer = Scelti.Item(Rec("Squadra1").Value).idUtente
-															Dim Squadra2 As Integer = Scelti.Item(Rec("Squadra2").Value).idUtente
+														Dim Conta As Integer = 0
+														For Each p As Integer In Prima
+															Dim Squadra1 As Integer = Scelti.Item(p).idUtente
+															Dim Squadra2 As Integer = Scelti.Item(Seconda(Conta)).idUtente
 
 															Sql = "Insert Into EventiPartite Values (" &
 																" " & idAnno & ", " &
@@ -274,9 +287,11 @@ Public Class clsEventi
 																	End If
 																End If
 															End If
-															Rec.MoveNext
-														Loop
-														Rec.Close
+
+															'Rec.MoveNext
+															Conta += 1
+														Next
+														'Rec.Close
 													End If
 												End If
 											Next
