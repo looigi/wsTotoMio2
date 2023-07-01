@@ -217,7 +217,10 @@ Public Class clsEventi
 											Loop
 											Rec.Close
 
-											For i As Integer = 0 To QuantiGiocatori - 1
+											For i As Integer = 0 To QuantiGiocatori - 2
+												'Dim Connessione2 As String = RitornaPercorso(Mp, 5)
+												'Dim Conn2 As Object = New clsGestioneDB(TipoServer)
+
 												Sql = "Select * From ScontriDiretti Where NumeroSquadre=" & QuantiGiocatori & " And Giornata=" & i + 1 & " Order By Progressivo"
 												Rec = CreaRecordset(Mp, Conn, Sql, Connessione)
 												If TypeOf (Rec) Is String Then
@@ -228,6 +231,7 @@ Public Class clsEventi
 													Else
 														Dim Prima As New List(Of Integer)
 														Dim Seconda As New List(Of Integer)
+
 														Do Until Rec.Eof
 															Prima.Add(Rec("Squadra1").Value)
 															Seconda.Add(Rec("Squadra2").Value)
@@ -242,15 +246,16 @@ Public Class clsEventi
 														Dim idEventoRitorno As Integer = idEventiRitorno.Item(i)
 
 														Dim Conta As Integer = 0
+														Dim idPartita As Integer = 1
 														For Each p As Integer In Prima
-															Dim Squadra1 As Integer = Scelti.Item(p).idUtente
-															Dim Squadra2 As Integer = Scelti.Item(Seconda(Conta)).idUtente
+															Dim Squadra1 As Integer = Scelti.Item(Prima(Conta) - 1).idUtente
+															Dim Squadra2 As Integer = Scelti.Item(Seconda(Conta) - 1).idUtente
 
 															Sql = "Insert Into EventiPartite Values (" &
 																" " & idAnno & ", " &
 																" " & idEventoAndata & ", " &
 																" " & GiornataAndata & ", " &
-																" " & i & ", " &
+																" " & idPartita & ", " &
 																" " & Squadra1 & ", " &
 																"'', " &
 																" " & Squadra2 & ", " &
@@ -258,17 +263,19 @@ Public Class clsEventi
 																"-1 " &
 																")"
 															Ritorno = Conn.EsegueSql(Mp, Sql, Connessione, False)
-															If Not Ritorno.Contains("ERROR") Then
+															If Ritorno.Contains("ERROR") And Not Ritorno.ToUpper.Contains("DUPLICATE ENTRY") Then
+																Exit For
+															Else
 																Sql = "Insert Into EventiCalendario Values (" & idAnno & ", " & GiornataAndata & ", " & idEventoAndata & ")"
 																Ritorno = Conn.EsegueSql(Mp, Sql, Connessione, False)
-																If Ritorno.Contains("ERROR") Then
+																If Ritorno.Contains("ERROR") And Not Ritorno.ToUpper.Contains("DUPLICATE ENTRY") Then
 																	Exit For
 																Else
 																	Sql = "Insert Into EventiPartite Values (" &
 																		" " & idAnno & ", " &
 																		" " & idEventoRitorno & ", " &
 																		" " & GiornataRitorno & ", " &
-																		" " & i & ", " &
+																		" " & idPartita & ", " &
 																		" " & Squadra2 & ", " &
 																		"'', " &
 																		" " & Squadra1 & ", " &
@@ -276,12 +283,12 @@ Public Class clsEventi
 																		"-1 " &
 																		")"
 																	Ritorno = Conn.EsegueSql(Mp, Sql, Connessione, False)
-																	If Ritorno.Contains("ERROR") Then
+																	If Ritorno.Contains("ERROR") And Not Ritorno.ToUpper.Contains("DUPLICATE ENTRY") Then
 																		Exit For
 																	Else
-																		Sql = "Insert Into EventiCalendario Values (" & idAnno & ", " & idGiornata & ", " & idEventoRitorno & ")"
+																		Sql = "Insert Into EventiCalendario Values (" & idAnno & ", " & GiornataRitorno & ", " & idEventoRitorno & ")"
 																		Ritorno = Conn.EsegueSql(Mp, Sql, Connessione, False)
-																		If Ritorno.Contains("ERROR") Then
+																		If Ritorno.Contains("ERROR") And Not Ritorno.ToUpper.Contains("DUPLICATE ENTRY") Then
 																			Exit For
 																		End If
 																	End If
@@ -290,13 +297,14 @@ Public Class clsEventi
 
 															'Rec.MoveNext
 															Conta += 1
+															idPartita += 1
 														Next
 														'Rec.Close
 													End If
 												End If
 											Next
 
-											If Not Ritorno.Contains("ERROR") Then
+											If Not Ritorno.Contains("ERROR") Or Ritorno.ToUpper.Contains("DUPLICATE ENTRY") Then
 												If idEventoSemifinale <> -1 Then
 													Sql = "Insert Into EventiPartite Values (" &
 															" " & idAnno & ", " &
@@ -310,7 +318,7 @@ Public Class clsEventi
 															"-1 " &
 															")"
 													Ritorno = Conn.EsegueSql(Mp, Sql, Connessione, False)
-													If Not Ritorno.Contains("ERROR") Then
+													If Not Ritorno.Contains("ERROR") And Not Ritorno.ToUpper.Contains("DUPLICATE ENTRY") Then
 														Sql = "Insert Into EventiPartite Values (" &
 															" " & idAnno & ", " &
 															" " & idEventoSemifinale & ", " &
@@ -323,7 +331,7 @@ Public Class clsEventi
 															"-1 " &
 															")"
 														Ritorno = Conn.EsegueSql(Mp, Sql, Connessione, False)
-														If Not Ritorno.Contains("ERROR") Then
+														If Not Ritorno.Contains("ERROR") And Not Ritorno.ToUpper.Contains("DUPLICATE ENTRY") Then
 															Sql = "Insert Into EventiCalendario Values (" & idAnno & ", " & GiornataSemiFinale & ", " & idEventoSemifinale & ")"
 															Ritorno = Conn.EsegueSql(Mp, Sql, Connessione, False)
 														End If
@@ -331,7 +339,7 @@ Public Class clsEventi
 												End If
 											End If
 
-											If Not Ritorno.Contains("ERROR") Then
+											If Not Ritorno.Contains("ERROR") Or Ritorno.ToUpper.Contains("DUPLICATE ENTRY") Then
 												If idEventoFinale <> -1 Then
 													Sql = "Insert Into EventiPartite Values (" &
 															" " & idAnno & ", " &
@@ -345,14 +353,14 @@ Public Class clsEventi
 															"-1 " &
 															")"
 													Ritorno = Conn.EsegueSql(Mp, Sql, Connessione, False)
-													If Not Ritorno.Contains("ERROR") Then
+													If Not Ritorno.Contains("ERROR") And Not Ritorno.ToUpper.Contains("DUPLICATE ENTRY") Then
 														Sql = "Insert Into EventiCalendario Values (" & idAnno & ", " & GiornataFinale & ", " & idEventoFinale & ")"
 														Ritorno = Conn.EsegueSql(Mp, Sql, Connessione, False)
 													End If
 												End If
 											End If
 
-											If Not Ritorno.Contains("ERROR") Then
+											If Not Ritorno.Contains("ERROR") Or Ritorno.ToUpper.Contains("DUPLICATE ENTRY") Then
 												Ritorno = "OK"
 											End If
 										End If
