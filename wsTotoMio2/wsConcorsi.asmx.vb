@@ -191,7 +191,7 @@ Public Class wsConcorsi
 								Dim idGiornata As Integer = Rec("idGiornata").Value
 								Rec.Close
 
-								sql = "Select * From Eventi Where InizioGiornata=" & idGiornata ' idAnno=" & idAnno & " And idGiornata=" & idGiornata & " And idEvento<>1"
+								sql = "Select * From Eventi Where InizioGiornata=" & idGiornata & " Order By idEvento" ' idAnno=" & idAnno & " And idGiornata=" & idGiornata & " And idEvento<>1"
 								Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
 								If TypeOf (Rec) Is String Then
 									Ritorno = Rec
