@@ -231,6 +231,14 @@ Public Class wsConcorsi
 	End Function
 
 	<WebMethod()>
+	Public Function RitornaClassificaCoppe(idAnno As String, idGiornata As String, Torneo As String) As String
+		Dim e As New clsEventi
+		Dim Ritorno As String = e.CalcolaClassificaTorneo(Server.MapPath("."), idAnno, idGiornata, Torneo)
+
+		Return Ritorno
+	End Function
+
+	<WebMethod()>
 	Public Function impostaConcorsoPerControllo(idAnno As String) As String
 		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
 		Dim Conn As Object = New clsGestioneDB(TipoServer)

@@ -51,7 +51,7 @@ Public Class clsEventi
 				If Evento.ToUpper.Contains("PARTITA ") Then
 					Cosa = "PARTITA"
 					Dettaglio = Mid(Evento, 8, Evento.Length).Trim()
-					Dettaglio2 = Mid(Dettaglio, Dettaglio.Length - 3, Dettaglio.Length).Trim()
+					Dettaglio2 = Mid(Dettaglio, Dettaglio.Length - 2, Dettaglio.Length).Trim()
 					Dettaglio = Dettaglio.Replace(Dettaglio2, "").Trim()
 				End If
 
@@ -69,7 +69,7 @@ Public Class clsEventi
 					Case "CREAZIONE"
 						Ritorno = CreazioneCoppa(Mp, idAnno, idGiornata, QuantiGiocatori, Importanza, InizioGiornata, Conn, Connessione, Dettaglio)
 					Case "PARTITA"
-						Ritorno = Partita(Mp, idAnno, idGiornata, idEvento, Conn, Connessione)
+						Ritorno = Partita(Mp, idAnno, idGiornata, idEvento, Conn, Connessione, Dettaglio, Dettaglio2)
 					Case "SEMIFINALE"
 					Case "FINALE"
 					Case "CHIUSURA"
@@ -104,13 +104,125 @@ Public Class clsEventi
 		Return Ritorno
 	End Function
 
-	Private Function Partita(Mp As String, idAnno As Integer, idGiornata As Integer, idEvento As Integer, Conn As Object, Connessione As String) As String
+	Private Function RitornaRisultatiGiocatore(Mp As String, idAnno As Integer, idEvento As Integer, idGiornata As Integer,
+											   idUtente As Integer, QualeGiocatore As Integer, Conn As Object, Connessione As String) As Object
+		Dim Ritorno As Object
+
+		Dim Sql As String = "SELECT * FROM EventiPartite As A " &
+			"Left Join Risultati B On A.idAnno = B.idAnno And A.idGiornata = B.idConcorso And A.idGiocatore1 = B.idUtente " &
+			"WHERE A.idAnno = " & idAnno & " And A.idEvento = " & idEvento & " And A.idGiornata = " & idGiornata & " " &
+			"And A.idGiocatore" & QualeGiocatore.ToString().Trim() & " = " & idUtente
+		Dim Rec As Object = CreaRecordset(Mp, Conn, Sql, Connessione)
+		If TypeOf (Rec) Is String Then
+			Ritorno = Rec
+		Else
+			If Rec.Eof Then
+				Ritorno = "ERROR: Nessuna giornata di andata rilevata"
+			Else
+				Ritorno = Rec
+			End If
+		End If
+
+		Return ritorno
+	End Function
+
+	Private Function RitornaVincitore(Rec As Object) As Integer
+		Dim Vincente As Integer = -1
+		Dim Punti1 As Integer = Rec("Punti1").Value
+		Dim Punti2 As Integer = Rec("Punti2").Value
+		If Punti1 > Punti2 Then
+			Vincente = 1
+		Else
+			If Punti1 < Punti2 Then
+				Vincente = 2
+			Else
+				Dim Segni1 As Integer = Rec("SegniPresi1").Value
+				Dim Segni2 As Integer = Rec("SegniPresi2").Value
+
+				If Segni1 > Segni2 Then
+					Vincente = 1
+				Else
+					If Segni2 < Segni2 Then
+						Vincente = 2
+					Else
+						Dim RisEsa1 As Integer = Rec("RisEsatti1").Value
+						Dim RisEsa2 As Integer = Rec("RisEsatti2").Value
+
+						If RisEsa1 > RisEsa2 Then
+							Vincente = 1
+						Else
+							If RisEsa1 < RisEsa2 Then
+								Vincente = 2
+							Else
+								Dim RisFuori1 As Integer = Rec("RisFuori1").Value
+								Dim RisFuori2 As Integer = Rec("RisFuori2").Value
+
+								If RisFuori1 > RisFuori2 Then
+									Vincente = 1
+								Else
+									If RisFuori1 < RisFuori2 Then
+										Vincente = 2
+									Else
+										Dim RisCasa1 As Integer = Rec("RisCasa1").Value
+										Dim RisCasa2 As Integer = Rec("RisCasa2").Value
+
+										If RisCasa1 > RisCasa2 Then
+											Vincente = 1
+										Else
+											If RisCasa1 < RisCasa2 Then
+												Vincente = 2
+											Else
+												Dim SommeGoal1 As Integer = Rec("SommeGoal1").Value
+												Dim SommeGoal2 As Integer = Rec("SommeGoal2").Value
+
+												If SommeGoal1 > SommeGoal2 Then
+													Vincente = 1
+												Else
+													If SommeGoal1 < SommeGoal2 Then
+														Vincente = 2
+													Else
+														Dim DiffGoal1 As Integer = Rec("DiffGoal1").Value
+														Dim DiffGoal2 As Integer = Rec("DiffGoal2").Value
+
+														If DiffGoal1 > DiffGoal2 Then
+															Vincente = 1
+														Else
+															If DiffGoal1 < DiffGoal2 Then
+																Vincente = 2
+															Else
+																'Dim Random As Integer = CInt(Int((5 * Rnd())))
+																'If Random > 2 Then
+																'	Vincente = 1
+																'Else
+																'	Vincente = 2
+																'End If
+																Vincente = 0
+															End If
+														End If
+													End If
+												End If
+											End If
+										End If
+									End If
+								End If
+							End If
+						End If
+					End If
+				End If
+			End If
+		End If
+
+		Return Vincente
+	End Function
+
+	Private Function Partita(Mp As String, idAnno As Integer, idGiornata As Integer, idEvento As Integer, Conn As Object, Connessione As String,
+							 Torneo As String, Dettaglio As String) As String
 		Dim Ritorno As String = "OK"
 		Dim Sql As String = "SELECT A.*, B.NickName As Casa, C.NickName As Fuori, D.Descrizione As Evento, E.Punti As Punti1, F.Punti As Punti2, " &
 			"E.SegniPresi As SegniPresi1, F.SegniPresi As SegniPresi2, E.RisultatiEsatti As RisEsatti1, F.RisultatiEsatti As RisEsatti2, " &
 			"E.RisultatiCasaTot As RisCasa1, F.RisultatiCasaTot As RisCasa2, E.RisultatiFuoriTot As RisFuori1, F.RisultatiFuoriTot As RisFuori2, " &
 			"E.SommeGoal As SommeGoal1, F.SommeGoal As SommeGoal2, E.DifferenzeGoal As DiffGoal1, F.DifferenzeGoal As DiffGoal2, " &
-			"G.Pronostico As Risultato1, H.Pronostico As Risultato2 " &
+			"G.Pronostico As DRisultato1, H.Pronostico As DRisultato2 " &
 			"FROM EventiPartite A " &
 			"Left Join Utenti B On A.idAnno = B.idAnno And A.idGiocatore1 = B.idUtente " &
 			"Left Join Utenti C On A.idAnno = B.idAnno And A.idGiocatore2 = C.idUtente " &
@@ -129,86 +241,77 @@ Public Class clsEventi
 				Ritorno = "ERROR: Nessuna giornata di andata rilevata"
 			Else
 				Do Until Rec.Eof
-					Dim Vincente As Integer = -1
 					Dim idPartita As Integer = Rec("idPartita").Value
-					Dim Risultato1 As String = Rec("Risultato1").Value
-					Dim Risultato2 As String = Rec("Risultato2").Value
+					Dim Risultato1 As String = Rec("DRisultato1").Value
+					Dim Risultato2 As String = Rec("DRisultato2").Value
 
-					Dim Punti1 As Integer = Rec("Punti1").Value
-					Dim Punti2 As Integer = Rec("Punti2").Value
-					If Punti1 > Punti2 Then
-						Vincente = 1
+					Dim Vincente As Integer = -1
+
+					If Torneo.ToUpper.Contains("ROTOLO DI") Then
+						Vincente = RitornaVincitore(Rec)
 					Else
-						If Punti1 < Punti2 Then
-							Vincente = 2
-						Else
-							Dim Segni1 As Integer = Rec("SegniPresi1").Value
-							Dim Segni2 As Integer = Rec("SegniPresi2").Value
+						Dim Rec1 As Object = RitornaRisultatiGiocatore(Mp, idAnno, Rec("idEvento").Value, Rec("idGiornata").Value,
+								Rec("idGiocatore1").Value, 1, Conn, Connessione)
+						Dim Rec2 As Object = RitornaRisultatiGiocatore(Mp, idAnno, Rec("idEvento").Value, Rec("idGiornata").Value,
+								Rec("idGiocatore2").Value, 2, Conn, Connessione)
+
+						If Torneo.ToUpper.Contains("TOTMIO") Then
+							Dim Segni1 As Integer = Rec1("SegniPresi").Value
+							Dim Segni2 As Integer = Rec2("SegniPresi").Value
 
 							If Segni1 > Segni2 Then
 								Vincente = 1
 							Else
-								If Segni2 < Segni2 Then
+								If Segni1 < Segni2 Then
 									Vincente = 2
 								Else
-									Dim RisEsa1 As Integer = Rec("RisEsatti1").Value
-									Dim RisEsa2 As Integer = Rec("RisEsatti2").Value
+									Vincente = 0
+								End If
+							End If
+						Else
+							If Torneo.ToUpper.Contains("COPPATA") Then
+								Dim Tot1 As Integer = CInt(((Rec1("Punti").Value / 10) + Rec1("SegniPresi").Value + Rec1("RisultatiEsatti").Value +
+									 Rec1("RisultatiCasaTot").Value + Rec1("RisultatiFuoriTot").Value + Rec1("SommeGoal").Value +
+									 Rec1("DifferenzeGoal").Value) / 7)
+								Dim Tot2 As Integer = CInt(((Rec2("Punti").Value / 10) + Rec2("SegniPresi").Value + Rec2("RisultatiEsatti").Value +
+									 Rec2("RisultatiCasaTot").Value + Rec2("RisultatiFuoriTot").Value + Rec2("SommeGoal").Value +
+									 Rec2("DifferenzeGoal").Value) / 7)
 
-									If RisEsa1 > RisEsa2 Then
+								If Tot1 > Tot2 Then
+									Vincente = 1
+								Else
+									If Tot1 < Tot2 Then
+										Vincente = 2
+									Else
+										Vincente = 0
+									End If
+								End If
+							Else
+								If Torneo.ToUpper.Contains("SETTIMINI") Then
+									Dim Segni1 As Integer = Rec1("RisultatiCasaTot").Value + Rec1("RisultatiFuoriTot").Value
+									Dim Segni2 As Integer = Rec2("RisultatiCasaTot").Value + Rec2("RisultatiFuoriTot").Value
+
+									If Segni1 > Segni2 Then
 										Vincente = 1
 									Else
-										If RisEsa1 < RisEsa2 Then
+										If Segni1 < Segni2 Then
 											Vincente = 2
 										Else
-											Dim RisFuori1 As Integer = Rec("RisFuori1").Value
-											Dim RisFuori2 As Integer = Rec("RisFuori2").Value
+											Vincente = 0
+										End If
+									End If
+								Else
+									If Torneo.ToUpper.Contains("PIPPETTERO") Then
+										Dim Segni1 As Integer = Rec1("Punti").Value
+										Dim Segni2 As Integer = Rec2("Punti").Value
 
-											If RisFuori1 > RisFuori2 Then
-												Vincente = 1
+										If Segni1 < Segni2 Then
+											Vincente = 1
+										Else
+											If Segni1 > Segni2 Then
+												Vincente = 2
 											Else
-												If RisFuori1 < RisFuori2 Then
-													Vincente = 2
-												Else
-													Dim RisCasa1 As Integer = Rec("RisCasa1").Value
-													Dim RisCasa2 As Integer = Rec("RisCasa2").Value
-
-													If RisCasa1 > RisCasa2 Then
-														Vincente = 1
-													Else
-														If RisCasa1 < RisCasa2 Then
-															Vincente = 2
-														Else
-															Dim SommeGoal1 As Integer = Rec("SommeGoal1").Value
-															Dim SommeGoal2 As Integer = Rec("SommeGoal2").Value
-
-															If SommeGoal1 > SommeGoal2 Then
-																Vincente = 1
-															Else
-																If SommeGoal1 < SommeGoal2 Then
-																	Vincente = 2
-																Else
-																	Dim DiffGoal1 As Integer = Rec("DiffGoal1").Value
-																	Dim DiffGoal2 As Integer = Rec("DiffGoal2").Value
-
-																	If DiffGoal1 > DiffGoal2 Then
-																		Vincente = 1
-																	Else
-																		If DiffGoal1 < DiffGoal2 Then
-																			Vincente = 2
-																		Else
-																			Dim Random As Integer = CInt(Int((5 * Rnd())))
-																			If Random > 2 Then
-																				Vincente = 1
-																			Else
-																				Vincente = 2
-																			End If
-																		End If
-																	End If
-																End If
-															End If
-														End If
-													End If
-												End If
+												Vincente = 0
 											End If
 										End If
 									End If
@@ -234,6 +337,78 @@ Public Class clsEventi
 
 		Return Ritorno
 	End Function
+
+	Public Function CalcolaClassificaTorneo(Mp As String, idAnno As Integer, idGiornata As Integer, Torneo As String) As String
+		Dim Connessione As String = RitornaPercorso(Mp, 5)
+		Dim Conn As Object = New clsGestioneDB(TipoServer)
+		Dim Ritorno As String = ""
+		Dim sql As String = "Select A.idAnno, NickName, idGiocatore, Sum(Punti) As PuntiTotali From ( " &
+			"SELECT idAnno, idGiocatore1 As idGiocatore, Count(*) * 3 As Punti FROM EventiPartite As A " &
+			"Where idEvento In (select idEvento From Eventi Where Descrizione Like '%" & Torneo & "%') " &
+			"And idAnno = " & idAnno & " And idGiornata <= " & idGiornata & " And idVincente = 1 " &
+			"Group By idAnno, idGiocatore1 " &
+			"Union ALL " &
+			"SELECT idAnno, idGiocatore2 As idGiocatore, Count(*) * 3 As Punti FROM EventiPartite As A " &
+			"Where idEvento In (select idEvento From Eventi Where Descrizione Like '%" & Torneo & "%') " &
+			"And idAnno = " & idAnno & " And idGiornata <= " & idGiornata & " And idVincente = 2 " &
+			"Group By idAnno, idGiocatore2 " &
+			"Union ALL " &
+			"SELECT idAnno, idGiocatore1 As idGiocatore, Count(*) * 3 As Punti FROM EventiPartite As A " &
+			"Where idEvento In (select idEvento From Eventi Where Descrizione Like '%" & Torneo & "%') " &
+			"And idAnno = " & idAnno & " And idGiornata <= " & idGiornata & " And idVincente = 0 " &
+			"Group By idAnno, idGiocatore1 " &
+			"Union ALL " &
+			"SELECT idAnno, idGiocatore2 As idGiocatore, Count(*) * 3 As Punti FROM EventiPartite As A " &
+			"Where idEvento In (select idEvento From Eventi Where Descrizione Like '%" & Torneo & "%') " &
+			"And idAnno = " & idAnno & " And idGiornata <= " & idGiornata & " And idVincente = 0 " &
+			"Group By idAnno, idGiocatore2 " &
+			") As A  " &
+			"Left Join Utenti B On A.idAnno = B.idAnno And idGiocatore = B.idUtente " &
+			"Group By NickName, idGiocatore " &
+			"Order By PuntiTotali Desc"
+		Dim Rec As Object = CreaRecordset(Mp, Conn, sql, Connessione)
+		If TypeOf (Rec) Is String Then
+			Ritorno = Rec
+		Else
+			If Rec.Eof Then
+				Ritorno = "ERROR: Nessun dato rilevato"
+			Else
+				Do Until Rec.Eof
+					Ritorno &= Rec("idGiocatore").Value & ";" & SistemaStringaPerRitorno(Rec("NickName").Value) & ";" & Rec("PuntiTotali").Value & "§"
+
+					Rec.MoveNext
+				Loop
+				Rec.Close
+
+				' Lista Partite giornata
+				Ritorno &= "|"
+				sql = "SELECT A.*, B.NickName As Casa, C.NickName As Fuori FROM EventiPartite As A " &
+					"Left() Join Utenti As B On A.idAnno = B.idAnno And A.idGiocatore1 = B.idUtente " &
+					"Left Join Utenti As C On A.idAnno = C.idAnno And A.idGiocatore2 = C.idUtente " &
+					"Where A.idAnno = " & idAnno & " And A.idGiornata = " & idGiornata & " And " &
+					"A.idEvento In (Select idEvento From Eventi Where Descrizione Like '%" & Torneo & "%') " &
+					"Order By idPartita"
+				Rec = CreaRecordset(Mp, Conn, sql, Connessione)
+				If TypeOf (Rec) Is String Then
+					Ritorno = Rec
+				Else
+					If Rec.Eof Then
+						'Ritorno = "ERROR: Nessun dato rilevato"
+					Else
+						Do Until Rec.Eof
+							Ritorno &= SistemaStringaPerRitorno(Rec("Casa").Value) & ";" & SistemaStringaPerRitorno(Rec("Fuori").Value) & ";" &
+								Rec("idVincente").Value & "§"
+
+							Rec.MoveNext
+						Loop
+						Rec.Close
+					End If
+				End If
+			End If
+		End If
+
+		Return Ritorno
+    End Function
 
 	Private Function RitornaGiocatoriScelti(QuantiGiocatori As Integer, Importanza As Integer, Classifica As List(Of StrutturaGiocatore)) As List(Of StrutturaGiocatore)
 		Dim Scelti As New List(Of StrutturaGiocatore)
