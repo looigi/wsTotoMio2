@@ -200,9 +200,11 @@ Public Class wsConcorsi
 										Dim ev As New clsEventi
 
 										Do Until Rec.Eof
-											Ritorno = ev.GestioneEventi(Server.MapPath("."), idAnno, idGiornata, Rec("idEvento").Value,
+											If Rec("idEvento").Value <> 1 Then
+												Ritorno = ev.GestioneEventi(Server.MapPath("."), idAnno, idGiornata, Rec("idEvento").Value,
 																		Rec("QuantiGiocatori").Value, Rec("Importanza").Value,
 																		Rec("InizioGiornata").Value, Conn, Connessione)
+											End If
 
 											Rec.MoveNext
 										Loop

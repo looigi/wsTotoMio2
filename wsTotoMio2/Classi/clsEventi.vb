@@ -344,23 +344,23 @@ Public Class clsEventi
 		Dim Ritorno As String = ""
 		Dim sql As String = "Select A.idAnno, NickName, idGiocatore, Sum(Punti) As PuntiTotali From ( " &
 			"SELECT idAnno, idGiocatore1 As idGiocatore, Count(*) * 3 As Punti FROM EventiPartite As A " &
-			"Where idEvento In (select idEvento From Eventi Where Descrizione Like '%" & Torneo & "%') " &
-			"And idAnno = " & idAnno & " And idGiornata <= " & idGiornata & " And idVincente = 1 " &
+			"Where idEvento In (Select idEvento From Eventi Where Descrizione Like '%" & Torneo & "%') " &
+			"And idAnno = " & idAnno & " And idGiornataVirtuale <= " & idGiornata & " And idVincente = 1 " &
 			"Group By idAnno, idGiocatore1 " &
 			"Union ALL " &
 			"SELECT idAnno, idGiocatore2 As idGiocatore, Count(*) * 3 As Punti FROM EventiPartite As A " &
-			"Where idEvento In (select idEvento From Eventi Where Descrizione Like '%" & Torneo & "%') " &
-			"And idAnno = " & idAnno & " And idGiornata <= " & idGiornata & " And idVincente = 2 " &
+			"Where idEvento In (Select idEvento From Eventi Where Descrizione Like '%" & Torneo & "%') " &
+			"And idAnno = " & idAnno & " And idGiornataVirtuale <= " & idGiornata & " And idVincente = 2 " &
 			"Group By idAnno, idGiocatore2 " &
 			"Union ALL " &
 			"SELECT idAnno, idGiocatore1 As idGiocatore, Count(*) * 3 As Punti FROM EventiPartite As A " &
-			"Where idEvento In (select idEvento From Eventi Where Descrizione Like '%" & Torneo & "%') " &
-			"And idAnno = " & idAnno & " And idGiornata <= " & idGiornata & " And idVincente = 0 " &
+			"Where idEvento In (Select idEvento From Eventi Where Descrizione Like '%" & Torneo & "%') " &
+			"And idAnno = " & idAnno & " And idGiornataVirtuale <= " & idGiornata & " And idVincente = 0 " &
 			"Group By idAnno, idGiocatore1 " &
 			"Union ALL " &
 			"SELECT idAnno, idGiocatore2 As idGiocatore, Count(*) * 3 As Punti FROM EventiPartite As A " &
-			"Where idEvento In (select idEvento From Eventi Where Descrizione Like '%" & Torneo & "%') " &
-			"And idAnno = " & idAnno & " And idGiornata <= " & idGiornata & " And idVincente = 0 " &
+			"Where idEvento In (Select idEvento From Eventi Where Descrizione Like '%" & Torneo & "%') " &
+			"And idAnno = " & idAnno & " And idGiornataVirtuale <= " & idGiornata & " And idVincente = 0 " &
 			"Group By idAnno, idGiocatore2 " &
 			") As A  " &
 			"Left Join Utenti B On A.idAnno = B.idAnno And idGiocatore = B.idUtente " &
@@ -576,6 +576,7 @@ Public Class clsEventi
 																"'', " &
 																" " & Squadra2 & ", " &
 																"'', " &
+																"-1, " &
 																"-1 " &
 																")"
 															Ritorno = Conn.EsegueSql(Mp, Sql, Connessione, False)
@@ -596,6 +597,7 @@ Public Class clsEventi
 																		"'', " &
 																		" " & Squadra1 & ", " &
 																		"'', " &
+																		"-1, " &
 																		"-1 " &
 																		")"
 																	Ritorno = Conn.EsegueSql(Mp, Sql, Connessione, False)
@@ -631,6 +633,7 @@ Public Class clsEventi
 															"'', " &
 															"-1, " &
 															"'', " &
+															"-1, " &
 															"-1 " &
 															")"
 													Ritorno = Conn.EsegueSql(Mp, Sql, Connessione, False)
@@ -644,6 +647,7 @@ Public Class clsEventi
 															"'', " &
 															"-1, " &
 															"'', " &
+															"-1, " &
 															"-1 " &
 															")"
 														Ritorno = Conn.EsegueSql(Mp, Sql, Connessione, False)
@@ -666,6 +670,7 @@ Public Class clsEventi
 															"'', " &
 															"-1, " &
 															"'', " &
+															"-1, " &
 															"-1 " &
 															")"
 													Ritorno = Conn.EsegueSql(Mp, Sql, Connessione, False)
@@ -677,7 +682,37 @@ Public Class clsEventi
 											End If
 
 											If Not Ritorno.Contains("ERROR") Or Ritorno.ToUpper.Contains("DUPLICATE ENTRY") Then
-												Ritorno = "OK"
+												'Aggiunta giornata virtuale
+												Sql = "SELECT idAnno, idGiornata FROM EventiPartite " &
+													"Where idEvento In (Select idEvento From Eventi Where Descrizione Like '%" & Torneo & "%') " &
+													"Group By idAnno, idGiornata " &
+													"Order By idAnno, idGiornata"
+												Rec = CreaRecordset(Mp, Conn, Sql, Connessione)
+												If TypeOf (Rec) Is String Then
+													Ritorno = Rec
+												Else
+													If Rec.Eof Then
+														Ritorno = "ERROR: Nessuna giornata eventi partite rilevata"
+													Else
+														Dim Progressivo As Integer = 1
+														Do Until Rec.Eof
+															Sql = "Update EventiPartite Set idGiornataVirtuale=" & Progressivo & " " &
+																"Where idAnno=" & Rec("idAnno").Value & " " &
+																"And idGiornata=" & Rec("idGiornata").Value
+															Ritorno = Conn.EsegueSql(Mp, Sql, Connessione, False)
+															If Ritorno.Contains("ERROR") Then
+																Exit Do
+															End If
+
+															Rec.MoveNext
+														Loop
+														Rec.Close
+
+														If Not Ritorno.Contains("ERROR") Or Ritorno.ToUpper.Contains("DUPLICATE ENTRY") Then
+															Ritorno = "OK"
+														End If
+													End If
+												End If
 											End If
 										End If
 									End If
