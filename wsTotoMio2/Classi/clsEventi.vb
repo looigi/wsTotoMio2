@@ -353,19 +353,27 @@ Public Class clsEventi
 			"And idAnno = " & idAnno & " And idGiornataVirtuale <= " & idGiornata & " And idVincente = 2 " &
 			"Group By idAnno, idGiocatore2 " &
 			"Union ALL " &
-			"SELECT idAnno, idGiocatore1 As idGiocatore, Count(*) * 3 As Punti FROM EventiPartite As A " &
+			"SELECT idAnno, idGiocatore1 As idGiocatore, Count(*) As Punti FROM EventiPartite As A " &
 			"Where idEvento In (Select idEvento From Eventi Where Descrizione Like '%" & Torneo & "%') " &
 			"And idAnno = " & idAnno & " And idGiornataVirtuale <= " & idGiornata & " And idVincente = 0 " &
 			"Group By idAnno, idGiocatore1 " &
 			"Union ALL " &
-			"SELECT idAnno, idGiocatore2 As idGiocatore, Count(*) * 3 As Punti FROM EventiPartite As A " &
+			"SELECT idAnno, idGiocatore2 As idGiocatore, Count(*) As Punti FROM EventiPartite As A " &
 			"Where idEvento In (Select idEvento From Eventi Where Descrizione Like '%" & Torneo & "%') " &
 			"And idAnno = " & idAnno & " And idGiornataVirtuale <= " & idGiornata & " And idVincente = 0 " &
 			"Group By idAnno, idGiocatore2 " &
+			"Union ALL " &
+			"SELECT idAnno, idGiocatore1 As idGiocatore, 0 As Punti FROM EventiPartite As A " &
+			"Where idEvento In (Select idEvento From Eventi Where Descrizione Like '%" & Torneo & "%') " &
+			"And idAnno = 1 And idGiornataVirtuale <= " & idGiornata & " And idVincente = -1 Group By idAnno, idGiocatore1 " &
+			"Union ALL " &
+			"SELECT idAnno, idGiocatore2 As idGiocatore, 0 As Punti FROM EventiPartite As A " &
+			"Where idEvento In (Select idEvento From Eventi Where Descrizione Like '%" & Torneo & "%') " &
+			"And idAnno = 1 And idGiornataVirtuale <= " & idGiornata & " And idVincente = -1 Group By idAnno, idGiocatore2 " &
 			") As A  " &
 			"Left Join Utenti B On A.idAnno = B.idAnno And idGiocatore = B.idUtente " &
 			"Group By NickName, idGiocatore " &
-			"Order By PuntiTotali Desc"
+			"Order By PuntiTotali Desc, NickName"
 		Dim Rec As Object = CreaRecordset(Mp, Conn, sql, Connessione)
 		If TypeOf (Rec) Is String Then
 			Ritorno = Rec
@@ -383,9 +391,9 @@ Public Class clsEventi
 				' Lista Partite giornata
 				Ritorno &= "|"
 				sql = "SELECT A.*, B.NickName As Casa, C.NickName As Fuori FROM EventiPartite As A " &
-					"Left() Join Utenti As B On A.idAnno = B.idAnno And A.idGiocatore1 = B.idUtente " &
+					"Left Join Utenti As B On A.idAnno = B.idAnno And A.idGiocatore1 = B.idUtente " &
 					"Left Join Utenti As C On A.idAnno = C.idAnno And A.idGiocatore2 = C.idUtente " &
-					"Where A.idAnno = " & idAnno & " And A.idGiornata = " & idGiornata & " And " &
+					"Where A.idAnno = " & idAnno & " And A.idGiornataVirtuale = " & idGiornata & " And " &
 					"A.idEvento In (Select idEvento From Eventi Where Descrizione Like '%" & Torneo & "%') " &
 					"Order By idPartita"
 				Rec = CreaRecordset(Mp, Conn, sql, Connessione)
@@ -703,6 +711,7 @@ Public Class clsEventi
 															If Ritorno.Contains("ERROR") Then
 																Exit Do
 															End If
+															Progressivo += 1
 
 															Rec.MoveNext
 														Loop
