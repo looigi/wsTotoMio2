@@ -692,7 +692,7 @@ Public Class clsEventi
 											If Not Ritorno.Contains("ERROR") Or Ritorno.ToUpper.Contains("DUPLICATE ENTRY") Then
 												'Aggiunta giornata virtuale
 												Sql = "SELECT idAnno, idGiornata FROM EventiPartite " &
-													"Where idEvento In (Select idEvento From Eventi Where Descrizione Like '%" & Torneo & "%') " &
+													"Where idAnno = " & idAnno & " And idEvento In (Select idEvento From Eventi Where Descrizione Like '%" & Torneo & "%') " &
 													"Group By idAnno, idGiornata " &
 													"Order By idAnno, idGiornata"
 												Rec = CreaRecordset(Mp, Conn, Sql, Connessione)
@@ -703,19 +703,25 @@ Public Class clsEventi
 														Ritorno = "ERROR: Nessuna giornata eventi partite rilevata"
 													Else
 														Dim Progressivo As Integer = 1
+														Dim Giornate As New List(Of Integer)
 														Do Until Rec.Eof
-															Sql = "Update EventiPartite Set idGiornataVirtuale=" & Progressivo & " " &
-																"Where idAnno=" & Rec("idAnno").Value & " " &
-																"And idGiornata=" & Rec("idGiornata").Value
-															Ritorno = Conn.EsegueSql(Mp, Sql, Connessione, False)
-															If Ritorno.Contains("ERROR") Then
-																Exit Do
-															End If
-															Progressivo += 1
+															Giornate.Add(Rec("idGiornata").Value)
 
 															Rec.MoveNext
 														Loop
 														Rec.Close
+
+														For Each g As Integer In Giornate
+															Sql = "Update EventiPartite Set idGiornataVirtuale=" & Progressivo & " " &
+																	"Where idAnno=" & idAnno & " " &
+																	"And idGiornata=" & g
+															Ritorno = Conn.EsegueSql(Mp, Sql, Connessione, False)
+															If Ritorno.Contains("ERROR") Then
+																Exit For
+															End If
+
+															Progressivo += 1
+														Next
 
 														If Not Ritorno.Contains("ERROR") Or Ritorno.ToUpper.Contains("DUPLICATE ENTRY") Then
 															Ritorno = "OK"
