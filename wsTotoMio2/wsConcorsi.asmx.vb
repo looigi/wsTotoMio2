@@ -191,7 +191,10 @@ Public Class wsConcorsi
 								Dim idGiornata As Integer = Rec("idGiornata").Value
 								Rec.Close
 
-								sql = "Select * From Eventi Where InizioGiornata=" & idGiornata & " Order By idEvento" ' idAnno=" & idAnno & " And idGiornata=" & idGiornata & " And idEvento<>1"
+								sql = "Select A.*, B.Descrizione As Tipologia, C.Descrizione As Torneo From Eventi A " &
+									"Left Join EventiTipologie B On A.idTipologia = B.idTipologia " &
+									"Left Join EventiNomi C On A.idCoppa = C.idCoppa " &
+									"Where InizioGiornata=" & idGiornata & " Order By idEvento" ' idAnno=" & idAnno & " And idGiornata=" & idGiornata & " And idEvento<>1"
 								Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
 								If TypeOf (Rec) Is String Then
 									Ritorno = Rec
@@ -203,7 +206,8 @@ Public Class wsConcorsi
 											If Rec("idEvento").Value <> 1 Then
 												Ritorno = ev.GestioneEventi(Server.MapPath("."), idAnno, idGiornata, Rec("idEvento").Value,
 																		Rec("QuantiGiocatori").Value, Rec("Importanza").Value,
-																		Rec("InizioGiornata").Value, Conn, Connessione)
+																		Rec("InizioGiornata").Value, Rec("Tipologia").Value, Rec("Torneo").Value,
+																		Rec("Dettaglio").Value, Rec("idCoppa").Value, Conn, Connessione)
 											End If
 
 											Rec.MoveNext

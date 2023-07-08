@@ -16,66 +16,70 @@ Public Class clsEventi
 	End Structure
 
 	Public Function GestioneEventi(Mp As String, idAnno As Integer, idGiornata As Integer, idEvento As Integer,
-								   QuantiGiocatori As Integer, Importanza As Integer, InizioGiornata As Integer,
-								   Conn As Object, Connessione As String) As String
+								   QuantiGiocatori As Integer, Importanza As Integer, InizioGiornata As Integer, Evento As String,
+								   Torneo As String, Dettaglio As String, idCoppa As Integer, Conn As Object, Connessione As String) As String
 		Dim Ritorno As String = ""
-		Dim Sql As String
-		Dim Rec As Object
+		'Dim Sql As String
+		'Dim Rec As Object
 
-		Sql = "Select * From Eventi Where idEvento=" & idEvento
-		Rec = CreaRecordset(Mp, Conn, Sql, Connessione)
-		If TypeOf (Rec) Is String Then
-			Ritorno = Rec
-		Else
-			If Not Rec.Eof Then
-				Dim Evento As String = Rec("Descrizione").Value
-				Rec.Close
+		'Sql = "Select A.idEvento, C.Descrizione From Eventi A " &
+		'	"Left() Join EventiNomi B On A.idCoppa = B.idCoppa " &
+		'	"Left Join EventiTipologie C On A.idTipologia = C.idTipologia " &
+		'	"Where idEvento=" & idEvento
+		'Rec = CreaRecordset(Mp, Conn, Sql, Connessione)
+		'If TypeOf (Rec) Is String Then
+		'	Ritorno = Rec
+		'Else
+		'	If Not Rec.Eof Then
+		'		Dim Evento As String = Rec("Descrizione").Value.ToString.ToUpper.Trim
+		'		Dim Dettaglio As String = Rec("Dettaglio").Value
+		'		Rec.Close
 
-				Dim Dettaglio As String = ""
-				Dim Dettaglio2 As String = ""
-				Dim Cosa As String = ""
+		'Dim Dettaglio As String = ""
+		'Dim Dettaglio2 As String = ""
+		'Dim Cosa As String = ""
 
-				If Evento.ToUpper.Contains("CREAZIONE ") Then
-					Cosa = "CREAZIONE"
-					Dettaglio = Mid(Evento, 10, Evento.Length).Trim()
-				End If
+		'If Evento.ToUpper.Contains("CREAZIONE ") Then
+		'	Cosa = "CREAZIONE"
+		'	Dettaglio = Mid(Evento, 10, Evento.Length).Trim()
+		'End If
 
-				If Evento.ToUpper.Contains("CHIUSURA ") Then
-					Cosa = "CHIUSURA"
-					Dettaglio = Mid(Evento, 9, Evento.Length).Trim()
-					Dim c() As String = Dettaglio.Split(" ")
-					Dettaglio2 = c(0) ' FINALE / SEMIFINALE / GIRONI
-					Dettaglio = Dettaglio.Replace(Dettaglio2, "").Trim ' NOME TROFEO
-				End If
+		'If Evento.ToUpper.Contains("CHIUSURA ") Then
+		'	Cosa = "CHIUSURA"
+		'	Dettaglio = Mid(Evento, 9, Evento.Length).Trim()
+		'	Dim c() As String = Dettaglio.Split(" ")
+		'	Dettaglio2 = c(0) ' FINALE / SEMIFINALE / GIRONI
+		'	Dettaglio = Dettaglio.Replace(Dettaglio2, "").Trim ' NOME TROFEO
+		'End If
 
-				If Evento.ToUpper.Contains("PARTITA ") Then
-					Cosa = "PARTITA"
-					Dettaglio = Mid(Evento, 8, Evento.Length).Trim()
-					Dettaglio2 = Mid(Dettaglio, Dettaglio.Length - 2, Dettaglio.Length).Trim()
-					Dettaglio = Dettaglio.Replace(Dettaglio2, "").Trim()
-				End If
+		'If Evento.ToUpper.Contains("PARTITA ") Then
+		'	Cosa = "PARTITA"
+		'	Dettaglio = Mid(Evento, 8, Evento.Length).Trim()
+		'	Dettaglio2 = Mid(Dettaglio, Dettaglio.Length - 2, Dettaglio.Length).Trim()
+		'	Dettaglio = Dettaglio.Replace(Dettaglio2, "").Trim()
+		'End If
 
-				If Evento.ToUpper.Contains("SEMIFINALE ") And Not Evento.ToUpper.Contains("CHIUSURA") Then
-					Cosa = "SEMIFINALE"
-					Dettaglio = Mid(Evento, 11, Evento.Length).Trim() ' NOME TORNEO
-				End If
+		'If Evento.ToUpper.Contains("SEMIFINALE ") And Not Evento.ToUpper.Contains("CHIUSURA") Then
+		'	Cosa = "SEMIFINALE"
+		'	Dettaglio = Mid(Evento, 11, Evento.Length).Trim() ' NOME TORNEO
+		'End If
 
-				If Evento.ToUpper.Contains("FINALE ") And Not Evento.ToUpper.Contains("SEMIFINALE ") And Not Evento.ToUpper.Contains("CHIUSURA") Then
-					Cosa = "FINALE"
-					Dettaglio = Mid(Evento, 7, Evento.Length).Trim() ' NOME TORNEO
-				End If
+		'If Evento.ToUpper.Contains("FINALE ") And Not Evento.ToUpper.Contains("SEMIFINALE ") And Not Evento.ToUpper.Contains("CHIUSURA") Then
+		'	Cosa = "FINALE"
+		'	Dettaglio = Mid(Evento, 7, Evento.Length).Trim() ' NOME TORNEO
+		'End If
 
-				Select Case Cosa
-					Case "CREAZIONE"
-						Ritorno = CreazioneCoppa(Mp, idAnno, idGiornata, QuantiGiocatori, Importanza, InizioGiornata, Conn, Connessione, Dettaglio)
-					Case "PARTITA"
-						Ritorno = Partita(Mp, idAnno, idGiornata, idEvento, Conn, Connessione, Dettaglio, Dettaglio2)
-					Case "SEMIFINALE"
-					Case "FINALE"
-					Case "CHIUSURA"
-				End Select
-			End If
-		End If
+		Select Case Evento
+			Case "CREAZIONE"
+				Ritorno = CreazioneCoppa(Mp, idAnno, idGiornata, idEvento, QuantiGiocatori, Importanza, InizioGiornata, idCoppa, Conn, Connessione)
+			Case "PARTITA"
+				Ritorno = Partita(Mp, idAnno, idGiornata, idEvento, Conn, Connessione, Dettaglio)
+			Case "SEMIFINALE"
+			Case "FINALE"
+			Case "CHIUSURA"
+		End Select
+		'	End If
+		'End If
 
 		Return Ritorno
 	End Function
@@ -216,7 +220,7 @@ Public Class clsEventi
 	End Function
 
 	Private Function Partita(Mp As String, idAnno As Integer, idGiornata As Integer, idEvento As Integer, Conn As Object, Connessione As String,
-							 Torneo As String, Dettaglio As String) As String
+							 Torneo As String) As String
 		Dim Ritorno As String = "OK"
 		Dim Sql As String = "SELECT A.*, B.NickName As Casa, C.NickName As Fuori, D.Descrizione As Evento, E.Punti As Punti1, F.Punti As Punti2, " &
 			"E.SegniPresi As SegniPresi1, F.SegniPresi As SegniPresi2, E.RisultatiEsatti As RisEsatti1, F.RisultatiEsatti As RisEsatti2, " &
@@ -365,11 +369,11 @@ Public Class clsEventi
 			"Union ALL " &
 			"SELECT idAnno, idGiocatore1 As idGiocatore, 0 As Punti FROM EventiPartite As A " &
 			"Where idEvento In (Select idEvento From Eventi Where Descrizione Like '%" & Torneo & "%') " &
-			"And idAnno = 1 And idGiornataVirtuale <= " & idGiornata & " And idVincente = -1 Group By idAnno, idGiocatore1 " &
+			"And idAnno = 1 And idGiornataVirtuale <= " & idGiornata & " And idVincente = -1 And idGiocatore1 <> - 1 Group By idAnno, idGiocatore1 " &
 			"Union ALL " &
 			"SELECT idAnno, idGiocatore2 As idGiocatore, 0 As Punti FROM EventiPartite As A " &
 			"Where idEvento In (Select idEvento From Eventi Where Descrizione Like '%" & Torneo & "%') " &
-			"And idAnno = 1 And idGiornataVirtuale <= " & idGiornata & " And idVincente = -1 Group By idAnno, idGiocatore2 " &
+			"And idAnno = 1 And idGiornataVirtuale <= " & idGiornata & " And idVincente = -1 And idGiocatore2 <> - 1 Group By idAnno, idGiocatore2 " &
 			") As A  " &
 			"Left Join Utenti B On A.idAnno = B.idAnno And idGiocatore = B.idUtente " &
 			"Group By NickName, idGiocatore " &
@@ -394,7 +398,8 @@ Public Class clsEventi
 					"Left Join Utenti As B On A.idAnno = B.idAnno And A.idGiocatore1 = B.idUtente " &
 					"Left Join Utenti As C On A.idAnno = C.idAnno And A.idGiocatore2 = C.idUtente " &
 					"Where A.idAnno = " & idAnno & " And A.idGiornataVirtuale = " & idGiornata & " And " &
-					"A.idEvento In (Select idEvento From Eventi Where Descrizione Like '%" & Torneo & "%') " &
+					"A.idEvento In (Select idEvento From Eventi As E Where Descrizione Like '%" & Torneo & "%' " &
+					"And Descrizione Like '%" & idGiornata & "%' And A.idGiornata = E.InizioGiornata) " &
 					"Order By idPartita"
 				Rec = CreaRecordset(Mp, Conn, sql, Connessione)
 				If TypeOf (Rec) Is String Then
@@ -458,8 +463,8 @@ Public Class clsEventi
 		Return Scelti
 	End Function
 
-	Private Function CreazioneCoppa(Mp As String, idAnno As Integer, idGiornata As Integer, QuantiGiocatori As Integer, Importanza As Integer,
-											InizioGiornata As Integer, Conn As Object, Connessione As String, Torneo As String) As String
+	Private Function CreazioneCoppa(Mp As String, idAnno As Integer, idGiornata As Integer, idEvento As Integer, QuantiGiocatori As Integer, Importanza As Integer,
+											InizioGiornata As Integer, idCoppa As Integer, Conn As Object, Connessione As String) As String
 		Dim Ritorno As String = ""
 		Dim Classifica As List(Of StrutturaGiocatore) = PrendeGiocatori(Mp, idAnno, idGiornata, Conn, Connessione)
 		Dim QuantiGiocatoriPresenti As Integer = Classifica.Count - 1
@@ -471,7 +476,11 @@ Public Class clsEventi
 			Dim GiornateRitorno As New List(Of Integer)
 			Dim idEventiRitorno As New List(Of Integer)
 
-			Dim Sql As String = "Select * From Eventi Where Upper(Descrizione) Like '%" & Torneo.ToUpper & " A%' Order By InizioGiornata"
+			Dim Sql As String = "Select * From Eventi A " &
+				"Left Join EventiTipologie B On A.idTipologia = B.idTipologia " &
+				"Left Join EventiNomi C On A.idCoppa = C.idCoppa " &
+				"Where B.Dettaglio = 'Andata' And A.idCoppa = " & idCoppa & " " &
+				"Order By InizioGiornata"
 			Dim Rec As Object = CreaRecordset(Mp, Conn, Sql, Connessione)
 			If TypeOf (Rec) Is String Then
 				Ritorno = Rec
@@ -487,7 +496,11 @@ Public Class clsEventi
 					Loop
 					Rec.Close
 
-					Sql = "Select * From Eventi Where Upper(Descrizione) Like '%" & Torneo.ToUpper & " R%' Order By InizioGiornata"
+					Sql = "Select * From Eventi A " &
+						"Left Join EventiTipologie B On A.idTipologia = B.idTipologia " &
+						"Left Join EventiNomi C On A.idCoppa = C.idCoppa " &
+						"Where B.Dettaglio = 'Ritorno' And A.idCoppa = " & idCoppa & " " &
+						"Order By InizioGiornata"
 					Rec = CreaRecordset(Mp, Conn, Sql, Connessione)
 					If TypeOf (Rec) Is String Then
 						Ritorno = Rec
@@ -506,7 +519,11 @@ Public Class clsEventi
 							Dim GiornataSemiFinale As Integer = -1
 							Dim idEventoSemifinale As Integer = -1
 
-							Sql = "Select * From Eventi Where Upper(Descrizione) Like '%SEMIFINALE " & Torneo.ToUpper & "%' Order By InizioGiornata"
+							Sql = "Select * From Eventi A " &
+								"Left Join EventiTipologie B On A.idTipologia = B.idTipologia " &
+								"Left Join EventiNomi C On A.idCoppa = C.idCoppa " &
+								"Where B.Descrizione = 'Semifinale' And A.idCoppa = " & idCoppa & " " &
+								"Order By InizioGiornata"
 							Rec = CreaRecordset(Mp, Conn, Sql, Connessione)
 							If TypeOf (Rec) Is String Then
 								Ritorno = Rec
@@ -525,7 +542,11 @@ Public Class clsEventi
 									Dim GiornataFinale As Integer = -1
 									Dim idEventoFinale As Integer = -1
 
-									Sql = "Select * From Eventi Where Upper(Descrizione) Like '%FINALE " & Torneo.ToUpper & "%' And UPPER(Descrizione) Not Like '%SEMIFINALE " & Torneo.ToUpper & "%' Order By InizioGiornata"
+									Sql = "Select * From Eventi A " &
+										"Left Join EventiTipologie B On A.idTipologia = B.idTipologia " &
+										"Left Join EventiNomi C On A.idCoppa = C.idCoppa " &
+										"Where B.Descrizione = 'Finale' And A.idCoppa = " & idCoppa & " " &
+										"Order By InizioGiornata"
 									Rec = CreaRecordset(Mp, Conn, Sql, Connessione)
 									If TypeOf (Rec) Is String Then
 										Ritorno = Rec
@@ -545,7 +566,9 @@ Public Class clsEventi
 												'Dim Connessione2 As String = RitornaPercorso(Mp, 5)
 												'Dim Conn2 As Object = New clsGestioneDB(TipoServer)
 
-												Sql = "Select * From ScontriDiretti Where NumeroSquadre=" & QuantiGiocatori & " And Giornata=" & i + 1 & " Order By Progressivo"
+												Sql = "Select * From ScontriDiretti Where " &
+													"NumeroSquadre=" & QuantiGiocatori & " And Giornata=" & i + 1 & " " &
+													"Order By Progressivo"
 												Rec = CreaRecordset(Mp, Conn, Sql, Connessione)
 												If TypeOf (Rec) Is String Then
 													Ritorno = Rec
@@ -743,5 +766,4 @@ Public Class clsEventi
 
 		Return Ritorno
 	End Function
-
 End Class
