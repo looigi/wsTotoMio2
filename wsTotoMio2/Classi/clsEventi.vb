@@ -68,8 +68,9 @@ Public Class clsEventi
 		'	Cosa = "FINALE"
 		'	Dettaglio = Mid(Evento, 7, Evento.Length).Trim() ' NOME TORNEO
 		'End If
+		Dim Evento2 As String = Evento.Trim.ToUpper
 
-		Select Case Evento
+		Select Case Evento2
 			Case "CREAZIONE"
 				Ritorno = CreazioneCoppa(Mp, idAnno, idGiornata, idEvento, QuantiGiocatori, Importanza, InizioGiornata, idCoppa, Conn, Connessione)
 			Case "PARTITA"
@@ -714,10 +715,10 @@ Public Class clsEventi
 
 											If Not Ritorno.Contains("ERROR") Or Ritorno.ToUpper.Contains("DUPLICATE ENTRY") Then
 												'Aggiunta giornata virtuale
-												Sql = "SELECT idAnno, idGiornata FROM EventiPartite " &
-													"Where idAnno = " & idAnno & " And idEvento In (Select idEvento From Eventi Where Descrizione Like '%" & Torneo & "%') " &
-													"Group By idAnno, idGiornata " &
-													"Order By idAnno, idGiornata"
+												Sql = "SELECT idAnno, idGiornata FROM EventiPartite A " &
+													"Left Join Eventi B On A.idEvento = B.idEvento " &
+													"Where B.idCoppa = " & idAnno & " " &
+													"Group By idAnno, idGiornata"
 												Rec = CreaRecordset(Mp, Conn, Sql, Connessione)
 												If TypeOf (Rec) Is String Then
 													Ritorno = Rec

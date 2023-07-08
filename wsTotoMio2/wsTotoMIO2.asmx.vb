@@ -89,15 +89,22 @@ Public Class wsTotoMIO2
 					Rec.Close
 
 					Ritorno &= "|"
-					Sql = "Select * From EventiCalendario A " &
+					Sql = "Select Distinct C.Descrizione As Tipologia, C.Dettaglio, D.Descrizione As Torneo, E.idGiornataVirtuale From EventiCalendario A " &
 						"Left Join Eventi B On A.idEvento = B.idEvento " &
-						"Where idAnno=" & idAnno & " And idGiornata=" & idGiornata
+						"Left Join EventiTipologie C On B.idTipologia = C.idTipologia " &
+						"Left Join EventiNomi D On B.idCoppa = D.idCoppa " &
+						"Left Join EventiPartite E On A.idAnno = E.idAnno And A.idEvento = B.idEvento And E.idGiornata = A.idGiornata And E.idPartita = 1 " &
+						"Where A.idAnno = " & idAnno & " And A.idGiornata = " & idGiornata & " And B.idEvento Is Not null"
 					Rec = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
 					If TypeOf (Rec) Is String Then
 						Ritorno = Rec
 					Else
 						Do Until Rec.Eof
-							Ritorno &= Rec("Descrizione").Value & "§"
+							If Rec("Tipologia").Value = "Partita" Then
+								Ritorno &= Rec("Tipologia").Value & " " & Rec("idGiornataVirtuale").Value & " " & Rec("Dettaglio").Value & " " & Rec("Torneo").Value & "§"
+							Else
+								Ritorno &= Rec("Tipologia").Value & " " & Rec("Dettaglio").Value & " " & Rec("Torneo").Value & "§"
+							End If
 
 							Rec.MoveNext
 						Loop
@@ -133,7 +140,7 @@ Public Class wsTotoMIO2
 
 		Dim Sql As String = "Start transaction"
 		Ritorno = Conn.EsegueSql(Server.MapPath("."), Sql, Connessione)
-		If Not Ritorno.Contains("Error:") Then
+		If Not Ritorno.Contains("Error: ") Then
 			Sql = "Update Globale Set " &
 				"idGiornata=idGiornata+1 " &
 				"Where idAnno=" & idAnno
@@ -388,7 +395,7 @@ Public Class wsTotoMIO2
 								'InizioPerCoppa += 1
 							Next
 
-							Dim idEvento As Integer = 1
+							Dim idEvento As Integer = 2
 							sql = "Select * From EventiTipologie Order By idTipologia"
 							Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
 							If TypeOf (Rec) Is String Then

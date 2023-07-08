@@ -191,7 +191,9 @@ Public Class wsConcorsi
 								Dim idGiornata As Integer = Rec("idGiornata").Value
 								Rec.Close
 
-								sql = "Select A.*, B.Descrizione As Tipologia, C.Descrizione As Torneo From Eventi A " &
+								sql = "Select A.*, B.Descrizione As Tipologia, C.Descrizione As Torneo, C.QuantiGiocatori, C.Importanza, " &
+									"A.InizioGiornata, C.Descrizione As Torneo, B.Dettaglio " &
+									"From Eventi A " &
 									"Left Join EventiTipologie B On A.idTipologia = B.idTipologia " &
 									"Left Join EventiNomi C On A.idCoppa = C.idCoppa " &
 									"Where InizioGiornata=" & idGiornata & " Order By idEvento" ' idAnno=" & idAnno & " And idGiornata=" & idGiornata & " And idEvento<>1"
@@ -240,6 +242,31 @@ Public Class wsConcorsi
 	Public Function RitornaClassificaCoppe(idAnno As String, idGiornata As String, Torneo As String) As String
 		Dim e As New clsEventi
 		Dim Ritorno As String = e.CalcolaClassificaTorneo(Server.MapPath("."), idAnno, idGiornata, Torneo)
+
+		Return Ritorno
+	End Function
+
+	<WebMethod()>
+	Public Function ritornaNomiCoppe() As String
+		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
+		Dim Conn As Object = New clsGestioneDB(TipoServer)
+		Dim Ritorno As String = ""
+		Dim sql As String = "Select * From EventiNomi Order By idCoppa"
+		Dim Rec As Object = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+		If TypeOf (Rec) Is String Then
+			Ritorno = Rec
+		Else
+			If Rec.Eof Then
+				Ritorno = "ERROR: Nessuna coppa rilevata"
+			Else
+				Do Until Rec.Eof
+					Ritorno &= Rec("idCoppa").Value & ";" & SistemaStringaPerRitorno(Rec("Descrizione").Value) & "§"
+
+					Rec.MoveNext
+				Loop
+				Rec.Close
+			End If
+		End If
 
 		Return Ritorno
 	End Function
