@@ -382,21 +382,61 @@ Public Class clsEventi
 			If Rec.Eof Then
 				Ritorno = "ERROR: Nessun dato rilevato"
 			Else
+				Dim Presenti As New List(Of Integer)
+
 				Do Until Rec.Eof
+					Presenti.Add(Rec("idGiocatore").Value)
 					Ritorno &= Rec("idGiocatore").Value & ";" & SistemaStringaPerRitorno(Rec("NickName").Value) & ";" & Rec("PuntiTotali").Value & "§"
 
 					Rec.MoveNext
 				Loop
 				Rec.Close
 
+				Dim Lista As String = ""
+
+				For Each p As Integer In Presenti
+					Lista &= p & ","
+				Next
+
+				If Lista.Length > 0 Then
+					Lista = Mid(Lista, 1, Lista.Length - 1)
+
+					sql = "Select * From ( " &
+						"Select idGiocatore1 As idGiocatore From EventiPartite " &
+						"Where idEvento In (Select idEvento From Eventi Where idCoppa = " & Torneo & ") And idAnno = " & idAnno & " " &
+						"And idGiornataVirtuale <= " & idGiornata & " " &
+						"Union All " &
+						"Select idGiocatore2 As idGiocatore From EventiPartite " &
+						"Where idEvento In (Select idEvento From Eventi Where idCoppa = " & Torneo & ") And idAnno = " & idAnno & " " &
+						"And idGiornataVirtuale <= " & idGiornata & " " &
+						") As A " &
+						"Left Join Utenti B On A.idGiocatore = B.idUtente " &
+						"Where A.idGiocatore Not In (" & Lista & ")"
+					Rec = CreaRecordset(Mp, Conn, sql, Connessione)
+					If TypeOf (Rec) Is String Then
+						'Ritorno = Rec
+					Else
+						If Rec.Eof Then
+							'Ritorno = "ERROR: Nessun dato 2 rilevato"
+						Else
+							Do Until Rec.Eof
+								Ritorno &= Rec("idGiocatore").Value & ";" & SistemaStringaPerRitorno(Rec("NickName").Value) & ";0§"
+
+								Rec.MoveNext
+							Loop
+							Rec.CLose
+						End If
+					End If
+				End If
+
 				' Lista Partite giornata
 				Ritorno &= "|"
 				sql = "SELECT A.*, B.NickName As Casa, C.NickName As Fuori FROM EventiPartite As A " &
-					"Left Join Utenti As B On A.idAnno = B.idAnno And A.idGiocatore1 = B.idUtente " &
-					"Left Join Utenti As C On A.idAnno = C.idAnno And A.idGiocatore2 = C.idUtente " &
-					"Where A.idAnno = " & idAnno & " And A.idGiornataVirtuale = " & idGiornata & " And " &
-					"A.idEvento In (Select idEvento From Eventi As E Where idCoppa = " & Torneo & " And A.idGiornata = E.InizioGiornata) " &
-					"Order By idPartita"
+							"Left Join Utenti As B On A.idAnno = B.idAnno And A.idGiocatore1 = B.idUtente " &
+							"Left Join Utenti As C On A.idAnno = C.idAnno And A.idGiocatore2 = C.idUtente " &
+							"Where A.idAnno = " & idAnno & " And A.idGiornataVirtuale = " & idGiornata & " And " &
+							"A.idEvento In (Select idEvento From Eventi As E Where idCoppa = " & Torneo & " And A.idGiornata = E.InizioGiornata) " &
+							"Order By idPartita"
 				Rec = CreaRecordset(Mp, Conn, sql, Connessione)
 				If TypeOf (Rec) Is String Then
 					Ritorno = Rec
@@ -713,10 +753,10 @@ Public Class clsEventi
 
 									If Not Ritorno.Contains("ERROR") Or Ritorno.ToUpper.Contains("DUPLICATE ENTRY") Then
 										'Aggiunta giornata virtuale
-										Sql = "SELECT idAnno, idGiornata FROM EventiPartite A " &
+										Sql = "SELECT idAnno, idGiornata, A.idEvento FROM EventiPartite A " &
 											"Left Join Eventi B On A.idEvento = B.idEvento " &
-											"Where B.idCoppa = " & idAnno & " " &
-											"Group By idAnno, idGiornata"
+											"Where B.idCoppa = " & idCoppa & " " &
+											"Group By idAnno, idGiornata, A.idEvento"
 										Rec = CreaRecordset(Mp, Conn, Sql, Connessione)
 										If TypeOf (Rec) Is String Then
 											Ritorno = Rec
@@ -726,23 +766,27 @@ Public Class clsEventi
 											Else
 												Dim Progressivo As Integer = 1
 												Dim Giornate As New List(Of Integer)
+												Dim idEventi As New List(Of Integer)
 												Do Until Rec.Eof
 													Giornate.Add(Rec("idGiornata").Value)
+													idEventi.Add(Rec("idEvento").Value)
 
 													Rec.MoveNext
 												Loop
 												Rec.Close
 
+												Dim C As Integer = 0
 												For Each g As Integer In Giornate
 													Sql = "Update EventiPartite Set idGiornataVirtuale=" & Progressivo & " " &
 															"Where idAnno=" & idAnno & " " &
-															"And idGiornata=" & g
+															"And idGiornata=" & g & " And idEvento=" & idEventi.Item(c)
 													Ritorno = Conn.EsegueSql(Mp, Sql, Connessione, False)
 													If Ritorno.Contains("ERROR") Then
 														Exit For
 													End If
 
 													Progressivo += 1
+													C += 1
 												Next
 
 												If Not Ritorno.Contains("ERROR") Or Ritorno.ToUpper.Contains("DUPLICATE ENTRY") Then

@@ -154,6 +154,29 @@ Public Class wsConcorsi
 	End Function
 
 	<WebMethod()>
+	Public Function RitornaMaxGiornataCoppa(idAnno As String, idCoppa As String) As String
+		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
+		Dim Conn As Object = New clsGestioneDB(TipoServer)
+		Dim Ritorno As String = ""
+		Dim Sql As String = "Select Coalesce(Max(idGiornataVirtuale), 1) As idGiornata From EventiPartite Where idEvento In (Select idEvento From Eventi Where idCoppa = " & idCoppa & ") " &
+			"And Risultato1 <> '' And Risultato1 Is Not Null And Risultato2 <> '' And Risultato2 Is Not Null And idAnno = " & idAnno
+		Dim Rec As Object = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
+		If TypeOf (Rec) Is String Then
+			Ritorno = Rec
+		Else
+			If Rec.Eof Then
+				Ritorno = "ERROR: Nessuna giornata rilevata"
+			Else
+				Ritorno = Rec("idGiornata").Value
+
+				Rec.Close
+			End If
+		End If
+
+		Return Ritorno
+	End Function
+
+	<WebMethod()>
 	Public Function ChiudeConcorso(idAnno As String) As String
 		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
 		Dim Conn As Object = New clsGestioneDB(TipoServer)
