@@ -283,7 +283,7 @@ Public Class wsConcorsi
 				Ritorno = "ERROR: Nessuna coppa rilevata"
 			Else
 				Do Until Rec.Eof
-					Ritorno &= Rec("idCoppa").Value & ";" & SistemaStringaPerRitorno(Rec("Descrizione").Value) & "§"
+					Ritorno &= Rec("idCoppa").Value & ";" & SistemaStringaPerRitorno(Rec("Descrizione").Value) & ";" & Rec("SemiFinale").Value & ";" & Rec("Finale").Value & "§"
 
 					Rec.MoveNext
 				Loop
