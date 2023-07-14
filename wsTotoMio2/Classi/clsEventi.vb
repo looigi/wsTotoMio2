@@ -1,7 +1,4 @@
-﻿Imports System.Diagnostics.Eventing.Reader
-Imports Microsoft.SqlServer
-
-Public Class clsEventi
+﻿Public Class clsEventi
 	Private Structure StrutturaGiocatore
 		Dim idUtente As Integer
 		Dim NickName As String
@@ -77,7 +74,7 @@ Public Class clsEventi
 			Case "CREAZIONE"
 				Ritorno = CreazioneCoppa(Mp, idAnno, idGiornata, QuantiGiocatori, Importanza, idCoppa, Conn, Connessione)
 			Case "PARTITA"
-				Ritorno = Partita(Mp, idAnno, idGiornata, idEvento, Conn, Connessione)
+				Ritorno = GiocaPartita(Mp, idAnno, idGiornata, idEvento, Conn, Connessione)
 			Case "SEMIFINALE"
 			Case "FINALE"
 			Case "CHIUSURA"
@@ -131,121 +128,128 @@ Public Class clsEventi
 			End If
 		End If
 
-		Return ritorno
+		Return Ritorno
 	End Function
 
 	Private Function RitornaVincitore(Rec As Object) As Integer
 		Dim Vincente As Integer = -1
 		Dim Punti1 As Integer = Rec("Punti1").Value
 		Dim Punti2 As Integer = Rec("Punti2").Value
-
-		Ris1 = Punti1
-		Ris2 = Punti2
+		Dim Tot1 As Integer = 0
+		Dim Tot2 As Integer = 0
 
 		If Punti1 > Punti2 Then
-			Vincente = 1
+			Tot1 += 3
 		Else
 			If Punti1 < Punti2 Then
-				Vincente = 2
+				Tot2 += 3
 			Else
-				Dim Segni1 As Integer = Rec("SegniPresi1").Value
-				Dim Segni2 As Integer = Rec("SegniPresi2").Value
-
-				Ris1 = Segni1
-				Ris2 = Segni2
-
-				If Segni1 > Segni2 Then
-					Vincente = 1
-				Else
-					If Segni2 < Segni2 Then
-						Vincente = 2
-					Else
-						Dim RisEsa1 As Integer = Rec("RisEsatti1").Value
-						Dim RisEsa2 As Integer = Rec("RisEsatti2").Value
-
-						Ris1 = RisEsa1
-						Ris2 = RisEsa2
-
-						If RisEsa1 > RisEsa2 Then
-							Vincente = 1
-						Else
-							If RisEsa1 < RisEsa2 Then
-								Vincente = 2
-							Else
-								Dim RisFuori1 As Integer = Rec("RisFuori1").Value
-								Dim RisFuori2 As Integer = Rec("RisFuori2").Value
-
-								Ris1 = RisFuori1
-								Ris2 = RisFuori2
-
-								If RisFuori1 > RisFuori2 Then
-									Vincente = 1
-								Else
-									If RisFuori1 < RisFuori2 Then
-										Vincente = 2
-									Else
-										Dim RisCasa1 As Integer = Rec("RisCasa1").Value
-										Dim RisCasa2 As Integer = Rec("RisCasa2").Value
-
-										Ris1 = RisCasa1
-										Ris2 = RisCasa2
-
-										If RisCasa1 > RisCasa2 Then
-											Vincente = 1
-										Else
-											If RisCasa1 < RisCasa2 Then
-												Vincente = 2
-											Else
-												Dim SommeGoal1 As Integer = Rec("SommeGoal1").Value
-												Dim SommeGoal2 As Integer = Rec("SommeGoal2").Value
-
-												Ris1 = SommeGoal1
-												Ris2 = SommeGoal2
-
-												If SommeGoal1 > SommeGoal2 Then
-													Vincente = 1
-												Else
-													If SommeGoal1 < SommeGoal2 Then
-														Vincente = 2
-													Else
-														Dim DiffGoal1 As Integer = Rec("DiffGoal1").Value
-														Dim DiffGoal2 As Integer = Rec("DiffGoal2").Value
-
-														Ris1 = DiffGoal1
-														Ris2 = DiffGoal2
-
-														If DiffGoal1 > DiffGoal2 Then
-															Vincente = 1
-														Else
-															If DiffGoal1 < DiffGoal2 Then
-																Vincente = 2
-															Else
-																'Dim Random As Integer = CInt(Int((5 * Rnd())))
-																'If Random > 2 Then
-																'	Vincente = 1
-																'Else
-																'	Vincente = 2
-																'End If
-																Vincente = 0
-															End If
-														End If
-													End If
-												End If
-											End If
-										End If
-									End If
-								End If
-							End If
-						End If
-					End If
-				End If
+				Tot1 += 1
+				Tot2 += 1
 			End If
 		End If
+
+		Dim Segni1 As Integer = Rec("SegniPresi1").Value
+		Dim Segni2 As Integer = Rec("SegniPresi2").Value
+
+		If Segni1 > Segni2 Then
+			Tot1 += 3
+		Else
+			If Segni2 < Segni2 Then
+				Tot2 += 3
+			Else
+				Tot1 += 1
+				Tot2 += 1
+			End If
+		End If
+
+		Dim RisEsa1 As Integer = Rec("RisEsatti1").Value
+		Dim RisEsa2 As Integer = Rec("RisEsatti2").Value
+
+		If RisEsa1 > RisEsa2 Then
+			Tot1 += 3
+		Else
+			If RisEsa1 < RisEsa2 Then
+				Tot2 += 3
+			Else
+				Tot1 += 1
+				Tot2 += 1
+			End If
+		End If
+
+		Dim RisFuori1 As Integer = Rec("RisFuori1").Value
+		Dim RisFuori2 As Integer = Rec("RisFuori2").Value
+
+		If RisFuori1 > RisFuori2 Then
+			Tot1 += 3
+		Else
+			If RisFuori1 < RisFuori2 Then
+				Tot2 += 3
+			Else
+				Tot1 += 1
+				Tot2 += 1
+			End If
+		End If
+
+		Dim RisCasa1 As Integer = Rec("RisCasa1").Value
+		Dim RisCasa2 As Integer = Rec("RisCasa2").Value
+
+		If RisCasa1 > RisCasa2 Then
+			Tot1 += 3
+		Else
+			If RisCasa1 < RisCasa2 Then
+				Tot2 += 3
+			Else
+				Tot1 += 1
+				Tot2 += 1
+			End If
+		End If
+
+		Dim SommeGoal1 As Integer = Rec("SommeGoal1").Value
+		Dim SommeGoal2 As Integer = Rec("SommeGoal2").Value
+
+		If SommeGoal1 > SommeGoal2 Then
+			Tot1 += 3
+		Else
+			If SommeGoal1 < SommeGoal2 Then
+				Tot2 += 3
+			Else
+				Tot1 += 1
+				Tot2 += 1
+			End If
+		End If
+
+		Dim DiffGoal1 As Integer = Rec("DiffGoal1").Value
+		Dim DiffGoal2 As Integer = Rec("DiffGoal2").Value
+
+		If DiffGoal1 > DiffGoal2 Then
+			Tot1 += 3
+		Else
+			If DiffGoal1 < DiffGoal2 Then
+				Tot2 += 3
+			Else
+				Tot1 += 1
+				Tot2 += 1
+			End If
+		End If
+
+		If Tot1 > Tot2 Then
+			Vincente = 1
+		Else
+			If Tot1 < Tot2 Then
+				Vincente = 2
+			Else
+				Vincente = 0
+			End If
+		End If
+
+		Ris1 = "Totale " & Tot1
+		Ris2 = "Totale " & Tot2
 
 		Return Vincente
 	End Function
 
-	Private Function Partita(Mp As String, idAnno As Integer, idGiornata As Integer, idEvento As Integer, Conn As Object, Connessione As String) As String
+	Private Function GiocaPartita(Mp As String, idAnno As Integer, idGiornata As Integer, idEvento As Integer, Conn As Object, Connessione As String) As String
 		Dim Ritorno As String = "OK"
 		Dim Sql As String = "SELECT Distinct A.*, B.NickName As Casa, C.NickName As Fuori, J.Descrizione As Torneo, E.Punti As Punti1, F.Punti As Punti2, " &
 			"E.SegniPresi As SegniPresi1, F.SegniPresi As SegniPresi2, E.RisultatiEsatti As RisEsatti1, F.RisultatiEsatti As RisEsatti2, " &
@@ -280,10 +284,10 @@ Public Class clsEventi
 					Dim idCoppa As String = Rec("idCoppa").Value
 					Dim Vincente As Integer = -1
 
-					Dim Rec1 As Object = RitornaRisultatiGiocatore(Mp, idAnno, Rec("idEvento").Value, Rec("idGiornata").Value,
-								Rec("idGiocatore1").Value, 1, Conn, Connessione)
-					Dim Rec2 As Object = RitornaRisultatiGiocatore(Mp, idAnno, Rec("idEvento").Value, Rec("idGiornata").Value,
-								Rec("idGiocatore2").Value, 2, Conn, Connessione)
+					'Dim Rec1 As Object = RitornaRisultatiGiocatore(Mp, idAnno, Rec("idEvento").Value, Rec("idGiornata").Value,
+					'			Rec("idGiocatore1").Value, 1, Conn, Connessione)
+					'Dim Rec2 As Object = RitornaRisultatiGiocatore(Mp, idAnno, Rec("idEvento").Value, Rec("idGiornata").Value,
+					'			Rec("idGiocatore2").Value, 2, Conn, Connessione)
 
 					Select Case idCoppa
 						Case 1
@@ -295,11 +299,11 @@ Public Class clsEventi
 							Risultato1 = Ris1
 							Risultato2 = Ris2
 						Case 2
-							Dim Segni1 As Integer = Rec1("SegniPresi").Value
-							Dim Segni2 As Integer = Rec2("SegniPresi").Value
+							Dim Segni1 As Integer = Rec("SegniPresi1").Value
+							Dim Segni2 As Integer = Rec("SegniPresi2").Value
 
-							Risultato1 = Segni1
-							Risultato2 = Segni2
+							Risultato1 = "Segni " & Segni1
+							Risultato2 = "Segni " & Segni2
 
 							If Segni1 > Segni2 Then
 								Vincente = 1
@@ -311,15 +315,15 @@ Public Class clsEventi
 								End If
 							End If
 						Case 3
-							Dim Tot1 As Integer = CInt(((Rec1("Punti").Value / 10) + Rec1("SegniPresi").Value + Rec1("RisultatiEsatti").Value +
-									 Rec1("RisultatiCasaTot").Value + Rec1("RisultatiFuoriTot").Value + Rec1("SommeGoal").Value +
-									 Rec1("DifferenzeGoal").Value) / 7)
-							Dim Tot2 As Integer = CInt(((Rec2("Punti").Value / 10) + Rec2("SegniPresi").Value + Rec2("RisultatiEsatti").Value +
-									 Rec2("RisultatiCasaTot").Value + Rec2("RisultatiFuoriTot").Value + Rec2("SommeGoal").Value +
-									 Rec2("DifferenzeGoal").Value) / 7)
+							Dim Tot1 As Integer = CInt(((Rec("Punti1").Value / 10) + Rec("SegniPresi1").Value + Rec("RisEsatti1").Value +
+									 Rec("RisCasa1").Value + Rec("RisFuori1").Value + Rec("SommeGoal1").Value +
+									 Rec("DiffGoal1").Value) / 7)
+							Dim Tot2 As Integer = CInt(((Rec("Punti2").Value / 10) + Rec("SegniPresi2").Value + Rec("RisEsatti2").Value +
+									 Rec("RisCasa2").Value + Rec("RisFuori2").Value + Rec("SommeGoal2").Value +
+									 Rec("DiffGoal2").Value) / 7)
 
-							Risultato1 = Tot1
-							Risultato2 = Tot2
+							Risultato1 = "Calcolo " & Tot1
+							Risultato2 = "Calcolo " & Tot2
 
 							If Tot1 > Tot2 Then
 								Vincente = 1
@@ -331,32 +335,33 @@ Public Class clsEventi
 								End If
 							End If
 						Case 4
-							Dim Segni1 As Integer = Rec1("RisultatiCasaTot").Value + Rec1("RisultatiFuoriTot").Value
-							Dim Segni2 As Integer = Rec2("RisultatiCasaTot").Value + Rec2("RisultatiFuoriTot").Value
+							' PIPPETTERO
+							Dim Segni1 As Integer = Rec("RisCasa1").Value + Rec("RisFuori1").Value
+							Dim Segni2 As Integer = Rec("RisCasa2").Value + Rec("RisFuori2").Value
 
-							Risultato1 = Segni1
-							Risultato2 = Segni2
+							Risultato1 = "Casa+Fuori " & Segni1
+							Risultato2 = "Casa+Fuori " & Segni2
 
-							If Segni1 > Segni2 Then
+							If Segni1 < Segni2 Then
 								Vincente = 1
 							Else
-								If Segni1 < Segni2 Then
+								If Segni1 > Segni2 Then
 									Vincente = 2
 								Else
 									Vincente = 0
 								End If
 							End If
 						Case 5
-							Dim Segni1 As Integer = Rec1("Punti").Value
-							Dim Segni2 As Integer = Rec2("Punti").Value
+							Dim Segni1 As Integer = Rec("Punti1").Value
+							Dim Segni2 As Integer = Rec("Punti2").Value
 
-							Risultato1 = Segni1
-							Risultato2 = Segni2
+							Risultato1 = "Punti " & Segni1
+							Risultato2 = "Punti " & Segni2
 
-							If Segni1 < Segni2 Then
+							If Segni1 > Segni2 Then
 								Vincente = 1
 							Else
-								If Segni1 > Segni2 Then
+								If Segni1 < Segni2 Then
 									Vincente = 2
 								Else
 									Vincente = 0
@@ -489,7 +494,7 @@ Public Class clsEventi
 					Else
 						Do Until Rec.Eof
 							Ritorno &= SistemaStringaPerRitorno(Rec("Casa").Value) & ";" & SistemaStringaPerRitorno(Rec("Fuori").Value) & ";" &
-								Rec("idVincente").Value & "§"
+								Rec("idVincente").Value & ";" & SistemaStringaPerRitorno(Rec("Risultato1").Value) & ";" & SistemaStringaPerRitorno(Rec("Risultato2").Value) & "§"
 
 							Rec.MoveNext
 						Loop
@@ -500,7 +505,7 @@ Public Class clsEventi
 		End If
 
 		Return Ritorno
-    End Function
+	End Function
 
 	Private Function RitornaGiocatoriScelti(QuantiGiocatori As Integer, Importanza As Integer, Classifica As List(Of StrutturaGiocatore)) As List(Of StrutturaGiocatore)
 		Dim Scelti As New List(Of StrutturaGiocatore)
@@ -822,7 +827,7 @@ Public Class clsEventi
 												For Each g As Integer In Giornate
 													Sql = "Update EventiPartite Set idGiornataVirtuale=" & Progressivo & " " &
 															"Where idAnno=" & idAnno & " " &
-															"And idGiornata=" & g & " And idEvento=" & idEventi.Item(c)
+															"And idGiornata=" & g & " And idEvento=" & idEventi.Item(C)
 													Ritorno = Conn.EsegueSql(Mp, Sql, Connessione, False)
 													If Ritorno.Contains("ERROR") Then
 														Exit For
