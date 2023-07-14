@@ -1,4 +1,6 @@
-﻿Public Class clsEventi
+﻿Imports System.CodeDom
+
+Public Class clsEventi
 	Private Structure StrutturaGiocatore
 		Dim idUtente As Integer
 		Dim NickName As String
@@ -10,6 +12,12 @@
 		Dim SommaGoal As Integer
 		Dim DifferenzaGoal As Integer
 		Dim Giocate As Integer
+	End Structure
+
+	Private Structure StrutturaClassificaTorneo
+		Dim idGiocatore As Integer
+		Dim NickName As String
+		Dim Punti As Integer
 	End Structure
 
 	Dim Ris1 As String
@@ -81,6 +89,58 @@
 		End Select
 		'	End If
 		'End If
+
+		Return Ritorno
+	End Function
+
+	Private Function ChiusuraTorneo(Mp As String, idAnno As Integer, idGiornata As Integer, Torneo As Integer, Conn As Object, Connessione As String) As String
+		Dim Ritorno As String = "OK"
+		Dim Classifica As String = CalcolaClassificaTorneo(Mp, idAnno, idGiornata, Torneo, True)
+		If Classifica <> "" Then
+			Dim c() As String = Classifica.Split("§")
+			Dim Lista As New List(Of StrutturaClassificaTorneo)
+
+			For Each cc As String In c
+				If cc <> "" Then
+					Dim ccc() As String = cc.Split(";")
+					Dim s As New StrutturaClassificaTorneo
+					s.idGiocatore = ccc(0)
+					s.NickName = ccc(1)
+					s.Punti = ccc(2)
+					Lista.Add(s)
+				End If
+			Next
+
+			For i As Integer = 0 To Lista.Count
+				Dim Punti1 As Integer = Lista.Item(i).Punti
+				For k As Integer = i + 1 To Lista.Count
+					Dim Punti2 As Integer = Lista.Item(k).Punti
+					If Punti1 > Punti2 Then
+						Dim s As StrutturaClassificaTorneo = Lista.Item(i)
+						Lista.Item(i) = Lista.Item(k)
+						Lista.Item(k) = s
+					End If
+				Next
+			Next
+
+			Dim Sql As String = "Select * From EventiNomi Where idCoppa=" & Torneo
+			Dim Rec As Object = CreaRecordset(Mp, Conn, Sql, Connessione)
+			If TypeOf (Rec) Is String Then
+				Ritorno = Rec
+			Else
+				If Rec.Eof Then
+					Ritorno = "ERROR: Nessuna coppa rilevata"
+				Else
+					Dim Semifinale As Boolean = (Rec("Semifinale").Value = "S")
+					Dim Finale As Boolean = (Rec("Finale").Value = "S")
+					Rec.Close
+
+				End If
+			End If
+
+		Else
+			Ritorno = "ERROR: Nessun giocatore presente in classifica per il torneo"
+		End If
 
 		Return Ritorno
 	End Function
@@ -387,7 +447,7 @@
 		Return Ritorno
 	End Function
 
-	Public Function CalcolaClassificaTorneo(Mp As String, idAnno As Integer, idGiornata As Integer, Torneo As String) As String
+	Public Function CalcolaClassificaTorneo(Mp As String, idAnno As Integer, idGiornata As Integer, Torneo As String, PerChiusura As Boolean) As String
 		Dim Connessione As String = RitornaPercorso(Mp, 5)
 		Dim Conn As Object = New clsGestioneDB(TipoServer)
 		Dim Ritorno As String = ""
@@ -477,28 +537,30 @@
 					End If
 				End If
 
-				' Lista Partite giornata
-				Ritorno &= "|"
-				sql = "SELECT A.*, B.NickName As Casa, C.NickName As Fuori FROM EventiPartite As A " &
+				If Not PerChiusura Then
+					' Lista Partite giornata
+					Ritorno &= "|"
+					sql = "SELECT A.*, B.NickName As Casa, C.NickName As Fuori FROM EventiPartite As A " &
 							"Left Join Utenti As B On A.idAnno = B.idAnno And A.idGiocatore1 = B.idUtente " &
 							"Left Join Utenti As C On A.idAnno = C.idAnno And A.idGiocatore2 = C.idUtente " &
 							"Where A.idAnno = " & idAnno & " And A.idGiornataVirtuale = " & idGiornata & " And " &
 							"A.idEvento In (Select idEvento From Eventi As E Where idCoppa = " & Torneo & " And A.idGiornata = E.InizioGiornata) " &
 							"Order By idPartita"
-				Rec = CreaRecordset(Mp, Conn, sql, Connessione)
-				If TypeOf (Rec) Is String Then
-					Ritorno = Rec
-				Else
-					If Rec.Eof Then
-						'Ritorno = "ERROR: Nessun dato rilevato"
+					Rec = CreaRecordset(Mp, Conn, sql, Connessione)
+					If TypeOf (Rec) Is String Then
+						Ritorno = Rec
 					Else
-						Do Until Rec.Eof
-							Ritorno &= SistemaStringaPerRitorno(Rec("Casa").Value) & ";" & SistemaStringaPerRitorno(Rec("Fuori").Value) & ";" &
+						If Rec.Eof Then
+							'Ritorno = "ERROR: Nessun dato rilevato"
+						Else
+							Do Until Rec.Eof
+								Ritorno &= SistemaStringaPerRitorno(Rec("Casa").Value) & ";" & SistemaStringaPerRitorno(Rec("Fuori").Value) & ";" &
 								Rec("idVincente").Value & ";" & SistemaStringaPerRitorno(Rec("Risultato1").Value) & ";" & SistemaStringaPerRitorno(Rec("Risultato2").Value) & "§"
 
-							Rec.MoveNext
-						Loop
-						Rec.Close
+								Rec.MoveNext
+							Loop
+							Rec.Close
+						End If
 					End If
 				End If
 			End If
