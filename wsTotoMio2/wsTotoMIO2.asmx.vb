@@ -51,7 +51,6 @@ Public Class wsTotoMIO2
 		Return Ritorno
 	End Function
 
-
 	<WebMethod()>
 	Public Function RitornaDatiGenerali(idAnno As String) As String
 		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
@@ -73,6 +72,7 @@ Public Class wsTotoMIO2
 				Ritorno = Rec("idGiornata").Value & ";" &
 						Rec("idModalitaConcorso").Value & ";" &
 						Rec("ModalitaConcorso").Value & ";" &
+						Rec("Scadenza").Value & ";" &
 						"|"
 				Rec.Close
 
@@ -266,7 +266,7 @@ Public Class wsTotoMIO2
 					Ritorno = Conn.EsegueSql(Server.MapPath("."), Sql, Connessione, False)
 					If Not Ritorno.Contains(StringaErrore) Then
 
-						Sql = "Update Globale Set idGiornata=0, idModalitaConcorso=0 Where idAnno=" & idAnno
+						Sql = "Update Globale Set idGiornata=0, idModalitaConcorso=0, Scadenza='' Where idAnno=" & idAnno
 						Ritorno = Conn.EsegueSql(Server.MapPath("."), Sql, Connessione, False)
 						If Not Ritorno.Contains(StringaErrore) Then
 
@@ -628,7 +628,7 @@ Public Class wsTotoMIO2
 								End If
 
 								If Not Ritorno.Contains("ERROR") Then
-									sql = "Update Globale Set idGiornata=0, idModalitaConcorso=0 Where idAnno=" & idAnno
+									sql = "Update Globale Set idGiornata=0, idModalitaConcorso=0, Scadenza='' Where idAnno=" & idAnno
 									Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 									If Not Ritorno.Contains(StringaErrore) Then
 										Ritorno = "OK"

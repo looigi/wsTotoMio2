@@ -433,11 +433,11 @@ Public Class clsEventi
 			Next
 
 			For i As Integer = 0 To Lista.Count - 1
-				Dim Nome1 As Integer = Lista.Item(i).NickName
+				Dim Nome1 As String = Lista.Item(i).NickName
 				Dim Punti1 As Integer = Lista.Item(i).Punti
 				Dim Totale1 As Integer = Lista.Item(i).Totale
 				For k As Integer = i + 1 To Lista.Count - 1
-					Dim Nome2 As Integer = Lista.Item(k).NickName
+					Dim Nome2 As String = Lista.Item(k).NickName
 					Dim Punti2 As Integer = Lista.Item(k).Punti
 					Dim Totale2 As Integer = Lista.Item(k).Totale
 					If Punti1 < Punti2 Then
@@ -537,6 +537,10 @@ Public Class clsEventi
 							End If
 
 						End If
+					End If
+
+					If Not Semifinale And Not Finale Then
+						' Fine torneo senza scontri diretti
 					End If
 				End If
 			End If
@@ -981,7 +985,8 @@ Public Class clsEventi
 						Else
 							Do Until Rec.Eof
 								Ritorno &= SistemaStringaPerRitorno(Rec("Casa").Value) & ";" & SistemaStringaPerRitorno(Rec("Fuori").Value) & ";" &
-								Rec("idVincente").Value & ";" & SistemaStringaPerRitorno(Rec("Risultato1").Value) & ";" & SistemaStringaPerRitorno(Rec("Risultato2").Value) & "§"
+									Rec("idVincente").Value & ";" & SistemaStringaPerRitorno(Rec("Risultato1").Value) & ";" &
+									SistemaStringaPerRitorno(Rec("Risultato2").Value) & "§"
 
 								Rec.MoveNext
 							Loop

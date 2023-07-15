@@ -16,6 +16,7 @@ Module mdlGenerale
 	Public nomeFileLogmail As String = ""
 	Public StringaErrore As String = "ERROR: "
 	Public TipoServer As String = "MARIADB"
+	Public CorpoMail As String = ""
 
 	Public Function SistemaStringaPerDB(Stringa As String) As String
 		Dim Ritorno As String = Stringa

@@ -62,7 +62,7 @@ Public Class wsConcorsi
 	'End Function
 
 	<WebMethod()>
-	Public Function ApreConcorso(idAnno As String) As String
+	Public Function ApreConcorso(idAnno As String, Scadenza As String) As String
 		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
 		Dim Conn As Object = New clsGestioneDB(TipoServer)
 		Dim Ritorno As String = ""
@@ -70,7 +70,7 @@ Public Class wsConcorsi
 		Dim Descrizione As String = ""
 
 		Dim sql As String = "Start transaction"
-		Ritorno = Conn.EsegueSql(Server.MapPath("."), Sql, Connessione, False)
+		Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 		If Not Ritorno.Contains("ERROR:") Then
 			sql = "Select * From ModalitaConcorso Where Descrizione='Aperto'"
 			Dim Rec As Object = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
@@ -84,7 +84,7 @@ Public Class wsConcorsi
 					Descrizione = Rec("Descrizione").Value
 					Rec.Close
 
-					sql = "Update Globale Set idModalitaConcorso=" & idModalita & ", idGiornata = idGiornata + 1 Where idAnno=" & idAnno
+					sql = "Update Globale Set idModalitaConcorso=" & idModalita & ", idGiornata = idGiornata + 1, Scadenza='" & Scadenza & "' Where idAnno=" & idAnno
 					Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 					If Not Ritorno.Contains("ERROR") Then
 						sql = "Select * From Globale Where idAnno=" & idAnno
@@ -170,6 +170,23 @@ Public Class wsConcorsi
 				Ritorno = Rec("idGiornata").Value
 
 				Rec.Close
+
+				Sql = "Select Coalesce(Max(idGiornataVirtuale), 1) As idGiornata From EventiPartite Where idEvento In " &
+					"(Select idEvento From Eventi A Left Join EventiTipologie B On A.idTipologia = B.idTipologia " &
+					"Where idCoppa = " & idCoppa & " And B.Descrizione <> 'Semifinale' And B.Descrizione <> 'Finale') " &
+					"And idAnno = " & idAnno
+				Rec = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
+				If TypeOf (Rec) Is String Then
+					Ritorno = Rec
+				Else
+					If Rec.Eof Then
+						Ritorno = "ERROR: Nessuna giornata rilevata"
+					Else
+						Ritorno &= ";" & Rec("idGiornata").Value
+
+						Rec.Close
+					End If
+				End If
 			End If
 		End If
 
@@ -199,7 +216,7 @@ Public Class wsConcorsi
 					Descrizione = Rec("Descrizione").Value
 					Rec.Close
 
-					sql = "Update Globale Set idModalitaConcorso=" & idModalita & " Where idAnno=" & idAnno
+					sql = "Update Globale Set idModalitaConcorso=" & idModalita & ", Scadenza='' Where idAnno=" & idAnno
 					Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 					If Ritorno.Contains("ERROR") Then
 					Else
@@ -316,7 +333,7 @@ Public Class wsConcorsi
 				Dim Descrizione As String = Rec("Descrizione").Value
 				Rec.Close
 
-				sql = "Update Globale Set idModalitaConcorso=" & idModalita & " Where idAnno=" & idAnno
+				sql = "Update Globale Set idModalitaConcorso=" & idModalita & ", Scadenza='' Where idAnno=" & idAnno
 				Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 				If Not Ritorno.Contains("ERROR") Then
 					Ritorno = idModalita & ";" & Descrizione
