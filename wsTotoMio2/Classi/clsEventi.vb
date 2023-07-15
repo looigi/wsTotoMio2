@@ -473,36 +473,69 @@ Public Class clsEventi
 					Dim QuantiGiocatori As Integer = Rec("QuantiGiocatori").Value
 					Rec.Close
 
-					Sql = "SELECT Distinct idAnno, A.idEvento, idGiornata FROM EventiPartite A " &
-						"Left Join Eventi B On A.idEvento = B.idEvento " &
-						"Left Join EventiTipologie C On B.idTipologia = C.idTipologia " &
-						"Where A.idAnno = " & idAnno & " And B.idCoppa = " & Torneo & " And C.Descrizione = 'Semifinale'"
-					Rec = CreaRecordset(Mp, Conn, Sql, Connessione)
-					If TypeOf (Rec) Is String Then
-						Ritorno = Rec
-					Else
-						If Rec.Eof Then
-							Ritorno = "ERROR: Nessuna semifinale rilevata"
+					If Semifinale Then
+						Sql = "SELECT Distinct idAnno, A.idEvento, idGiornata FROM EventiPartite A " &
+							"Left Join Eventi B On A.idEvento = B.idEvento " &
+							"Left Join EventiTipologie C On B.idTipologia = C.idTipologia " &
+							"Where A.idAnno = " & idAnno & " And B.idCoppa = " & Torneo & " And C.Descrizione = 'Semifinale'"
+						Rec = CreaRecordset(Mp, Conn, Sql, Connessione)
+						If TypeOf (Rec) Is String Then
+							Ritorno = Rec
 						Else
-							Dim idEvento As Integer = Rec("idEvento").Value
-							Dim idGiornataSemi As Integer = Rec("idGiornata").Value
-							Rec.Close
+							If Rec.Eof Then
+								Ritorno = "ERROR: Nessuna semifinale rilevata"
+							Else
+								Dim idEvento As Integer = Rec("idEvento").Value
+								Dim idGiornataSemi As Integer = Rec("idGiornata").Value
+								Rec.Close
 
-							Dim idGiocatori(QuantiGiocatori) As Integer
-							For i As Integer = 1 To 4
-								idGiocatori(i - 1) = Lista.Item(i - 1).idGiocatore
-							Next
-							Sql = "Update EventiPartite Set idGiocatore1 = " & idGiocatori(0) & ", idGiocatore2 = " & idGiocatori(3) & " " &
-								"Where idAnno=" & idAnno & " And idEvento=" & idEvento & " And idGiornata=" & idGiornataSemi & " And idPartita=1"
-							Ritorno = Conn.EsegueSql(Mp, Sql, Connessione, False)
-							If Not Ritorno.Contains("ERROR") Then
-								Sql = "Update EventiPartite Set idGiocatore1 = " & idGiocatori(2) & ", idGiocatore2 = " & idGiocatori(1) & " " &
-									"Where idAnno=" & idAnno & " And idEvento=" & idEvento & " And idGiornata=" & idGiornataSemi & " And idPartita=2"
+								Dim idGiocatori(4) As Integer
+								For i As Integer = 1 To 4
+									idGiocatori(i - 1) = Lista.Item(i - 1).idGiocatore
+								Next
+								Sql = "Update EventiPartite Set idGiocatore1 = " & idGiocatori(0) & ", idGiocatore2 = " & idGiocatori(3) & " " &
+									"Where idAnno=" & idAnno & " And idEvento=" & idEvento & " And idGiornata=" & idGiornataSemi & " And idPartita=1"
 								Ritorno = Conn.EsegueSql(Mp, Sql, Connessione, False)
 								If Not Ritorno.Contains("ERROR") Then
-									Ritorno = "OK"
+									Sql = "Update EventiPartite Set idGiocatore1 = " & idGiocatori(2) & ", idGiocatore2 = " & idGiocatori(1) & " " &
+										"Where idAnno=" & idAnno & " And idEvento=" & idEvento & " And idGiornata=" & idGiornataSemi & " And idPartita=2"
+									Ritorno = Conn.EsegueSql(Mp, Sql, Connessione, False)
+									If Not Ritorno.Contains("ERROR") Then
+										Ritorno = "OK"
+									End If
 								End If
 							End If
+						End If
+					Else
+						If Not Semifinale And Finale Then
+							Sql = "SELECT Distinct idAnno, A.idEvento, idGiornata FROM EventiPartite A " &
+							"Left Join Eventi B On A.idEvento = B.idEvento " &
+							"Left Join EventiTipologie C On B.idTipologia = C.idTipologia " &
+							"Where A.idAnno = " & idAnno & " And B.idCoppa = " & Torneo & " And C.Descrizione = 'Finale'"
+							Rec = CreaRecordset(Mp, Conn, Sql, Connessione)
+							If TypeOf (Rec) Is String Then
+								Ritorno = Rec
+							Else
+								If Rec.Eof Then
+									Ritorno = "ERROR: Nessuna finale rilevata"
+								Else
+									Dim idEvento As Integer = Rec("idEvento").Value
+									Dim idGiornataSemi As Integer = Rec("idGiornata").Value
+									Rec.Close
+
+									Dim idGiocatori(2) As Integer
+									For i As Integer = 1 To 2
+										idGiocatori(i - 1) = Lista.Item(i - 1).idGiocatore
+									Next
+									Sql = "Update EventiPartite Set idGiocatore1 = " & idGiocatori(0) & ", idGiocatore2 = " & idGiocatori(1) & " " &
+										"Where idAnno=" & idAnno & " And idEvento=" & idEvento & " And idGiornata=" & idGiornataSemi & " And idPartita=1"
+									Ritorno = Conn.EsegueSql(Mp, Sql, Connessione, False)
+									If Not Ritorno.Contains("ERROR") Then
+										Ritorno = "OK"
+									End If
+								End If
+							End If
+
 						End If
 					End If
 				End If
@@ -953,6 +986,61 @@ Public Class clsEventi
 								Rec.MoveNext
 							Loop
 							Rec.Close
+
+							' Semifinale
+							Ritorno &= "|"
+							sql = "SELECT A.idPartita, D.NickName As Giocatore1, E.NickName As Giocatore2, A.Risultato1, A.Risultato2, A.idVincente FROM EventiPartite A " &
+								"Left Join Eventi B On A.idEvento = B.idEvento " &
+								"Left Join EventiTipologie C On B.idTipologia = C.idTipologia " &
+								"Left Join Utenti D On A.idGiocatore1 = D.idUtente And A.idAnno = D.idAnno " &
+								"Left Join Utenti E On A.idGiocatore2 = E.idUtente And A.idAnno = E.idAnno " &
+								"Left Join Risultati F On F.idAnno = A.idAnno And F.idConcorso = A.idGiornata And F.idUtente = A.idGiocatore1 " &
+								"Left Join Risultati G On G.idAnno = A.idAnno And G.idConcorso = A.idGiornata And G.idUtente = A.idGiocatore2 " &
+								"Where A.idAnno = " & idAnno & " And B.idCoppa = " & Torneo & " And C.Descrizione = 'Semifinale'"
+							Rec = CreaRecordset(Mp, Conn, sql, Connessione)
+							If TypeOf (Rec) Is String Then
+								Ritorno = Rec
+							Else
+								If Rec.Eof Then
+								Else
+									Do Until Rec.Eof
+										Ritorno &= Rec("idPartita").Value & ";" & SistemaStringaPerRitorno(Rec("Giocatore1").Value) & ";" &
+											SistemaStringaPerRitorno(Rec("Giocatore2").Value) & ";" & Rec("Risultato1").Value & ";" & Rec("Risultato2").Value & ";" &
+											Rec("idVincente").Value & "§"
+
+										Rec.MoveNext
+									Loop
+									Rec.Close
+								End If
+							End If
+
+							' Finale
+							Ritorno &= "|"
+							sql = "SELECT A.idPartita, D.NickName As Giocatore1, E.NickName As Giocatore2, A.Risultato1, A.Risultato2, A.idVincente FROM EventiPartite A " &
+								"Left Join Eventi B On A.idEvento = B.idEvento " &
+								"Left Join EventiTipologie C On B.idTipologia = C.idTipologia " &
+								"Left Join Utenti D On A.idGiocatore1 = D.idUtente And A.idAnno = D.idAnno " &
+								"Left Join Utenti E On A.idGiocatore2 = E.idUtente And A.idAnno = E.idAnno " &
+								"Left Join Risultati F On F.idAnno = A.idAnno And F.idConcorso = A.idGiornata And F.idUtente = A.idGiocatore1 " &
+								"Left Join Risultati G On G.idAnno = A.idAnno And G.idConcorso = A.idGiornata And G.idUtente = A.idGiocatore2 " &
+								"Where A.idAnno = " & idAnno & " And B.idCoppa = " & Torneo & " And C.Descrizione = 'Finale'"
+							Rec = CreaRecordset(Mp, Conn, sql, Connessione)
+							If TypeOf (Rec) Is String Then
+								Ritorno = Rec
+							Else
+								If Rec.Eof Then
+								Else
+									Do Until Rec.Eof
+										Ritorno &= Rec("idPartita").Value & ";" & SistemaStringaPerRitorno(Rec("Giocatore1").Value) & ";" &
+											SistemaStringaPerRitorno(Rec("Giocatore2").Value) & ";" & Rec("Risultato1").Value & ";" & Rec("Risultato2").Value & ";" &
+											Rec("idVincente").Value & "§"
+
+										Rec.MoveNext
+									Loop
+									Rec.Close
+								End If
+							End If
+
 						End If
 					End If
 				End If
