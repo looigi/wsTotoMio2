@@ -233,6 +233,9 @@ Public Class wsConcorsi
 																		Rec("QuantiGiocatori").Value, Rec("Importanza").Value,
 																		Rec("InizioGiornata").Value, Rec("Tipologia").Value, Rec("Torneo").Value,
 																		Rec("Dettaglio").Value, Rec("idCoppa").Value, Conn, Connessione)
+												If Ritorno.Contains("ERROR") Then
+													Exit Do
+												End If
 											End If
 
 											Rec.MoveNext
@@ -263,8 +266,10 @@ Public Class wsConcorsi
 
 	<WebMethod()>
 	Public Function RitornaClassificaCoppe(idAnno As String, idGiornata As String, Torneo As String) As String
+		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
+		Dim Conn As Object = New clsGestioneDB(TipoServer)
 		Dim e As New clsEventi
-		Dim Ritorno As String = e.CalcolaClassificaTorneo(Server.MapPath("."), idAnno, idGiornata, Torneo, False)
+		Dim Ritorno As String = e.CalcolaClassificaTorneo(Server.MapPath("."), idAnno, idGiornata, Torneo, False, Conn, Connessione)
 
 		Return Ritorno
 	End Function
