@@ -2,7 +2,7 @@
 Imports Microsoft.SqlServer
 
 Public Class clsEventi
-	Private Structure StrutturaGiocatore
+	Public Structure StrutturaGiocatore
 		Dim idUtente As Integer
 		Dim NickName As String
 		Dim Punti As Integer
@@ -551,7 +551,7 @@ Public Class clsEventi
 		Return Ritorno
 	End Function
 
-	Private Function PrendeGiocatori(Mp As String, idAnno As Integer, idGiornata As Integer, Conn As Object, Connessione As String) As List(Of StrutturaGiocatore)
+	Public Function PrendeGiocatori(Mp As String, idAnno As Integer, idGiornata As Integer, Conn As Object, Connessione As String) As List(Of StrutturaGiocatore)
 		Dim Ritorno As New List(Of StrutturaGiocatore)
 		Dim Giocatori As String = RitornaClassificaGenerale(Mp, idAnno, idGiornata, Conn, Connessione)
 		Dim Righe() As String = Giocatori.Split("§")

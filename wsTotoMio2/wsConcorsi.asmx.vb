@@ -194,6 +194,95 @@ Public Class wsConcorsi
 	End Function
 
 	<WebMethod()>
+	Public Function RitornaVincitori(idAnno As String) As String
+		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
+		Dim Conn As Object = New clsGestioneDB(TipoServer)
+		Dim Ritorno As String = ""
+		Dim idModalita As String = ""
+		Dim Sql As String = "Select * From EventiNomi Where Attiva='S'"
+		Dim Rec As Object = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
+		If TypeOf (Rec) Is String Then
+			Ritorno = Rec
+		Else
+			If Rec.Eof Then
+				Ritorno = "ERROR: Nessuna coppa rilevata"
+			Else
+				Dim idCoppe As New List(Of Integer)
+				Dim Descrizione As New List(Of String)
+				Dim Finale As New List(Of Boolean)
+				Dim Giocatori As New List(Of Integer)
+
+				Do Until Rec.Eof
+					Giocatori.Add(Rec("QuantiGiocatori").Value)
+					idCoppe.Add(Rec("idCoppa").Value)
+					Descrizione.Add(Rec("Descrizione").Value)
+					Finale.Add(Rec("Finale").Value = "S")
+
+					Rec.MoveNext
+				Loop
+				Rec.Close
+
+				' CAMPIONATO
+				Dim ev As New clsEventi
+				Dim Classifica As List(Of clsEventi.StrutturaGiocatore) = ev.PrendeGiocatori(Server.MapPath("."), idAnno, 38, Conn, Connessione)
+				Ritorno &= "Campione di TotoMIO;" & Classifica.Item(0).NickName & "§"
+				Ritorno &= "Vice Campione;" & Classifica.Item(1).NickName & "§"
+				Ritorno &= "Terzo;" & Classifica.Item(2).NickName & "§"
+				Ritorno &= "Cucchiara di legno;" & Classifica.Item(Classifica.Count - 1).NickName & "§"
+
+				' COPPE
+				Dim Conta As Integer = 0
+
+				For Each idCoppa As Integer In idCoppe
+					If Finale.Item(Conta) Then
+						Sql = "SELECT A.idPartita, D.NickName As Giocatore1, E.NickName As Giocatore2, A.Risultato1, A.Risultato2, Coalesce(A.idVincente, -99) As idVincente FROM EventiPartite A " &
+								"Left Join Eventi B On A.idEvento = B.idEvento " &
+								"Left Join EventiTipologie C On B.idTipologia = C.idTipologia " &
+								"Left Join Utenti D On A.idGiocatore1 = D.idUtente And A.idAnno = D.idAnno " &
+								"Left Join Utenti E On A.idGiocatore2 = E.idUtente And A.idAnno = E.idAnno " &
+								"Left Join Risultati F On F.idAnno = A.idAnno And F.idConcorso = A.idGiornata And F.idUtente = A.idGiocatore1 " &
+								"Left Join Risultati G On G.idAnno = A.idAnno And G.idConcorso = A.idGiornata And G.idUtente = A.idGiocatore2 " &
+								"Where A.idAnno = " & idAnno & " And B.idCoppa = " & idCoppa & " And C.Descrizione = 'Finale'"
+						Rec = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
+						If TypeOf (Rec) Is String Then
+							Ritorno = Rec
+						Else
+							If Rec.Eof Then
+								Ritorno = "ERROR: Nessuna finale rilevata"
+							Else
+								If Rec("idVincente").Value = -99 Or Rec("idVincente").Value = -1 Then
+									Ritorno &= Descrizione.Item(Conta) & ";Non giocata finale§"
+								Else
+									If Rec("idVincente").Value = 1 Then
+										Ritorno &= Descrizione.Item(Conta) & ";" & Rec("Giocatore1").Value & "§"
+									Else
+										Ritorno &= Descrizione.Item(Conta) & ";" & Rec("Giocatore2").Value & "§"
+									End If
+								End If
+								Rec.Close
+							End If
+						End If
+					Else
+						Dim idGiornata As Integer = (Giocatori.Item(Conta) - 1) * 2
+						Dim ClassificaTorneo As String = ev.CalcolaClassificaTorneo(Server.MapPath("."), idAnno, idGiornata, idCoppa, True, Conn, Connessione)
+						If Not ClassificaTorneo.Contains("ERROR") Then
+							Dim r() As String = ClassificaTorneo.Split(";")
+
+							Ritorno &= Descrizione.Item(Conta) & ";" & r(1) & "§"
+						Else
+							Ritorno &= Descrizione.Item(Conta) & ";Non ancora creata§"
+						End If
+					End If
+
+					Conta += 1
+				Next
+			End If
+		End If
+
+		Return Ritorno
+	End Function
+
+	<WebMethod()>
 	Public Function ChiudeConcorso(idAnno As String) As String
 		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
 		Dim Conn As Object = New clsGestioneDB(TipoServer)
