@@ -702,6 +702,9 @@ Public Class wsConcorsi
 			Dim idPrimo As Integer = UltimaRiga(0)
 			Dim Ritorno2 As String = "OK"
 
+			sql = "Update RisultatiAltro Set Vittorie = 0, Ultimo = 0 Where idAnno=" & idAnno & " And idConcorso=" & idGiornata
+			Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+
 			sql = "Select * From RisultatiAltro Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente=" & idPrimo
 			Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
 			If TypeOf (Rec) Is String Then
@@ -711,7 +714,7 @@ Public Class wsConcorsi
 					sql = "Insert Into RisultatiAltro Values (" & idAnno & ", " & idGiornata & ", " & idPrimo & ", 1, 0, 0)"
 					Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 				Else
-					sql = "Update RisultatiAltro Set Vittorie = Vittorie + 1 Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente = " & idPrimo
+					sql = "Update RisultatiAltro Set Vittorie = 1 Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente = " & idPrimo
 					Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 				End If
 			End If
@@ -725,7 +728,7 @@ Public Class wsConcorsi
 					sql = "Insert Into RisultatiAltro Values (" & idAnno & ", " & idGiornata & ", " & idUltimo & ", 0, 1, 0)"
 					Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 				Else
-					sql = "Update RisultatiAltro Set Ultimo = Ultimo + 1 Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente = " & idUltimo
+					sql = "Update RisultatiAltro Set Ultimo = 1 Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente = " & idUltimo
 					Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 				End If
 			End If
