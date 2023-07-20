@@ -286,6 +286,16 @@ Public Class wsTotoMIO2
 										Ritorno = Conn.EsegueSql(Server.MapPath("."), Sql, Connessione, False)
 										If Not Ritorno.Contains(StringaErrore) Then
 
+											Sql = "Delete From RisultatiAltro Where idAnno=" & idAnno
+											Ritorno = Conn.EsegueSql(Server.MapPath("."), Sql, Connessione, False)
+											If Not Ritorno.Contains(StringaErrore) Then
+
+												Sql = "Delete From PartiteJolly Where idAnno=" & idAnno
+												Ritorno = Conn.EsegueSql(Server.MapPath("."), Sql, Connessione, False)
+												If Not Ritorno.Contains(StringaErrore) Then
+
+												End If
+											End If
 										End If
 									End If
 								End If
@@ -579,6 +589,11 @@ Public Class wsTotoMIO2
 
 									If Ritorno.Contains(StringaErrore) Then
 										Exit For
+									Else
+										'Ritorno = CreaPartitaJolly(Server.MapPath("."), idAnno, i, Conn, Connessione)
+										'If Ritorno.Contains(StringaErrore) Then
+										'	Exit For
+										'End If
 									End If
 								Next i
 							End If
@@ -654,5 +669,4 @@ Public Class wsTotoMIO2
 
 		Return Ritorno
 	End Function
-
 End Class

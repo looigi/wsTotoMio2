@@ -145,7 +145,7 @@ Module mdlGenerale
 	End Function
 
 	Public Function ControllaPunti(idAnno As String, idUtente As String, idConcorso As String, NickName As String, Partite As List(Of String), Pronostici As List(Of String),
-								   Conn As Object, Connessione As String, MP As String, Modalita As String) As String
+								   Conn As Object, Connessione As String, MP As String, Modalita As String, PartitaJolly As Integer) As String
 		Dim PuntiTotali As Integer = 0
 		Dim Ritorno As String = ""
 		Dim SegniPresi As Integer = 0
@@ -154,6 +154,7 @@ Module mdlGenerale
 		Dim RisultatoFuoriTot As Integer = 0
 		Dim SommaGoal As Integer = 0
 		Dim DifferenzaGoal As Integer = 0
+		Dim Jolly As Integer = 0
 
 		For Each Partita As String In Partite
 			'Partite.Add(Rec("idPartita").Value & ";" & SistemaStringaPerRitorno(Rec("Prima").Value) & ";" &
@@ -179,6 +180,7 @@ Module mdlGenerale
 			Dim DifferenzaGoalPartita As Integer = 0
 
 			For Each Pronostico As String In Pronostici
+				Jolly = 0
 				'Pronostici.Add(Rec("idPartita").Value & ";" & Rec("Risultato").Value & ";" & Rec("Segno").Value)
 				Dim Campi() As String = Pronostico.Split(";")
 				Dim idPartita As Integer = Campi(0)
@@ -193,12 +195,18 @@ Module mdlGenerale
 
 					Punti += 1
 					If RisultatoSegno = PronosticoSegno Then
+						If idPartita = PartitaJolly Then
+							Jolly += 3
+						End If
 						Punti += 5
 						SegniPresi += 1
 						SegnoPreso = 1
 					End If
 
 					If PronosticoCasa = RisultatoCasa And PronosticoFuori = RisultatoFuori Then
+						If idPartita = PartitaJolly Then
+							Jolly += 5
+						End If
 						Punti += 10
 						RisultatoEsatto += 1
 						RisultatoCasaTot += 1
@@ -208,11 +216,17 @@ Module mdlGenerale
 						RisultatoFuoriPartita = 1
 					Else
 						If PronosticoCasa = RisultatoCasa And PronosticoCasa <> RisultatoFuori Then
+							If idPartita = PartitaJolly Then
+								Jolly += 2
+							End If
 							Punti += 3
 							RisultatoCasaTot += 1
 							RisultatoCasaPartita = 1
 						Else
 							If PronosticoCasa <> RisultatoCasa And PronosticoFuori = RisultatoFuori Then
+								If idPartita = PartitaJolly Then
+									Jolly += 2
+								End If
 								Punti += 3
 								RisultatoFuoriTot += 1
 								RisultatoFuoriPartita = 1
@@ -221,28 +235,36 @@ Module mdlGenerale
 					End If
 
 					If PronosticoCasa + PronosticoFuori = RisultatoCasa + RisultatoFuori Then
+						If idPartita = PartitaJolly Then
+							Jolly += 1
+						End If
 						Punti += 2
 						SommaGoal += 1
 						SommaGoalPartita = 1
 					End If
 
 					If Math.Abs(PronosticoCasa - PronosticoFuori) = Math.Abs(RisultatoCasa - RisultatoFuori) Then
+						If idPartita = PartitaJolly Then
+							Jolly += 1
+						End If
 						Punti += 2
 						DifferenzaGoal += 1
 						DifferenzaGoalPartita = 1
 					End If
 
+					Punti += Jolly
+
 					Ritorno &= idPartita & ";" & Squadra1 & ";" & Squadra2 & ";" & Risultato & ";" & RisultatoSegno & ";" & Pronostico2 & ";" & PronosticoSegno & ";" &
 						SegnoPreso & ";" & RisultatoEsattoPartita & ";" & RisultatoCasaPartita & ";" & RisultatoFuoriPartita & ";" & SommaGoalPartita & ";" &
 						DifferenzaGoalPartita & ";"
-					Ritorno &= Punti & "§"
+					Ritorno &= Punti & ";" & Jolly & "§"
 
 					PuntiTotali += Punti
 				End If
 			Next
 
 			If Not PartitaTrovata Then
-				Ritorno &= idPartita2 & ";" & Squadra1 & ";" & Squadra2 & ";" & Risultato & ";" & RisultatoSegno & ";;;;;;;;;0§"
+				Ritorno &= idPartita2 & ";" & Squadra1 & ";" & Squadra2 & ";" & Risultato & ";" & RisultatoSegno & ";;;;;;;;;0;§"
 			End If
 		Next
 		Ritorno = idUtente & ";" & SistemaStringaPerRitorno(NickName) & ";" & PuntiTotali & "|" & Ritorno
@@ -255,27 +277,49 @@ Module mdlGenerale
 				" " & SegniPresi & ", " & RisultatoEsatto & ", " & RisultatoCasaTot & ", " & RisultatoFuoriTot & "," &
 				" " & SommaGoal & ", " & DifferenzaGoal & ")"
 			Ritorno2 = Conn.EsegueSql(MP, Sql, Connessione, False)
+			If Not Ritorno2.Contains("ERROR") Then
+				Sql = "Select * From RisultatiAltro Where idAnno=" & idAnno & " And idConcorso=" & idConcorso & " And idUtente=" & idUtente
+				Dim Rec As Object = CreaRecordset(MP, Conn, Sql, Connessione)
+				If TypeOf (Rec) Is String Then
+					Ritorno = Rec
+				Else
+					If Rec.Eof Then
+						Sql = "Insert Into RisultatiAltro Values (" & idAnno & ", " & idConcorso & ", " & idUtente & ", 0, 0, " & Jolly & ")"
+						Ritorno2 = Conn.EsegueSql(MP, Sql, Connessione, False)
+					Else
+						Sql = "Update RisultatiAltro Set Jolly = " & Jolly & " Where idAnno" & idAnno & " And idConcorso=" & idConcorso & " And idUtente=" & idUtente
+						Ritorno2 = Conn.EsegueSql(MP, Sql, Connessione, False)
+					End If
+				End If
+			End If
 		End If
 
 		Return Ritorno
 	End Function
 
-	Public Function RitornaClassificaGenerale(Mp As String, idAnno As Integer, idGiornata As Integer, Conn As Object, Connessione As String) As String
+	Public Function RitornaClassificaGenerale(Mp As String, idAnno As Integer, idGiornata As Integer, Conn As Object, Connessione As String, SoloUnaGiornata As Boolean) As String
 		Dim Ritorno As String = ""
+		Dim Confronto As String = "<="
+		If SoloUnaGiornata Then
+			Confronto = "="
+		End If
 		Dim sql As String = "Select * From (" &
 			"SELECT A.idUtente, NickName, Sum(Punti) As Punti, Sum(RisultatiEsatti) As RisultatiEsatti, " &
 			"Sum(RisultatiCasaTot) As RisCasaTot, Sum(RisultatiFuoriTot) As RisFuoriTot, " &
-			"Sum(SegniPresi) As Segni, Sum(SommeGoal) As SommaGoal, Sum(DifferenzeGoal) As DifferenzeGoal, Count(*) As Giocate " &
+			"Sum(SegniPresi) As Segni, Sum(SommeGoal) As SommaGoal, Sum(DifferenzeGoal) As DifferenzeGoal, Count(*) As Giocate, " &
+			"Coalesce(Sum(C.Vittorie),0) As Vittorie, Coalesce(Sum(C.Ultimo),0) As Ultimo, Coalesce(Sum(C.Jolly), 0) As Jolly " &
 			"FROM Risultati A Left Join Utenti B On A.idUtente = B.idUtente And A.idAnno = B.idAnno " &
-			"Where A.idAnno=" & idAnno & " And idConcorso <= " & idGiornata & " " &
+			"Left Join RisultatiAltro C On A.idAnno = C.idAnno And A.idConcorso = C.idConcorso And A.idUtente = C.idUtente " &
+			"Where A.idAnno=" & idAnno & " And A.idConcorso " & Confronto & " " & idGiornata & " " &
 			"Group By A.idUtente, NickName " &
 			"Union ALL " &
 			"Select idUtente, NickName, 0 As Punti, 0 As RisultatiEsatti, " &
 			"0 As RisCasaTot, 0 As RisFuoriTot, " &
-			"0 As Segni, 0 As SommaGoal, 0 As DifferenzeGoal, 0 As Giocate " &
+			"0 As Segni, 0 As SommaGoal, 0 As DifferenzeGoal, 0 As Giocate, " &
+			"0 As Vittorie,0 As Ultimo, 0 As Jolly " &
 			"From Utenti Where idUtente Not In (Select idUtente From Risultati) " &
 			") As A " &
-			"Order By 3 Desc, 4 Desc, 7 Desc, 5 Desc, 6 Desc, 8 Desc, 9 Desc, 10 Desc, 2"
+			"Order By 3 Desc, 4 Desc, 7 Desc, 5 Desc, 6 Desc, 8 Desc, 9 Desc, 10 Desc, 12 Desc, 13, 2"
 		Dim Rec As Object = CreaRecordset(Mp, Conn, sql, Connessione)
 		If TypeOf (Rec) Is String Then
 			Ritorno = Rec
@@ -286,7 +330,9 @@ Module mdlGenerale
 				Do Until Rec.Eof
 					Ritorno &= Rec("idUtente").Value & ";" & SistemaStringaPerRitorno(Rec("NickName").Value) & ";" & Rec("Punti").Value & ";" &
 						Rec("RisultatiEsatti").Value & ";" & Rec("RisCasaTot").Value & ";" & Rec("RisFuoriTot").Value & ";" &
-						Rec("Segni").Value & ";" & Rec("SommaGoal").Value & ";" & Rec("DifferenzeGoal").Value & ";" & Rec("Giocate").Value & "§"
+						Rec("Segni").Value & ";" & Rec("SommaGoal").Value & ";" & Rec("DifferenzeGoal").Value & ";" & Rec("Giocate").Value & ";" &
+						Rec("Vittorie").Value & ";" & Rec("Ultimo").Value & ";" & Rec("Jolly").Value &
+						"§"
 
 					Rec.MoveNext
 				Loop
@@ -296,4 +342,40 @@ Module mdlGenerale
 
 		Return Ritorno
 	End Function
+
+	Public Function CreaPartitaJolly(Mp As String, idAnno As Integer, idConcorso As Integer, Conn As Object, Connessione As String) As String
+		Dim Ritorno As String = ""
+		Dim Sql As String = "Select Coalesce(Count(*),0) From Concorsi Where idAnno=" & idAnno & " And idConcorso=" & idConcorso
+		Dim Rec As Object = CreaRecordset(Mp, Conn, Sql, Connessione)
+		If TypeOf (Rec) Is String Then
+			Ritorno = Rec
+		Else
+			If Rec.Eof Then
+				Ritorno = "ERROR: Nessun concorso rilevato"
+			Else
+				Dim Quante As Integer = Rec(0).Value
+				Rec.Close
+
+				Randomize()
+				Dim x As Integer = CInt(Quante * Rnd())
+				If x = 0 Then x = Quante
+
+				Sql = "Delete From PartiteJolly Where idAnno=" & idAnno & " And idConcorso=" & idConcorso
+				Ritorno = Conn.EsegueSql(Mp, Sql, Connessione, False)
+				If Not Ritorno.Contains(StringaErrore) Then
+					Sql = "Insert Into PartiteJolly Values (" &
+						" " & idAnno & ", " &
+						" " & idConcorso & ", " &
+						" " & x & " " &
+						")"
+					Ritorno = Conn.EsegueSql(Mp, Sql, Connessione, False)
+					If Ritorno.Contains(StringaErrore) Then
+					End If
+				End If
+			End If
+		End If
+
+		Return Ritorno
+	End Function
+
 End Module
