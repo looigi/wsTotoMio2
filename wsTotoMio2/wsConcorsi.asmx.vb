@@ -235,7 +235,7 @@ Public Class wsConcorsi
 				Ritorno &= "Campione di TotoMIO;" & Classifica.Item(0).NickName & "§"
 				Ritorno &= "Vice Campione;" & Classifica.Item(1).NickName & "§"
 				Ritorno &= "Terzo;" & Classifica.Item(2).NickName & "§"
-				Ritorno &= "Cucchiara di legno;" & Classifica.Item(Classifica.Count - 1).NickName & "§"
+				Ritorno &= "Cucchiarella;" & Classifica.Item(Classifica.Count - 1).NickName & "§"
 
 				' COPPE
 				Dim Conta As Integer = 0
@@ -255,7 +255,7 @@ Public Class wsConcorsi
 							Ritorno = Rec
 						Else
 							If Rec.Eof Then
-								Ritorno = "ERROR: Nessuna finale rilevata"
+								'Ritorno = "ERROR: Nessuna finale rilevata"
 							Else
 								If Rec("idVincente").Value = -99 Or Rec("idVincente").Value = -1 Then
 									Ritorno &= Descrizione.Item(Conta) & ";Non giocata finale§"
@@ -283,6 +283,24 @@ Public Class wsConcorsi
 
 					Conta += 1
 				Next
+
+				' 23 Aiutame Te
+				Sql = "SELECT A.idUtente, B.NickName, Sum(A.Punti) As Punti FROM SquadreRandom As A " &
+					"Left Join Utenti B On A.idAnno = B.idAnno And A.idUtente = B.idUtente " &
+					"Where A.idAnno = " & idAnno & " " &
+					"Group By A.idUtente, B.NickName " &
+					"Order By 2 Desc "
+				Rec = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
+				If TypeOf (Rec) Is String Then
+					Ritorno = Rec
+				Else
+					If Rec.Eof Then
+						' Ritorno = "ERROR: Nessuna coppa rilevata"
+					Else
+						Ritorno &= "23 Aiutame Te;" & Rec("NickName").Value & "§"
+						Rec.Close
+					End If
+				End If
 			End If
 		End If
 
@@ -857,4 +875,47 @@ Public Class wsConcorsi
 		Return Ritorno
 	End Function
 
+	<WebMethod()>
+	Public Function RitornaClassifica23(idAnno As String, idConcorso As String) As String
+		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
+		Dim Conn As Object = New clsGestioneDB(TipoServer)
+		Dim Ritorno As String = ""
+		Dim sql As String = "SELECT A.idUtente, B.NickName, Sum(A.Punti) As Punti FROM SquadreRandom As A " &
+			"Left Join Utenti B On A.idAnno = B.idAnno And A.idUtente = B.idUtente " &
+			"Where A.idAnno = " & idAnno & " And A.idConcorso <= " & idConcorso & " " &
+			"Group By A.idUtente, B.NickName " &
+			"Order By 2 Desc "
+		Dim Rec As Object = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+		If TypeOf (Rec) Is String Then
+			Ritorno = Rec
+		Else
+			Do Until Rec.Eof
+				Ritorno &= Rec("idUtente").Value & ";" & Rec("NickName").Value & ";" & Rec("Punti").Value & "§"
+
+				Rec.MoveNext
+			Loop
+			Rec.Close
+
+			Ritorno &= "|"
+
+			sql = "SELECT A.idUtente, B.NickName, A.Squadra, A.Punti As Punti FROM SquadreRandom As A " &
+				"Left Join Utenti B On A.idAnno = B.idAnno And A.idUtente = B.idUtente " &
+				"Where A.idAnno = " & idAnno & " And A.idConcorso = " & idConcorso & " " &
+				"Group By A.idUtente, B.NickName"
+			Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+			If TypeOf (Rec) Is String Then
+				Ritorno = Rec
+			Else
+				Do Until Rec.Eof
+					Ritorno &= Rec("idUtente").Value & ";" & Rec("NickName").Value & ";" & SistemaStringaPerRitorno(Rec("Squadra").Value) & ";" & Rec("Punti").Value & "§"
+
+					Rec.MoveNext
+				Loop
+				Rec.Close
+
+			End If
+		End If
+
+		Return Ritorno
+	End Function
 End Class

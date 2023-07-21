@@ -360,18 +360,29 @@ Module mdlGenerale
 				Dim x As Integer = CInt(Quante * Rnd())
 				If x = 0 Then x = Quante
 
-				Sql = "Delete From PartiteJolly Where idAnno=" & idAnno & " And idConcorso=" & idConcorso
-				Ritorno = Conn.EsegueSql(Mp, Sql, Connessione, False)
-				If Not Ritorno.Contains(StringaErrore) Then
-					Sql = "Insert Into PartiteJolly Values (" &
-						" " & idAnno & ", " &
-						" " & idConcorso & ", " &
-						" " & x & " " &
-						")"
-					Ritorno = Conn.EsegueSql(Mp, Sql, Connessione, False)
-					If Ritorno.Contains(StringaErrore) Then
+				Sql = "Select * From PartiteJolly Where idAnno=" & idAnno & " And idConcorso=" & idConcorso
+				Rec = CreaRecordset(Mp, Conn, Sql, Connessione)
+				If TypeOf (Rec) Is String Then
+					Ritorno = Rec
+				Else
+					If Rec.Eof Then
+						Sql = "Insert Into PartiteJolly Values (" &
+							" " & idAnno & ", " &
+							" " & idConcorso & ", " &
+							" " & x & " " &
+							")"
+						Ritorno = Conn.EsegueSql(Mp, Sql, Connessione, False)
+						If Ritorno.Contains(StringaErrore) Then
+						End If
+					Else
+						Rec.Close
 					End If
 				End If
+
+				'Sql = "Delete From PartiteJolly Where idAnno=" & idAnno & " And idConcorso=" & idConcorso
+				'Ritorno = Conn.EsegueSql(Mp, Sql, Connessione, False)
+				'If Not Ritorno.Contains(StringaErrore) Then
+				'End If
 			End If
 		End If
 
@@ -421,12 +432,13 @@ Module mdlGenerale
 						Loop
 						Rec.Close
 
-						Dim Quante As Integer = Squadre.Count ' - 1
+						Dim Quante As Integer = Squadre.Count - 1
 
 						For Each id As Integer In idGiocatore
 							Randomize()
 							Dim x As Integer = CInt(Quante * Rnd())
 							If x = 0 Then x = Quante
+							If x > Quante - 1 Then x = Quante - 1
 							Dim Squadra As String = Squadre.Item(x)
 
 							Sql = "Insert Into SquadreRandom Values (" &
