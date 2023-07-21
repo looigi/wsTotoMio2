@@ -82,7 +82,9 @@ Public Class clsEventi
 
 		Select Case Evento2
 			Case "CREAZIONE"
-				Ritorno = CreazioneCoppa(Mp, idAnno, idGiornata, QuantiGiocatori, Importanza, idCoppa, Conn, Connessione)
+				If QuantiGiocatori > -1 Then
+					Ritorno = CreazioneCoppa(Mp, idAnno, idGiornata, QuantiGiocatori, Importanza, idCoppa, Conn, Connessione)
+				End If
 			Case "PARTITA"
 				Ritorno = GiocaPartita(Mp, idAnno, idGiornata, idEvento, Conn, Connessione)
 			Case "SEMIFINALE"

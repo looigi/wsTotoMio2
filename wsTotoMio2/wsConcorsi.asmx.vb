@@ -1,5 +1,6 @@
 ﻿Imports System.ComponentModel
 Imports System.Drawing.Drawing2D
+Imports System.Runtime.CompilerServices
 Imports System.Web.Services
 Imports System.Web.Services.Protocols
 Imports wsTotoMio2.clsRecordset
@@ -69,6 +70,7 @@ Public Class wsConcorsi
 		Dim Ritorno As String = ""
 		Dim idModalita As String = ""
 		Dim Descrizione As String = ""
+		Dim idGiornata As Integer
 
 		Dim sql As String = "Start transaction"
 		Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
@@ -96,7 +98,7 @@ Public Class wsConcorsi
 							If Rec.Eof Then
 								Ritorno = "ERROR: Nessuna giornata rilevata"
 							Else
-								Dim idGiornata As Integer = Rec("idGiornata").Value
+								idgiornata = Rec("idGiornata").Value
 								Rec.Close
 
 								sql = "Select * From Eventi Where InizioGiornata=" & idGiornata
@@ -137,6 +139,10 @@ Public Class wsConcorsi
 						End If
 					End If
 				End If
+			End If
+
+			If Ritorno = "OK" Then
+				GestisceTorneo23(Server.MapPath("."), idAnno, idGiornata, Conn, Connessione)
 			End If
 
 			If Ritorno = "OK" Then
@@ -290,6 +296,7 @@ Public Class wsConcorsi
 		Dim Ritorno As String = ""
 		Dim idModalita As String = ""
 		Dim Descrizione As String = ""
+		Dim idGiornata As Integer
 
 		Dim sql As String = "Start transaction"
 		Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
@@ -318,7 +325,7 @@ Public Class wsConcorsi
 							If Rec.Eof Then
 								Ritorno = "ERROR: Nessuna giornata rilevata"
 							Else
-								Dim idGiornata As Integer = Rec("idGiornata").Value
+								idgiornata = Rec("idGiornata").Value
 								Rec.Close
 
 								sql = "Select A.*, B.Descrizione As Tipologia, C.Descrizione As Torneo, C.QuantiGiocatori, C.Importanza, " &
@@ -382,7 +389,7 @@ Public Class wsConcorsi
 	End Function
 
 	<WebMethod()>
-	Public Function ritornaNomiCoppe() As String
+	Public Function RitornaNomiCoppe() As String
 		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
 		Dim Conn As Object = New clsGestioneDB(TipoServer)
 		Dim Ritorno As String = ""
@@ -407,7 +414,7 @@ Public Class wsConcorsi
 	End Function
 
 	<WebMethod()>
-	Public Function impostaConcorsoPerControllo(idAnno As String) As String
+	Public Function ImpostaConcorsoPerControllo(idAnno As String) As String
 		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
 		Dim Conn As Object = New clsGestioneDB(TipoServer)
 		Dim Ritorno As String = ""
@@ -537,7 +544,7 @@ Public Class wsConcorsi
 	End Function
 
 	<WebMethod()>
-	Public Function controllaConcorso(idAnno As String, idUtente As String, ModalitaConcorso As String) As String
+	Public Function ControllaConcorso(idAnno As String, idUtente As String, ModalitaConcorso As String) As String
 		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
 		Dim Conn As Object = New clsGestioneDB(TipoServer)
 		Dim Ritorno As String = ""
@@ -580,105 +587,111 @@ Public Class wsConcorsi
 						If TypeOf (Rec) Is String Then
 							Ritorno = Rec
 						Else
-							PartitaJolly = Rec("idPartita").Value
+							If Not Rec.Eof Then
+								PartitaJolly = Rec("idPartita").Value
+							Else
+								Ritorno = "ERROR: Nessuna partita jolly rilevata"
+							End If
 							Rec.Close
 						End If
 
-						sql = "Select A.NickName, B.idTipologia, B.Descrizione From Utenti A " &
-							"Left Join UtentiTipologie B On A.idTipologia = B.idTipologia " &
-							"Where idAnno=" & idAnno & " And idUtente=" & idUtente
-						Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
-						If TypeOf (Rec) Is String Then
-							Ritorno = Rec
-						Else
-							If Rec.Eof Then
-								Ritorno = "ERROR: Nessun utente rilevato"
+						If Not Ritorno.Contains("ERROR") Then
+							sql = "Select A.NickName, B.idTipologia, B.Descrizione From Utenti A " &
+								"Left Join UtentiTipologie B On A.idTipologia = B.idTipologia " &
+								"Where idAnno=" & idAnno & " And idUtente=" & idUtente
+							Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+							If TypeOf (Rec) Is String Then
+								Ritorno = Rec
 							Else
-								Dim idTipologia As Integer = Rec("idTipologia").Value
-								Dim NickName As String = Rec("NickName").Value
-								Dim Tipologia As String = Rec("Descrizione").Value
-								Rec.Close
+								If Rec.Eof Then
+									Ritorno = "ERROR: Nessun utente rilevato"
+								Else
+									Dim idTipologia As Integer = Rec("idTipologia").Value
+									Dim NickName As String = Rec("NickName").Value
+									Dim Tipologia As String = Rec("Descrizione").Value
+									Rec.Close
 
-								If idTipologia = 0 Or ModalitaConcorso = "Controllato" Then
-									' Controllo per amministratore
-									sql = "Select * From Utenti Where idAnno=" & idAnno & " And Eliminato='N'"
-									Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
-									If TypeOf (Rec) Is String Then
-										Ritorno = Rec
-									Else
-										If Rec.Eof Then
-											Ritorno = "ERROR: Nessun utente rilevato"
+									If idTipologia = 0 Or ModalitaConcorso = "Controllato" Then
+										' Controllo per amministratore
+										sql = "Select * From Utenti Where idAnno=" & idAnno & " And Eliminato='N'"
+										Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+										If TypeOf (Rec) Is String Then
+											Ritorno = Rec
 										Else
-											Dim idUtenti As New List(Of String)
-											Dim NickNames As New List(Of String)
+											If Rec.Eof Then
+												Ritorno = "ERROR: Nessun utente rilevato"
+											Else
+												Dim idUtenti As New List(Of String)
+												Dim NickNames As New List(Of String)
 
-											Do Until Rec.Eof
-												idUtenti.Add(Rec("idUtente").Value)
-												NickNames.Add(Rec("NickName").Value)
+												Do Until Rec.Eof
+													idUtenti.Add(Rec("idUtente").Value)
+													NickNames.Add(Rec("NickName").Value)
 
-												Rec.MoveNext
-											Loop
-											Rec.Close
+													Rec.MoveNext
+												Loop
+												Rec.Close
 
-											Dim q As Integer = 0
-											For Each id As String In idUtenti
-												Dim NN As String = NickNames.Item(q)
-												q += 1
-												sql = "Select * From Pronostici Where idAnno=" & idAnno & " And idUtente=" & id & " And idConcorso=" & idGiornata & " Order By idPartita"
-												Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
-												If TypeOf (Rec) Is String Then
-													Ritorno = Rec
-												Else
-													If Rec.Eof Then
-														Dim Controllo As String = ControllaPunti(idAnno, id, idGiornata, NN,
+												Dim q As Integer = 0
+												For Each id As String In idUtenti
+													Dim NN As String = NickNames.Item(q)
+													q += 1
+													sql = "Select * From Pronostici Where idAnno=" & idAnno & " And idUtente=" & id & " And idConcorso=" & idGiornata & " Order By idPartita"
+													Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+													If TypeOf (Rec) Is String Then
+														Ritorno = Rec
+													Else
+														If Rec.Eof Then
+															Dim Controllo As String = ControllaPunti(idAnno, id, idGiornata, NN,
 																								 Partite, New List(Of String), Conn, Connessione, Server.MapPath("."),
 																								 ModalitaConcorso, PartitaJolly)
-														Ritorno &= Controllo & "%"
-													Else
-														Dim Pronostici As New List(Of String)
+															Ritorno &= Controllo & "%"
+														Else
+															Dim Pronostici As New List(Of String)
 
-														Do Until Rec.Eof
-															Pronostici.Add(Rec("idPartita").Value & ";" & Rec("Pronostico").Value & ";" & Rec("Segno").Value)
+															Do Until Rec.Eof
+																Pronostici.Add(Rec("idPartita").Value & ";" & Rec("Pronostico").Value & ";" & Rec("Segno").Value)
 
-															Rec.MoveNext
-														Loop
-														Rec.Close
+																Rec.MoveNext
+															Loop
+															Rec.Close
 
-														Dim Controllo As String = ControllaPunti(idAnno, id, idGiornata, NN,
+															Dim Controllo As String = ControllaPunti(idAnno, id, idGiornata, NN,
 																								 Partite, Pronostici, Conn, Connessione, Server.MapPath("."),
 																								 ModalitaConcorso, PartitaJolly)
-														Ritorno &= Controllo & "%"
+															Ritorno &= Controllo & "%"
+														End If
 													End If
-												End If
-											Next
+												Next
+											End If
 										End If
-									End If
-								Else
-									' Controllo per utente
-									sql = "Select * From Pronostici Where idAnno=" & idAnno & " And idUtente=" & idUtente & " And idConcorso=" & idGiornata & " Order By idPartita"
-									Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
-									If TypeOf (Rec) Is String Then
-										Ritorno = Rec
 									Else
-										If Rec.Eof Then
-											Dim Controllo As String = ControllaPunti(idAnno, idUtente, idGiornata, NickName,
+										' Controllo per utente
+										sql = "Select * From Pronostici Where idAnno=" & idAnno & " And idUtente=" & idUtente & " And idConcorso=" & idGiornata & " Order By idPartita"
+										Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+										If TypeOf (Rec) Is String Then
+											Ritorno = Rec
+										Else
+											If Rec.Eof Then
+												Dim Controllo As String = ControllaPunti(idAnno, idUtente, idGiornata, NickName,
 																					Partite, New List(Of String), Conn, Connessione, Server.MapPath("."),
 																					ModalitaConcorso, PartitaJolly)
-											Ritorno &= Controllo & "%"
-										Else
-											Dim Pronostici As New List(Of String)
+												Ritorno &= Controllo & "%"
+											Else
+												Dim Pronostici As New List(Of String)
 
-											Do Until Rec.Eof
-												Pronostici.Add(Rec("idPartita").Value & ";" & Rec("Pronostico").Value & ";" & Rec("Segno").Value)
+												Do Until Rec.Eof
+													Pronostici.Add(Rec("idPartita").Value & ";" & Rec("Pronostico").Value & ";" & Rec("Segno").Value)
 
-												Rec.MoveNext
-											Loop
-											Rec.Close
+													Rec.MoveNext
+												Loop
+												Rec.Close
 
-											Dim Controllo As String = ControllaPunti(idAnno, idUtente, idGiornata, NickName,
+												Dim Controllo As String = ControllaPunti(idAnno, idUtente, idGiornata, NickName,
 																					 Partite, Pronostici, Conn, Connessione, Server.MapPath("."),
 																					 ModalitaConcorso, PartitaJolly)
-											Ritorno &= Controllo & "%"
+												Ritorno &= Controllo & "%"
+											End If
 										End If
 									End If
 								End If
@@ -689,49 +702,156 @@ Public Class wsConcorsi
 			End If
 		End If
 
+		If Not Ritorno.Contains("ERROR") Then
+			' Controlla squadre random
+			sql = "Select * From SquadreRandom Where idAnno=" & idAnno & " And idConcorso=" & idGiornata
+			Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+			If TypeOf (Rec) Is String Then
+				Ritorno = Rec
+			Else
+				If Rec.Eof Then
+				Else
+					Do Until Rec.Eof
+						Dim idUtente23 As Integer = Rec("idUtente").Value
+						sql = "Select * From Concorsi Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And (Prima='" & SistemaStringaPerDB(Rec("Squadra").Value) & "' Or Seconda='" & SistemaStringaPerDB(Rec("Squadra").Value) & "')"
+						Dim Rec2 As Object = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+						If TypeOf (Rec2) Is String Then
+							Ritorno = Rec2
+						Else
+							Dim Punti As Integer = 0
+							Dim Casa As Boolean = True
+							If Rec("Squadra").Value = Rec2("Seconda").Value Then
+								Casa = False
+							End If
+							Dim Risultato As String = Rec2("Risultato").Value
+							Dim Segno As String = Rec2("Segno").Value
+							Dim idPartita As Integer = Rec2("idPartita").Value
+							Rec2.Close
+
+							sql = "Select * From Pronostici Where idAnno=" & idAnno & " And idUtente=" & idUtente23 & " And idConcorso=" & idGiornata & " And idPartita=" & idPartita
+							Rec2 = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+							If TypeOf (Rec2) Is String Then
+								Ritorno = Rec2
+							Else
+								If Not Rec2.Eof Then
+									Dim Pronostico As String = Rec2("Pronostico").Value
+									Dim SegnPron As String = Rec2("Segno").Value
+									Rec2.Close
+
+									If Risultato = Pronostico Then
+										Punti += 7
+									End If
+									If Segno = SegnPron Then
+										Punti += 5
+									End If
+
+									Dim r() As String = Risultato.Split("-")
+									Dim p() As String = Pronostico.Split("-")
+
+									Dim r1 As Integer = r(0)
+									Dim r2 As Integer = r(1)
+
+									Dim p1 As Integer = p(0)
+									Dim p2 As Integer = p(1)
+
+									If r1 = p1 Or r2 = p2 Then
+										Punti += 3
+									End If
+									If Math.Abs(r1 - r2) = Math.Abs(p1 - p2) Then
+										Punti += 1
+									End If
+									If Math.Abs(r1 + r2) = Math.Abs(p1 + p2) Then
+										Punti += 1
+									End If
+
+									If Not Casa Then
+										Punti *= 1.75
+										Punti = CInt(Punti)
+									End If
+
+									sql = "Update SquadreRandom Set Punti=" & Punti & " Where " &
+										"idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente=" & idUtente23
+									Dim Ritorno2 As String = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+
+									' Ritorno &= idUtente23 & ";" & Punti & "§"
+								End If
+							End If
+						End If
+
+						Rec.MoveNext
+					Loop
+					Rec.CLose
+				End If
+			End If
+		End If
+
 		' 1;28|1;Pippa;Pippetta;1-2;2;1-1;X;3§%
 		' IdUtente;PuntiTotali|idPartita;Squadra1;Squadra2;Risultato;Segno;Pronostico;PronosticoSegno;PuntiPartita;Jolly§%
+		' idUtente23;Punti§
 
-		' Aggiorna primi ultimi
-		Dim Classifica As String = RitornaClassificaGenerale(Server.MapPath("."), idAnno, idGiornata, Conn, Connessione, True)
-		If Classifica <> "" Then
-			Dim c() As String = Classifica.Split("§")
-			Dim PrimaRiga() As String = c(0).Split(";")
-			Dim idUltimo As Integer = PrimaRiga(0)
-			Dim UltimaRiga() As String = c(c.Count - 2).Split(";")
-			Dim idPrimo As Integer = UltimaRiga(0)
-			Dim Ritorno2 As String = "OK"
+		If Not Ritorno.Contains("ERROR") Then
+			' Aggiorna primi ultimi
+			Dim Classifica As String = RitornaClassificaGenerale(Server.MapPath("."), idAnno, idGiornata, Conn, Connessione, True)
+			If Classifica <> "" Then
+				Dim c() As String = Classifica.Split("§")
+				Dim PrimaRiga() As String = c(0).Split(";")
+				Dim idUltimo As Integer = PrimaRiga(0)
+				Dim UltimaRiga() As String = c(c.Count - 2).Split(";")
+				Dim idPrimo As Integer = UltimaRiga(0)
+				Dim Ritorno2 As String = "OK"
 
-			sql = "Update RisultatiAltro Set Vittorie = 0, Ultimo = 0 Where idAnno=" & idAnno & " And idConcorso=" & idGiornata
-			Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+				sql = "Update RisultatiAltro Set Vittorie = 0, Ultimo = 0 Where idAnno=" & idAnno & " And idConcorso=" & idGiornata
+				Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 
-			sql = "Select * From RisultatiAltro Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente=" & idPrimo
-			Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
-			If TypeOf (Rec) Is String Then
-				Ritorno2 = Rec
-			Else
-				If Rec.Eof Then
-					sql = "Insert Into RisultatiAltro Values (" & idAnno & ", " & idGiornata & ", " & idPrimo & ", 1, 0, 0)"
-					Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+				sql = "Select * From RisultatiAltro Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente=" & idPrimo
+				Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+				If TypeOf (Rec) Is String Then
+					Ritorno2 = Rec
 				Else
-					sql = "Update RisultatiAltro Set Vittorie = 1 Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente = " & idPrimo
-					Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+					If Rec.Eof Then
+						sql = "Insert Into RisultatiAltro Values (" & idAnno & ", " & idGiornata & ", " & idPrimo & ", 1, 0, 0)"
+						Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+					Else
+						sql = "Update RisultatiAltro Set Vittorie = 1 Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente = " & idPrimo
+						Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+					End If
+				End If
+
+				sql = "Select * From RisultatiAltro Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente=" & idUltimo
+				Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+				If TypeOf (Rec) Is String Then
+					Ritorno2 = Rec
+				Else
+					If Rec.Eof Then
+						sql = "Insert Into RisultatiAltro Values (" & idAnno & ", " & idGiornata & ", " & idUltimo & ", 0, 1, 0)"
+						Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+					Else
+						sql = "Update RisultatiAltro Set Ultimo = 1 Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente = " & idUltimo
+						Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+					End If
 				End If
 			End If
+		End If
 
-			sql = "Select * From RisultatiAltro Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente=" & idUltimo
-			Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
-			If TypeOf (Rec) Is String Then
-				Ritorno2 = Rec
-			Else
-				If Rec.Eof Then
-					sql = "Insert Into RisultatiAltro Values (" & idAnno & ", " & idGiornata & ", " & idUltimo & ", 0, 1, 0)"
-					Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
-				Else
-					sql = "Update RisultatiAltro Set Ultimo = 1 Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente = " & idUltimo
-					Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
-				End If
-			End If
+		Return Ritorno
+	End Function
+
+	<WebMethod()>
+	Public Function RitornaSquadre23(idAnno As String, idConcorso As String) As String
+		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
+		Dim Conn As Object = New clsGestioneDB(TipoServer)
+		Dim Ritorno As String = ""
+		Dim sql As String = "Select * From SquadreRandom Where idAnno=" & idAnno & " And idConcorso=" & idConcorso
+		Dim Rec As Object = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+		If TypeOf (Rec) Is String Then
+			Ritorno = Rec
+		Else
+			Do Until Rec.Eof
+				Ritorno &= Rec("idUtente").Value & ";" & Rec("Punti").Value & ";" & SistemaStringaPerRitorno(Rec("Squadra").Value) & "§"
+
+				Rec.MoveNext
+			Loop
+			Rec.Close
 		End If
 
 		Return Ritorno

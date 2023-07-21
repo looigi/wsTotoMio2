@@ -294,6 +294,12 @@ Public Class wsTotoMIO2
 												Ritorno = Conn.EsegueSql(Server.MapPath("."), Sql, Connessione, False)
 												If Not Ritorno.Contains(StringaErrore) Then
 
+													Sql = "Delete From SquadreRandom Where idAnno=" & idAnno
+													Ritorno = Conn.EsegueSql(Server.MapPath("."), Sql, Connessione, False)
+													If Not Ritorno.Contains(StringaErrore) Then
+
+													End If
+
 												End If
 											End If
 										End If

@@ -378,4 +378,75 @@ Module mdlGenerale
 		Return Ritorno
 	End Function
 
+	Public Function GestisceTorneo23(Mp As String, idAnno As Integer, idConcorso As Integer, Conn As Object, Connessione As String) As String
+		Dim Ritorno As String = ""
+		Dim Sql As String = "Delete From SquadreRandom Where idAnno=" & idAnno & " And idConcorso=" & idConcorso
+		Ritorno = Conn.EsegueSql(Mp, Sql, Connessione, False)
+		If Ritorno.Contains(StringaErrore) Then
+			Return Ritorno
+		End If
+
+		Sql = "Select* From Concorsi Where idAnno=" & idAnno & " And idConcorso=" & idConcorso
+		Dim Rec As Object = CreaRecordset(Mp, Conn, Sql, Connessione)
+		If TypeOf (Rec) Is String Then
+			Ritorno = Rec
+		Else
+			If Rec.Eof Then
+				'Ritorno = "ERROR: Nessun concorso rilevato"
+			Else
+				Dim Squadre As New List(Of String)
+
+				Do Until Rec.eof
+					Squadre.Add(Rec("Prima").Value)
+					Squadre.Add(Rec("Seconda").Value)
+
+					Rec.MoveNext
+				Loop
+				Rec.Close
+
+				Sql = "Select * From Utenti Where idAnno=" & idAnno & " And Eliminato='N'"
+				Rec = CreaRecordset(Mp, Conn, Sql, Connessione)
+				If TypeOf (Rec) Is String Then
+					Ritorno = Rec
+				Else
+					If Rec.Eof Then
+						'Ritorno = "ERROR: Nessun concorso rilevato"
+					Else
+						Dim idGiocatore As New List(Of Integer)
+
+						Do Until Rec.Eof
+							idGiocatore.Add(Rec("idUtente").Value)
+
+							Rec.MoveNext
+						Loop
+						Rec.Close
+
+						Dim Quante As Integer = Squadre.Count ' - 1
+
+						For Each id As Integer In idGiocatore
+							Randomize()
+							Dim x As Integer = CInt(Quante * Rnd())
+							If x = 0 Then x = Quante
+							Dim Squadra As String = Squadre.Item(x)
+
+							Sql = "Insert Into SquadreRandom Values (" &
+								" " & idAnno & ", " &
+								" " & idConcorso & ", " &
+								" " & id & ", " &
+								"'" & SistemaStringaPerDB(squadra) & "', " &
+								"0 " &
+								")"
+							Ritorno = Conn.EsegueSql(Mp, Sql, Connessione, False)
+							If Ritorno.Contains(StringaErrore) Then
+								Exit For
+							End If
+						Next
+					End If
+				End If
+			End If
+		End If
+
+		Return Ritorno
+	End Function
+
 End Module
