@@ -81,6 +81,7 @@
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Web" />
     <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Web.Services" />
@@ -129,6 +130,7 @@
     </Compile>
     <Compile Include="Classi\GestioneDB.vb" />
     <Compile Include="Classi\GestioneFilesDirectory.vb" />
+    <Compile Include="Classi\GestioneImmagini.vb" />
     <Compile Include="Classi\mail.vb" />
     <Compile Include="Classi\mdlGenerale.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />

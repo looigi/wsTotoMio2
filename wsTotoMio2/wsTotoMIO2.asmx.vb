@@ -1,6 +1,7 @@
 ﻿Imports System.ComponentModel
 Imports System.Diagnostics.Eventing.Reader
 Imports System.Runtime.InteropServices
+Imports System.Security.Permissions
 Imports System.Web.Services
 Imports System.Web.Services.Protocols
 Imports ADODB
@@ -519,6 +520,10 @@ Public Class wsTotoMIO2
 		Dim Conn As Object = New clsGestioneDB(TipoServer)
 		Dim Ritorno As String = ""
 		Dim sql As String = ""
+		Dim NomiSquadre() As String = {"Lazio", "Roma", "Juventus", "Torino", "Milan", "Inter", "Napoli", "Sampdoria", "Genoa", "Acireale", "Afragolese",
+			"Castelverde", "Real Madrid", "Tiburtino III", "Padova", "Parma", "Palermo", "Cerebrolesi", "Ignobili", "Fetenti", "Sgarrupati", "Smutandati",
+			"Tedeschi", "Svizzeri", "Babbioni", "Gabibbi", "Bounty", "Davidini", "Angeliconi", "Micaeleschi", "Testoni", "Arsenal", "Ravenna",
+			"Reggiana", "Reggina", "Atalanta", "Bari", "Cesena", "Cagliari", "Ternana"}
 
 		Dim Quanti As Integer = 10
 
@@ -542,6 +547,9 @@ Public Class wsTotoMIO2
 					Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 					If Ritorno.Contains(StringaErrore) Then
 						Exit For
+					Else
+						Dim gi As New GestioneImmagini
+						gi.CreaAvatar(Server.MapPath("."), idAnno, i + 1, "Utente " & i, "Nome", "Cognome")
 					End If
 				Next
 
@@ -563,10 +571,8 @@ Public Class wsTotoMIO2
 							If Not Ritorno.Contains(StringaErrore) Then
 								For i = 1 To 38
 									For k = 1 To 10
-										Randomize()
-										Dim Ris1 As Integer = CInt(Int((4 * Rnd())))
-										Randomize()
-										Dim Ris2 As Integer = CInt(Int((4 * Rnd())))
+										Dim Ris1 As Integer = GetRandom(0, 4)
+										Dim Ris2 As Integer = GetRandom(0, 4)
 										Dim Risultato As String = Ris1 & "-" & Ris2
 										Dim Segno As String = ""
 										If Ris1 > Ris2 Then
@@ -578,12 +584,16 @@ Public Class wsTotoMIO2
 												Segno = "X"
 											End If
 										End If
+										Dim x As Integer = GetRandom(0, NomiSquadre.Count - 1)
+										Dim Casa As String = NomiSquadre(x)
+										x = GetRandom(0, NomiSquadre.Count - 1)
+										Dim Fuori As String = NomiSquadre(x)
 										sql = "Insert Into Concorsi Values (" &
 											" " & idAnno & ", " &
 											" " & i & ", " &
 											" " & k & ", " &
-											"'Squadra Casa " & k & "', " &
-											"'Squadra Fuori " & k & "', " &
+											"'" & Casa & "', " &
+											"'" & Fuori & "', " &
 											"'" & Risultato & "', " &
 											"'" & Segno & "' " &
 											")"
@@ -612,10 +622,8 @@ Public Class wsTotoMIO2
 									For i = 1 To 38
 										For z = 1 To QuantiGiocatori
 											For k = 1 To 10
-												Randomize()
-												Dim Ris1 As Integer = CInt(Int((4 * Rnd())))
-												Randomize()
-												Dim Ris2 As Integer = CInt(Int((4 * Rnd())))
+												Dim Ris1 As Integer = GetRandom(0, 4)
+												Dim Ris2 As Integer = GetRandom(0, 4)
 												Dim Risultato As String = Ris1 & "-" & Ris2
 												Dim Segno As String = ""
 												If Ris1 > Ris2 Then
@@ -675,4 +683,12 @@ Public Class wsTotoMIO2
 
 		Return Ritorno
 	End Function
+
+	<WebMethod()>
+	Public Function TestCreazioneImmagine() As String
+		Dim gi As New GestioneImmagini
+		gi.CreaAvatar(Server.MapPath("."), 1, 1, "Catadiottro", "Pippeto", "Polpetti")
+		Return "OK"
+	End Function
+
 End Class

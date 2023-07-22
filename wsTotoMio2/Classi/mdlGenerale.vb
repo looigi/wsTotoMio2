@@ -154,8 +154,9 @@ Module mdlGenerale
 		Dim RisultatoFuoriTot As Integer = 0
 		Dim SommaGoal As Integer = 0
 		Dim DifferenzaGoal As Integer = 0
-		Dim Jolly As Integer = 0
+		Dim Jolly2 As Integer = 0
 
+		Jolly2 = 0
 		For Each Partita As String In Partite
 			'Partite.Add(Rec("idPartita").Value & ";" & SistemaStringaPerRitorno(Rec("Prima").Value) & ";" &
 			'							SistemaStringaPerRitorno(Rec("Seconda").Value) & ";" &
@@ -180,7 +181,7 @@ Module mdlGenerale
 			Dim DifferenzaGoalPartita As Integer = 0
 
 			For Each Pronostico As String In Pronostici
-				Jolly = 0
+				Dim Jolly As Integer = 0
 				'Pronostici.Add(Rec("idPartita").Value & ";" & Rec("Risultato").Value & ";" & Rec("Segno").Value)
 				Dim Campi() As String = Pronostico.Split(";")
 				Dim idPartita As Integer = Campi(0)
@@ -260,6 +261,8 @@ Module mdlGenerale
 					Ritorno &= Punti & ";" & Jolly & "§"
 
 					PuntiTotali += Punti
+
+					Jolly2 += Jolly
 				End If
 			Next
 
@@ -284,10 +287,10 @@ Module mdlGenerale
 					Ritorno = Rec
 				Else
 					If Rec.Eof Then
-						Sql = "Insert Into RisultatiAltro Values (" & idAnno & ", " & idConcorso & ", " & idUtente & ", 0, 0, " & Jolly & ")"
+						Sql = "Insert Into RisultatiAltro Values (" & idAnno & ", " & idConcorso & ", " & idUtente & ", 0, 0, " & Jolly2 & ")"
 						Ritorno2 = Conn.EsegueSql(MP, Sql, Connessione, False)
 					Else
-						Sql = "Update RisultatiAltro Set Jolly = " & Jolly & " Where idAnno" & idAnno & " And idConcorso=" & idConcorso & " And idUtente=" & idUtente
+						Sql = "Update RisultatiAltro Set Jolly = " & Jolly2 & " Where idAnno=" & idAnno & " And idConcorso=" & idConcorso & " And idUtente=" & idUtente
 						Ritorno2 = Conn.EsegueSql(MP, Sql, Connessione, False)
 					End If
 				End If
@@ -343,6 +346,14 @@ Module mdlGenerale
 		Return Ritorno
 	End Function
 
+	Public Function GetRandom(ByVal Min As Integer, ByVal Max As Integer) As Integer
+		' by making Generator static, we preserve the same instance '
+		' (i.e., do not create new instances with the same seed over and over) '
+		' between calls '
+		Static Generator As System.Random = New System.Random()
+		Return Generator.Next(Min, Max)
+	End Function
+
 	Public Function CreaPartitaJolly(Mp As String, idAnno As Integer, idConcorso As Integer, Conn As Object, Connessione As String) As String
 		Dim Ritorno As String = ""
 		Dim Sql As String = "Select Coalesce(Count(*),0) From Concorsi Where idAnno=" & idAnno & " And idConcorso=" & idConcorso
@@ -356,9 +367,7 @@ Module mdlGenerale
 				Dim Quante As Integer = Rec(0).Value
 				Rec.Close
 
-				Randomize()
-				Dim x As Integer = CInt(Quante * Rnd())
-				If x = 0 Then x = Quante
+				Dim x As Integer = GetRandom(1, Quante)
 
 				Sql = "Select * From PartiteJolly Where idAnno=" & idAnno & " And idConcorso=" & idConcorso
 				Rec = CreaRecordset(Mp, Conn, Sql, Connessione)
@@ -435,10 +444,7 @@ Module mdlGenerale
 						Dim Quante As Integer = Squadre.Count - 1
 
 						For Each id As Integer In idGiocatore
-							Randomize()
-							Dim x As Integer = CInt(Quante * Rnd())
-							If x = 0 Then x = Quante
-							If x > Quante - 1 Then x = Quante - 1
+							Dim x As Integer = GetRandom(1, Quante)
 							Dim Squadra As String = Squadre.Item(x)
 
 							Sql = "Insert Into SquadreRandom Values (" &

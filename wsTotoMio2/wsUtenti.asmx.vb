@@ -58,6 +58,9 @@ Public Class wsUtenti
 						Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 						If Not Ritorno.Contains(StringaErrore) Then
 							Ritorno = idUtente
+
+							Dim gi As New GestioneImmagini
+							gi.CreaAvatar(Server.MapPath("."), idAnno, idUtente, NickName, Nome, Cognome)
 						End If
 					End If
 				End If

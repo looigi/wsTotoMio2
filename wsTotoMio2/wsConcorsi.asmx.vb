@@ -579,6 +579,10 @@ Public Class wsConcorsi
 				idGiornata = Rec("idGiornata").Value
 				Rec.Close
 
+				sql = "Update RisultatiAltro Set Vittorie = 0, Ultimo = 0 Where idAnno=" & idAnno & " And idConcorso=" & idGiornata
+				Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+				Ritorno = ""
+
 				sql = "Select * From Concorsi Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " Order By idPartita"
 				Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
 				If TypeOf (Rec) Is String Then
@@ -817,9 +821,6 @@ Public Class wsConcorsi
 				Dim UltimaRiga() As String = c(c.Count - 2).Split(";")
 				Dim idPrimo As Integer = UltimaRiga(0)
 				Dim Ritorno2 As String = "OK"
-
-				sql = "Update RisultatiAltro Set Vittorie = 0, Ultimo = 0 Where idAnno=" & idAnno & " And idConcorso=" & idGiornata
-				Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 
 				sql = "Select * From RisultatiAltro Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente=" & idPrimo
 				Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
