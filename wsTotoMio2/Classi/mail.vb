@@ -4,7 +4,7 @@ Imports System.Net.Mime
 Imports System.Timers
 
 Public Class mail
-	Public Function SendEmail(Destinatario As String, ByVal oggetto As String, ByVal newBody As String, ByVal Allegato() As String) As String
+	Public Function SendEmail(Mp As String, Destinatario As String, ByVal oggetto As String, ByVal newBody As String, ByVal Allegato() As String) As String
 		Dim Ritorno As String = "*"
 		Dim s As New strutturaMail
 		s.Destinatario = Destinatario
@@ -12,8 +12,8 @@ Public Class mail
 		s.newBody = newBody
 		s.Allegato = Allegato
 
-		pathMail = HttpContext.Current.Server.MapPath(".") & "\Logs\"
-		path1 = HttpContext.Current.Server.MapPath(".") & "\"
+		pathMail = Mp & "/Logs/"
+		path1 = Mp & "/"
 
 		listaMails.Add(s)
 

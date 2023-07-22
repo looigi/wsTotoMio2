@@ -61,6 +61,13 @@ Public Class wsUtenti
 
 							Dim gi As New GestioneImmagini
 							gi.CreaAvatar(Server.MapPath("."), idAnno, idUtente, NickName, Nome, Cognome)
+
+							Dim Testo As String = "Nuovo utente registrato:<br /><br /><style=""font-weight: bold;"">" & NickName & "</style><br />" &
+								"<style=""font-weight: bold;"">" & Nome & " " & Cognome & "</style>"
+							Testo &= "<br /><br />Per accedere: <a href=" & IndirizzoSito & """>Click QUI</a>"
+
+							Dim m As New mail
+							m.SendEmail(Server.MapPath("."), Mail, "TotoMIO: Registrazione nuovo utente", Testo, {})
 						End If
 					End If
 				End If

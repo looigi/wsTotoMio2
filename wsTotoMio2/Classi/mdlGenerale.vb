@@ -17,6 +17,7 @@ Module mdlGenerale
 	Public StringaErrore As String = "ERROR: "
 	Public TipoServer As String = "MARIADB"
 	Public CorpoMail As String = ""
+	Public IndirizzoSito As String = "http://looigi.ddns.net:1080/"
 
 	Public Function SistemaStringaPerDB(Stringa As String) As String
 		Dim Ritorno As String = Stringa
@@ -467,4 +468,34 @@ Module mdlGenerale
 		Return Ritorno
 	End Function
 
+	Public Sub InvaMailATutti(Mp As String, idAnno As String, Oggetto As String, Testo As String, Conn As Object, Connessione As String)
+		Dim Ritorno As String = ""
+		Dim Sql As String = "Select * From Utenti Where idAnno=" & idAnno & " And Eliminato = 'N'"
+		Dim Rec As Object = CreaRecordset(Mp, Conn, Sql, Connessione)
+		If TypeOf (Rec) Is String Then
+			Ritorno = Rec
+		Else
+			If Rec.Eof Then
+				Ritorno = ""
+			Else
+				Do Until Rec.Eof
+					If Not Ritorno.Contains(Rec("Mail").Value & ";") Then
+						Ritorno &= Rec("Mail").Value & ";"
+					End If
+
+					Rec.MoveNext
+				Loop
+				Rec.Close
+			End If
+		End If
+
+		If Ritorno <> "" Then
+			Dim m As New mail
+			Dim lm() As String = Ritorno.Split(";")
+			For Each mm As String In lm
+				m.SendEmail(Mp, mm, Oggetto, Testo, {})
+			Next
+		End If
+
+	End Sub
 End Module

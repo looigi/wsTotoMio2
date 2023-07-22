@@ -1,5 +1,6 @@
 ﻿Imports System.ComponentModel
 Imports System.Drawing.Drawing2D
+Imports System.Linq.Expressions
 Imports System.Runtime.CompilerServices
 Imports System.Web.Services
 Imports System.Web.Services.Protocols
@@ -98,14 +99,19 @@ Public Class wsConcorsi
 							If Rec.Eof Then
 								Ritorno = "ERROR: Nessuna giornata rilevata"
 							Else
-								idgiornata = Rec("idGiornata").Value
+								idGiornata = Rec("idGiornata").Value
 								Rec.Close
 
-								sql = "Select * From Eventi Where InizioGiornata=" & idGiornata
+								sql = "Select A.idEvento, Coalesce(B.Descrizione, '') As NomeEvento, Coalesce(C.Descrizione, '') As Tipologia, Coalesce(C.Dettaglio, '') As Dettaglio From Eventi A " &
+									"Left Join EventiNomi B On A.idCoppa = B.idCoppa " &
+									"Left Join EventiTipologie C On A.idTipologia = C.idTipologia " &
+									"Where InizioGiornata=" & idGiornata
 								Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
 								If TypeOf (Rec) Is String Then
 									Ritorno = Rec
 								Else
+									Dim Eventi As String = ""
+
 									sql = "Delete From EventiCalendario Where idAnno=" & idAnno & " And idGiornata=" & idGiornata
 									Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 									If Not Ritorno.Contains("ERROR") Then
@@ -119,6 +125,8 @@ Public Class wsConcorsi
 														Ritorno = Rit
 														Exit Do
 													End If
+
+													Eventi &= Rec("NomeEvento").Value & " " & Rec("Tipologia").Value & " " & Rec("Dettaglio").Value & "<br />"
 												End If
 
 												Rec.MoveNext
@@ -132,6 +140,15 @@ Public Class wsConcorsi
 										Dim Rit As String = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 										If Rit.Contains("ERROR") Then
 											Ritorno = Rit
+										Else
+											Dim Testo As String = ""
+											Testo = "E' stato aperto il concorso TotoMIO numero " & idGiornata & ".<br />"
+											Testo &= "Eventi della giornata:<br /><br />"
+											Testo &= "Partita di campionato<br /><style=""font-weight: bold;"">"
+											Testo &= Eventi
+											Testo &= "</style><br />Chiusura concorso: <style=""font-weight: bold;"">" & Scadenza & "</style><br />"
+											Testo &= "Per partecipare: <a href=" & IndirizzoSito & """>Click QUI</a>"
+											InvaMailATutti(Server.MapPath("."), idAnno, "TotoMIO: Apertura concorso " & idGiornata, Testo, Conn, Connessione)
 										End If
 									End If
 								End If
@@ -232,10 +249,10 @@ Public Class wsConcorsi
 				' CAMPIONATO
 				Dim ev As New clsEventi
 				Dim Classifica As List(Of clsEventi.StrutturaGiocatore) = ev.PrendeGiocatori(Server.MapPath("."), idAnno, 38, Conn, Connessione)
-				Ritorno &= "Campione di TotoMIO;" & Classifica.Item(0).NickName & "§"
-				Ritorno &= "Vice Campione;" & Classifica.Item(1).NickName & "§"
-				Ritorno &= "Terzo;" & Classifica.Item(2).NickName & "§"
-				Ritorno &= "Cucchiarella;" & Classifica.Item(Classifica.Count - 1).NickName & "§"
+				Ritorno &= "Campione di TotoMIO;" & Classifica.Item(0).idUtente & ";" & Classifica.Item(0).NickName & "§"
+				Ritorno &= "Vice Campione;" & Classifica.Item(0).idUtente & ";" & Classifica.Item(1).NickName & "§"
+				Ritorno &= "Terzo;" & Classifica.Item(0).idUtente & ";" & Classifica.Item(2).NickName & "§"
+				Ritorno &= "Cucchiarella;" & Classifica.Item(0).idUtente & ";" & Classifica.Item(Classifica.Count - 1).NickName & "§"
 
 				' COPPE
 				Dim Conta As Integer = 0
@@ -258,12 +275,12 @@ Public Class wsConcorsi
 								'Ritorno = "ERROR: Nessuna finale rilevata"
 							Else
 								If Rec("idVincente").Value = -99 Or Rec("idVincente").Value = -1 Then
-									Ritorno &= Descrizione.Item(Conta) & ";Non giocata finale§"
+									Ritorno &= Descrizione.Item(Conta) & ";-1;Non giocata finale§"
 								Else
 									If Rec("idVincente").Value = 1 Then
-										Ritorno &= Descrizione.Item(Conta) & ";" & Rec("Giocatore1").Value & "§"
+										Ritorno &= Descrizione.Item(Conta) & ";" & Rec("idVincente").Value & ";" & Rec("Giocatore1").Value & "§"
 									Else
-										Ritorno &= Descrizione.Item(Conta) & ";" & Rec("Giocatore2").Value & "§"
+										Ritorno &= Descrizione.Item(Conta) & ";" & Rec("idVincente").Value & ";" & Rec("Giocatore2").Value & "§"
 									End If
 								End If
 								Rec.Close
@@ -275,9 +292,9 @@ Public Class wsConcorsi
 						If Not ClassificaTorneo.Contains("ERROR") Then
 							Dim r() As String = ClassificaTorneo.Split(";")
 
-							Ritorno &= Descrizione.Item(Conta) & ";" & r(1) & "§"
+							Ritorno &= Descrizione.Item(Conta) & ";" & r(0) & ";" & r(1) & "§"
 						Else
-							Ritorno &= Descrizione.Item(Conta) & ";Non ancora creata§"
+							Ritorno &= Descrizione.Item(Conta) & ";-1;Non ancora creata§"
 						End If
 					End If
 
@@ -297,7 +314,7 @@ Public Class wsConcorsi
 					If Rec.Eof Then
 						' Ritorno = "ERROR: Nessuna coppa rilevata"
 					Else
-						Ritorno &= "23 Aiutame Te;" & Rec("NickName").Value & "§"
+						Ritorno &= "23 Aiutame Te;" & Rec("idUtente").Value & ";" & Rec("NickName").Value & "§"
 						Rec.Close
 					End If
 				End If
@@ -343,7 +360,7 @@ Public Class wsConcorsi
 							If Rec.Eof Then
 								Ritorno = "ERROR: Nessuna giornata rilevata"
 							Else
-								idgiornata = Rec("idGiornata").Value
+								idGiornata = Rec("idGiornata").Value
 								Rec.Close
 
 								sql = "Select A.*, B.Descrizione As Tipologia, C.Descrizione As Torneo, C.QuantiGiocatori, C.Importanza, " &
@@ -373,6 +390,157 @@ Public Class wsConcorsi
 											Rec.MoveNext
 										Loop
 										Rec.CLose
+
+										Dim Risultati As String = ""
+
+										sql = "Select A.*, B.NickName, C.Jolly From Risultati A " &
+											"Left Join Utenti B On A.idUtente = B.idUtente " &
+											"Left Join RisultatiAltro C On A.idAnno = C.idAnno And A.idUtente = C.idUtente And A.idConcorso = C.idConcorso " &
+											"Where A.idAnno=" & idAnno & " And A.idConcorso=" & idGiornata
+										Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+										If TypeOf (Rec) Is String Then
+											'Ritorno = Rec
+										Else
+											Risultati = "Risultati Campionato<br /><table style=""width: 100%; border: 1px solid #999;"">"
+											Risultati &= "<tr style=""border-bottom: 1px solid #999"">"
+											Risultati &= "<th>Utente</th>"
+											Risultati &= "<th>Punti</th>"
+											Risultati &= "<th>Segni Presi</th>"
+											Risultati &= "<th>Ris. Esatti</th>"
+											Risultati &= "<th>Ris. Casa</th>"
+											Risultati &= "<th>Ris.Fuori</th>"
+											Risultati &= "<th>Somma Goal</th>"
+											Risultati &= "<th>Diff. Goal</th>"
+											Risultati &= "<th>Jolly</th>"
+											Risultati &= "</tr>"
+											Do Until Rec.Eof
+												Risultati &= "<tr style=""border-bottom: 1px solid #999"">"
+												Risultati &= "<td>" & Rec("NickName").Value & "</td>"
+												Risultati &= "<td style=""text-align: right"">" & Rec("Punti").Value & "</td>"
+												Risultati &= "<td style=""text-align: right"">" & Rec("SegniPresi").Value & "</td>"
+												Risultati &= "<td style=""text-align: right"">" & Rec("RisultatiEsatti").Value & "</td>"
+												Risultati &= "<td style=""text-align: right"">" & Rec("RisultatiCasaTot").Value & "</td>"
+												Risultati &= "<td style=""text-align: right"">" & Rec("RisultatiFuoriTot").Value & "</td>"
+												Risultati &= "<td style=""text-align: right"">" & Rec("SommeGoal").Value & "</td>"
+												Risultati &= "<td style=""text-align: right"">" & Rec("DifferenzeGoal").Value & "</td>"
+												Risultati &= "<td style=""text-align: right"">" & Rec("Jolly").Value & "</td>"
+												Risultati &= "<tr>"
+
+												Rec.MoveNext
+											Loop
+											Risultati &= " </table>"
+											Rec.Close
+										End If
+
+										'sql = "Select A.*, B.NickName, C.Jolly From Risultati A " &
+										'	"Left Join Utenti B On A.idUtente = B.idUtente " &
+										'	"Left Join RisultatiAltro C On A.idAnno = C.idAnno And A.idUtente = C.idUtente And A.idConcorso = C.idConcorso " &
+										'	"Where A.idAnno=" & idAnno & " And A.idConcorso=" & idGiornata
+										sql = "Select C.idCoppa, C.Descrizione As NomeCoppa, D.Descrizione As Tipologia FROM EventiPartite A " &
+											"Left Join Eventi B On A.idEvento = B.idEvento " &
+											"Left Join EventiNomi C On B.idCoppa = C.idCoppa " &
+											"Left Join EventiTipologie D On B.idTipologia = D.idTipologia " &
+											"Where idAnno = " & idAnno & " And idGiornataVirtuale = " & idGiornata & " And D.Descrizione <> 'Creazione' " &
+											"Group By C.idCoppa, C.Descrizione, D.Descrizione"
+										Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+										If TypeOf (Rec) Is String Then
+											'Ritorno = Rec
+										Else
+											Dim idCoppe As New List(Of Integer)
+											Dim Torneo As New List(Of String)
+
+											Do Until Rec.Eof
+												idCoppe.Add(Rec("idCoppa").Value)
+												Torneo.Add(Rec("NomeCoppa").Value)
+
+												Rec.MoveNext
+											Loop
+											Rec.Close
+
+											Risultati &= " <br /><br />"
+											Dim n As Integer = 0
+											For Each id As Integer In idCoppe
+												Risultati &= "Torneo: " & Torneo.Item(n) & " <br />"
+												Risultati &= "<table style=""width: 100%; border: 1px solid #999;"">"
+												Risultati &= "<tr style=""border-bottom: 1px solid #999"">"
+												Risultati &= "<th>Casa</th>"
+												Risultati &= "<th>Fuori</th>"
+												Risultati &= "<th>Risultato 1</th>"
+												Risultati &= "<th>Risultato 2</th>"
+												Risultati &= "<th>Vincente</th>"
+												Risultati &= "</tr>"
+												sql = "Select A.*, B.NickName As Casa, C.NickName As Fuori FROM EventiPartite As A " &
+													"Left Join Utenti As B On A.idAnno = B.idAnno And A.idGiocatore1 = B.idUtente " &
+													"Left Join Utenti As C On A.idAnno = C.idAnno And A.idGiocatore2 = C.idUtente " &
+													"Where A.idAnno = " & idAnno & " And A.idGiornataVirtuale = " & idGiornata & " And " &
+													"A.idEvento In (Select idEvento From Eventi As E Where idCoppa = " & id & " And A.idGiornata = E.InizioGiornata) " &
+													"Order By idPartita"
+												Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+												If TypeOf (Rec) Is String Then
+													'Ritorno = Rec
+												Else
+													Do Until Rec.Eof
+														Risultati &= "<tr style=""border-bottom: 1px solid #999"">"
+														Risultati &= "<td>" & Rec("Casa").Value & "</td>"
+														Risultati &= "<td>" & Rec("Fuori").Value & "</td>"
+														Risultati &= "<td>" & Rec("Risultato1").Value & "</td>"
+														Risultati &= "<td>" & Rec("Risultato2").Value & "</td>"
+														If Rec("idVincente").Value = "1" Then
+															Risultati &= "<td>" & Rec("Casa").Value & "</td>"
+														Else
+															If Rec("idVincente").Value = "2" Then
+																Risultati &= "<td>" & Rec("Casa").Value & "</td>"
+															Else
+																If Rec("idVincente").Value = "-1" Then
+																Else
+																	Risultati &= "<td>Pareggio</td>"
+																End If
+															End If
+														End If
+														Risultati &= "</tr>"
+
+														Rec.MoveNext
+													Loop
+													Rec.Close
+												End If
+												Risultati &= "</table><br /><br />"
+												n += 1
+											Next
+										End If
+
+										sql = "Select * From SquadreRandom A " &
+											"Left Join Utenti B On A.idAnno = B.idAnno And A.idUtente = B.idUtente " &
+											"Where A.idAnno=" & idAnno & " And A.idConcorso=" & idGiornata
+										Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+										If TypeOf (Rec) Is String Then
+											'Ritorno = Rec
+										Else
+											Risultati &= " <br />"
+											Risultati &= "23 Aiutame Te<br />"
+											Risultati &= "<table style=""width: 100%; border: 1px solid #999;"">"
+											Risultati &= "<tr style=""border-bottom: 1px solid #999"">"
+											Risultati &= "<th>Utente</th>"
+											Risultati &= "<th>Squadra</th>"
+											Risultati &= "<th>Punti</th>"
+											Risultati &= "</tr>"
+											Do Until Rec.Eof
+												Risultati &= "<tr style=""border-bottom: 1px solid #999"">"
+												Risultati &= "<td>" & Rec("NickName").Value & "</td>"
+												Risultati &= "<td>" & Rec("Squadra").Value & "</td>"
+												Risultati &= "<td style=""tect-align: right;"">" & Rec("Punti").Value & "</td>"
+												Risultati &= "</tr>"
+
+												Rec.MoveNext
+											Loop
+											Rec.Close
+											Risultati &= "</table><br />"
+										End If
+
+										Dim Testo As String = ""
+										Testo = "E' stato controllato il concorso TotoMIO numero " & idGiornata & ".<br />"
+										Testo &= "<br />" & Risultati & "<br />"
+										Testo &= "Per entrare nel sito e vedere il resto: <a href=" & IndirizzoSito & """>Click QUI</a>"
+										InvaMailATutti(Server.MapPath("."), idAnno, "TotoMIO: Controllo concorso " & idGiornata, Testo, Conn, Connessione)
 									End If
 								End If
 							End If
@@ -448,10 +616,48 @@ Public Class wsConcorsi
 				Dim Descrizione As String = Rec("Descrizione").Value
 				Rec.Close
 
-				sql = "Update Globale Set idModalitaConcorso=" & idModalita & ", Scadenza='' Where idAnno=" & idAnno
-				Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
-				If Not Ritorno.Contains("ERROR") Then
-					Ritorno = idModalita & ";" & Descrizione
+				sql = "Select * From Globale Where idAnno=" & idAnno
+				Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+				If TypeOf (Rec) Is String Then
+					Ritorno = Rec
+				Else
+					If Rec.Eof Then
+						Ritorno = "ERROR: problemi nella lettura della giornata"
+					Else
+						Dim idGiornata As String = Rec("idGiornata").Value
+						Rec.Close
+
+						sql = "Update Globale Set idModalitaConcorso=" & idModalita & ", Scadenza='' Where idAnno=" & idAnno
+						Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+						If Not Ritorno.Contains("ERROR") Then
+							Ritorno = idModalita & ";" & Descrizione
+
+							Dim Assenti As String = ""
+
+							sql = "SELECT Distinct idUtente, NickName FROM Utenti A " &
+								"Where idAnno = " & idAnno & " And idUtente Not In (Select idUtente From Pronostici Where idAnno = " & idAnno & " And idConcorso = " & idGiornata & ")"
+							Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+							If TypeOf (Rec) Is String Then
+								'Ritorno = Rec
+							Else
+								Do Until Rec.Eof
+									Assenti &= Rec("NickName").Value & " <br />"
+
+									Rec.MoveNext
+								Loop
+								Rec.Close
+							End If
+
+							Dim Testo As String = ""
+							Testo = "E' stato chiuso il concorso TotoMIO numero " & idGiornata & ".<br />"
+							Testo &= "Non sarà più possibile giocare la schedina<br /><br />"
+							If Assenti <> "" Then
+								Testo &= "Non adempienti:<br /><br />" & Assenti & " <br /><br />"
+							End If
+							Testo &= "Per entrare nel sito: <a href=" & IndirizzoSito & """>Click QUI</a>"
+							InvaMailATutti(Server.MapPath("."), idAnno, "TotoMIO: Chiusura concorso " & idGiornata, Testo, Conn, Connessione)
+						End If
+					End If
 				End If
 			End If
 		End If

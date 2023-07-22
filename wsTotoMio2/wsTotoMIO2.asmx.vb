@@ -47,7 +47,7 @@ Public Class wsTotoMIO2
 		Dim Ritorno As String = "*"
 
 		Dim m As New mail()
-		m.SendEmail("looigi@gmail.com", "Prova invio mail", "Prova prova prova", Nothing)
+		m.SendEmail(Server.MapPath("."), "looigi@gmail.com", "Prova invio mail", "Prova prova prova", Nothing)
 
 		Return Ritorno
 	End Function

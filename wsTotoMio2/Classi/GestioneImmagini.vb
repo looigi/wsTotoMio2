@@ -1333,7 +1333,7 @@ Public Class GestioneImmagini
 		gr.DrawString(PrimaLetteraNome,
 			  New Font("Verdana", 50),
 			  New SolidBrush(Color.Black),
-			  -5, 10)
+			  0, 10)
 		gr.DrawString(PrimaLetteraCognome,
 			  New Font("Verdana", 50),
 			  New SolidBrush(Color.Black),
