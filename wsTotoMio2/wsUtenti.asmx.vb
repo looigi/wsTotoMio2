@@ -235,6 +235,58 @@ Public Class wsUtenti
 			End If
 
 			If Ritorno = "OK" Then
+				Dim Risultati As String = ""
+
+				sql = "SELECT * FROM Pronostici As A " &
+					"Left Join Concorsi B On A.idAnno = B.idAnno And A.idConcorso = B.idConcorso And A.idPartita = B.idPartita " &
+					"Where A.idConcorso = " & idConcorso & " And A.idAnno = " & idAnno & " And A.idUtente =  " & idUtente & " " &
+					"Order By A.idPartita"
+				Dim Rec As Object = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+				If TypeOf (Rec) Is String Then
+					'Ritorno = Rec
+				Else
+					Risultati &= "<tr style=""border-bottom: 1px solid #999"">"
+					Risultati &= "<th>N°</th>"
+					Risultati &= "<th>Casa</th>"
+					Risultati &= "<th>Fuori</th>"
+					Risultati &= "<th>Pronostico</th>"
+					Risultati &= "<th>Segno</th>"
+					Risultati &= "</tr>"
+					Do Until Rec.Eof
+						Risultati &= "<tr style=""border-bottom: 1px solid #999"">"
+						Risultati &= "<td>" & Rec("idPartita").Value & "</td>"
+						Risultati &= "<td>" & Rec("Prima").Value & "</td>"
+						Risultati &= "<td>" & Rec("Seconda").Value & "</td>"
+						Risultati &= "<td style=""text-align: center"">" & Rec("Pronostico").Value & "</td>"
+						Risultati &= "<td style=""text-align: center"">" & Rec("Segno").Value & "</td>"
+						Risultati &= "</tr>"
+						Rec.MoveNext
+					Loop
+					Rec.Close
+					Risultati &= "</table><br />"
+				End If
+
+				Dim EMail As String = ""
+
+				sql = "Select * From Utenti Where idAnno=" & idAnno & " And idUtente=" & idUtente
+				Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+				If TypeOf (Rec) Is String Then
+					'Ritorno = Rec
+				Else
+					EMail = Rec("Mail").Value
+					Rec.Close
+				End If
+
+				If EMail <> "" Then
+					Dim Testo As String = ""
+					Testo = "E' stata giocata la colonna per il concorso TotoMIO numero " & idConcorso & ".<br />"
+					Testo &= "<br />" & Risultati & "<br />"
+					Testo &= "Per entrare nel sito e vedere il resto: <a href=" & IndirizzoSito & """>Click QUI</a>"
+
+					Dim m As New mail
+					m.SendEmail(Server.MapPath("."), EMail, "TotoMIO: Colonna utente per concorso numero " & idConcorso, Testo, {})
+				End If
+
 				sql = "commit"
 				Dim Rit As String = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 			Else

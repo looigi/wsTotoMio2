@@ -2,6 +2,7 @@
 Imports System.Drawing.Drawing2D
 Imports System.Linq.Expressions
 Imports System.Runtime.CompilerServices
+Imports System.Security.Policy
 Imports System.Web.Services
 Imports System.Web.Services.Protocols
 Imports wsTotoMio2.clsRecordset
@@ -318,6 +319,53 @@ Public Class wsConcorsi
 						Rec.Close
 					End If
 				End If
+
+				Sql = "Select A.idUtente, NickName, Sum(Punti) As Totale From ( " &
+					"Select A.idAnno, A.idUtente, (Sum(A.Punti) + (Sum(SegniPresi) * 7) + (Sum(RisultatiEsatti) * 5) + (Sum(RisultatiCasaTot) * 3) + (Sum(RisultatiFuoriTot) * 3) + " &
+					"(Sum(SommeGoal) * 3) + (Sum(DifferenzeGoal) * 3) + (Sum(Jolly) * 11) + (Sum(C.Punti) * 11)) / Count(*) As Punti " &
+					"From Risultati A " &
+					"Left Join RisultatiAltro B On A.idAnno = B.idAnno And A.idUtente = B.idUtente " &
+					"Left Join SquadreRandom C On A.idAnno = C.idAnno And A.idUtente = C.idUtente " &
+					"Where A.idAnno = " & idAnno & " " &
+					"Group By A.idUtente " &
+					"Union All " &
+					"Select A.idAnno, A.idUtente, (Count(*) * 3) * 5 As Punti From Utenti A " &
+					"Left Join EventiPartite B On A.idAnno = B.idAnno And A.idUtente = B.idGiocatore1 And B.idVincente = 1 " &
+					"Where A.idAnno = " & idAnno & " " &
+					"Group By A.idUtente " &
+					"Union ALL " &
+					"Select A.idAnno, A.idUtente, (Count(*)) * 5 As Punti From Utenti A " &
+					"Left Join EventiPartite B On A.idAnno = B.idAnno And A.idUtente = B.idGiocatore1 And B.idVincente = 0 " &
+					"Where A.idAnno = " & idAnno & " " &
+					"Group By A.idUtente " &
+					"Union All " &
+					"Select A.idAnno, A.idUtente, (Count(*) * 3) * 5 As Punti From Utenti A " &
+					"Left Join EventiPartite B On A.idAnno = B.idAnno And A.idUtente = B.idGiocatore2 And B.idVincente = 2 " &
+					"Where A.idAnno = " & idAnno & " " &
+					"Group By A.idUtente " &
+					"Union ALL " &
+					"Select A.idAnno, A.idUtente, (Count(*)) * 5 As Punti From Utenti A " &
+					"Left Join EventiPartite B On A.idAnno = B.idAnno And A.idUtente = B.idGiocatore2 And B.idVincente = 0 " &
+					"Where A.idAnno = " & idAnno & " " &
+					"Group By A.idUtente " &
+					") As A " &
+					"Left Join Utenti B On A.idAnno = B.idAnno And A.idUtente = B.idUtente " &
+					"Group By A.idAnno, A.idUtente " &
+					"Order By Punti Desc"
+				Rec = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
+				If TypeOf (Rec) Is String Then
+					Ritorno = Rec
+				Else
+					If Rec.Eof Then
+						' Ritorno = "ERROR: Nessuna coppa rilevata"
+					Else
+						Ritorno &= "Campione dei campioni (che non vince niente) con punti media " & Rec("Totale").Value & ";" & Rec("idUtente").Value & ";" & Rec("NickName").Value & "§"
+						Rec.MoveLast
+						Ritorno &= "Pippone dei pipponi (che non perde niente) con punti media " & Rec("Totale").Value & ";" & Rec("idUtente").Value & ";" & Rec("NickName").Value & "§"
+						Rec.Close
+					End If
+				End If
+
 			End If
 		End If
 
@@ -416,14 +464,14 @@ Public Class wsConcorsi
 											Do Until Rec.Eof
 												Risultati &= "<tr style=""border-bottom: 1px solid #999"">"
 												Risultati &= "<td>" & Rec("NickName").Value & "</td>"
-												Risultati &= "<td style=""text-align: right"">" & Rec("Punti").Value & "</td>"
-												Risultati &= "<td style=""text-align: right"">" & Rec("SegniPresi").Value & "</td>"
-												Risultati &= "<td style=""text-align: right"">" & Rec("RisultatiEsatti").Value & "</td>"
-												Risultati &= "<td style=""text-align: right"">" & Rec("RisultatiCasaTot").Value & "</td>"
-												Risultati &= "<td style=""text-align: right"">" & Rec("RisultatiFuoriTot").Value & "</td>"
-												Risultati &= "<td style=""text-align: right"">" & Rec("SommeGoal").Value & "</td>"
-												Risultati &= "<td style=""text-align: right"">" & Rec("DifferenzeGoal").Value & "</td>"
-												Risultati &= "<td style=""text-align: right"">" & Rec("Jolly").Value & "</td>"
+												Risultati &= "<td style=""text-align: center"">" & Rec("Punti").Value & "</td>"
+												Risultati &= "<td style=""text-align: center"">" & Rec("SegniPresi").Value & "</td>"
+												Risultati &= "<td style=""text-align: center"">" & Rec("RisultatiEsatti").Value & "</td>"
+												Risultati &= "<td style=""text-align: center"">" & Rec("RisultatiCasaTot").Value & "</td>"
+												Risultati &= "<td style=""text-align: center"">" & Rec("RisultatiFuoriTot").Value & "</td>"
+												Risultati &= "<td style=""text-align: center"">" & Rec("SommeGoal").Value & "</td>"
+												Risultati &= "<td style=""text-align: center"">" & Rec("DifferenzeGoal").Value & "</td>"
+												Risultati &= "<td style=""text-align: center"">" & Rec("Jolly").Value & "</td>"
 												Risultati &= "<tr>"
 
 												Rec.MoveNext
@@ -527,7 +575,7 @@ Public Class wsConcorsi
 												Risultati &= "<tr style=""border-bottom: 1px solid #999"">"
 												Risultati &= "<td>" & Rec("NickName").Value & "</td>"
 												Risultati &= "<td>" & Rec("Squadra").Value & "</td>"
-												Risultati &= "<td style=""tect-align: right;"">" & Rec("Punti").Value & "</td>"
+												Risultati &= "<td style=""text-align: center;"">" & Rec("Punti").Value & "</td>"
 												Risultati &= "</tr>"
 
 												Rec.MoveNext
