@@ -186,8 +186,8 @@ Public Class clsEventi
 							Dim Segni1 As Integer = Rec("RisCasa1").Value + Rec("RisFuori1").Value
 							Dim Segni2 As Integer = Rec("RisCasa2").Value + Rec("RisFuori2").Value
 
-							Risultato1 = "Casa+Fuori " & Segni1
-							Risultato2 = "Casa+Fuori " & Segni2
+							Risultato1 = "C+F " & Segni1
+							Risultato2 = "C+F " & Segni2
 
 							If Segni1 < Segni2 Then
 								Vincente = 1
@@ -972,7 +972,7 @@ Public Class clsEventi
 				If Not Ritorno.Contains("ERROR") And Not PerChiusura Then
 					' Lista Partite giornata
 					Ritorno &= "|"
-					sql = "SELECT A.*, B.NickName As Casa, C.NickName As Fuori FROM EventiPartite As A " &
+					sql = "SELECT A.*, B.NickName As Casa, C.NickName As Fuori, B.idUtente As idGiocatore1, C.idUtente As idGiocatore2 FROM EventiPartite As A " &
 							"Left Join Utenti As B On A.idAnno = B.idAnno And A.idGiocatore1 = B.idUtente " &
 							"Left Join Utenti As C On A.idAnno = C.idAnno And A.idGiocatore2 = C.idUtente " &
 							"Where A.idAnno = " & idAnno & " And A.idGiornataVirtuale = " & idGiornata & " And " &
@@ -988,7 +988,7 @@ Public Class clsEventi
 							Do Until Rec.Eof
 								Ritorno &= SistemaStringaPerRitorno(Rec("Casa").Value) & ";" & SistemaStringaPerRitorno(Rec("Fuori").Value) & ";" &
 									Rec("idVincente").Value & ";" & SistemaStringaPerRitorno(Rec("Risultato1").Value) & ";" &
-									SistemaStringaPerRitorno(Rec("Risultato2").Value) & "§"
+									SistemaStringaPerRitorno(Rec("Risultato2").Value) & ";" & Rec("idGiocatore1").Value & ";" & Rec("idGiocatore2").Value & "§"
 
 								Rec.MoveNext
 							Loop

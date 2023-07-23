@@ -298,4 +298,30 @@ Public Class wsUtenti
 		Return Ritorno
 	End Function
 
+	<WebMethod()>
+	Public Function CreaImmagineStandard(idAnno As Integer, idUtente As Integer) As String
+		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
+		Dim Conn As Object = New clsGestioneDB(TipoServer)
+		Dim Ritorno As String = ""
+		Dim sql As String = "Select * From Utenti Where idAnno=" & idAnno & " And idUtente=" & idUtente
+		Dim Rec As Object = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+		If TypeOf (Rec) Is String Then
+			Ritorno = Rec
+		Else
+			If Rec.Eof Then
+				Ritorno = "ERROR: Nessun utente rilevato"
+			Else
+				Dim NickName As String = Rec("NickName").Value
+				Dim Cognome As String = Rec("Cognome").Value
+				Dim Nome As String = Rec("Nome").Value
+				Rec.Close
+
+				Dim gi As New GestioneImmagini
+				gi.CreaAvatar(Server.MapPath("."), idAnno, idUtente, NickName, Nome, Cognome)
+				Ritorno = "OK"
+			End If
+		End If
+
+		Return Ritorno
+	End Function
 End Class

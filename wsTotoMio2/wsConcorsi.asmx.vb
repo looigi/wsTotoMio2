@@ -329,22 +329,22 @@ Public Class wsConcorsi
 					"Where A.idAnno = " & idAnno & " " &
 					"Group By A.idUtente " &
 					"Union All " &
-					"Select A.idAnno, A.idUtente, (Count(*) * 3) * 5 As Punti From Utenti A " &
+					"Select A.idAnno, A.idUtente, (Count(*) * 3) * 15 As Punti From Utenti A " &
 					"Left Join EventiPartite B On A.idAnno = B.idAnno And A.idUtente = B.idGiocatore1 And B.idVincente = 1 " &
 					"Where A.idAnno = " & idAnno & " " &
 					"Group By A.idUtente " &
 					"Union ALL " &
-					"Select A.idAnno, A.idUtente, (Count(*)) * 5 As Punti From Utenti A " &
+					"Select A.idAnno, A.idUtente, (Count(*)) * 7 As Punti From Utenti A " &
 					"Left Join EventiPartite B On A.idAnno = B.idAnno And A.idUtente = B.idGiocatore1 And B.idVincente = 0 " &
 					"Where A.idAnno = " & idAnno & " " &
 					"Group By A.idUtente " &
 					"Union All " &
-					"Select A.idAnno, A.idUtente, (Count(*) * 3) * 5 As Punti From Utenti A " &
+					"Select A.idAnno, A.idUtente, (Count(*) * 3) * 15 As Punti From Utenti A " &
 					"Left Join EventiPartite B On A.idAnno = B.idAnno And A.idUtente = B.idGiocatore2 And B.idVincente = 2 " &
 					"Where A.idAnno = " & idAnno & " " &
 					"Group By A.idUtente " &
 					"Union ALL " &
-					"Select A.idAnno, A.idUtente, (Count(*)) * 5 As Punti From Utenti A " &
+					"Select A.idAnno, A.idUtente, (Count(*)) * 7 As Punti From Utenti A " &
 					"Left Join EventiPartite B On A.idAnno = B.idAnno And A.idUtente = B.idGiocatore2 And B.idVincente = 0 " &
 					"Where A.idAnno = " & idAnno & " " &
 					"Group By A.idUtente " &
