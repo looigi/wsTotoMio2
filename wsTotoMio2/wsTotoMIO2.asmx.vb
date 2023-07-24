@@ -298,9 +298,15 @@ Public Class wsTotoMIO2
 													Sql = "Delete From SquadreRandom Where idAnno=" & idAnno
 													Ritorno = Conn.EsegueSql(Server.MapPath("."), Sql, Connessione, False)
 													If Not Ritorno.Contains(StringaErrore) Then
+														If Not Ritorno.Contains(StringaErrore) Then
 
+															Sql = "Delete From PartiteScelte Where idAnno=" & idAnno
+															Ritorno = Conn.EsegueSql(Server.MapPath("."), Sql, Connessione, False)
+															If Not Ritorno.Contains(StringaErrore) Then
+
+															End If
+														End If
 													End If
-
 												End If
 											End If
 										End If
@@ -619,9 +625,11 @@ Public Class wsTotoMIO2
 								sql = "Delete From Pronostici Where idAnno = " & idAnno
 								Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 								If Not Ritorno.Contains(StringaErrore) Then
+									Dim QuantePartite As Integer = 10
+
 									For i = 1 To 38
 										For z = 1 To QuantiGiocatori
-											For k = 1 To 10
+											For k = 1 To QuantePartite
 												Dim Ris1 As Integer = GetRandom(0, 4)
 												Dim Ris2 As Integer = GetRandom(0, 4)
 												Dim Risultato As String = Ris1 & "-" & Ris2
@@ -651,8 +659,22 @@ Public Class wsTotoMIO2
 
 											If Ritorno.Contains(StringaErrore) Then
 												Exit For
+											Else
+												sql = "Delete From PartiteScelte Where idAnno=" & idAnno & " And idConcorso=" & i & " And idUtente=" & z
+												Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+												If Not Ritorno.Contains("ERROR:") Then
+													Dim idPartitaScelta As Integer = GetRandom(1, QuantePartite)
+
+													sql = "Insert Into PartiteScelte Values (" & idAnno & ", " & i & ", " & z & ", " & idPartitaScelta & ")"
+													Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+												Else
+													Exit For
+												End If
 											End If
 										Next z
+										If Ritorno.Contains("ERROR") Then
+											Exit For
+										End If
 									Next i
 								End If
 

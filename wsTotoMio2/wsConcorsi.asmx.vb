@@ -321,8 +321,8 @@ Public Class wsConcorsi
 				End If
 
 				Sql = "Select A.idUtente, NickName, Sum(Punti) As Totale From ( " &
-					"Select A.idAnno, A.idUtente, (Sum(A.Punti) + (Sum(SegniPresi) * 7) + (Sum(RisultatiEsatti) * 5) + (Sum(RisultatiCasaTot) * 3) + (Sum(RisultatiFuoriTot) * 3) + " &
-					"(Sum(SommeGoal) * 3) + (Sum(DifferenzeGoal) * 3) + (Sum(Jolly) * 11) + (Sum(C.Punti) * 11)) / Count(*) As Punti " &
+					"Select A.idAnno, A.idUtente, ((Sum(A.Punti) / Count(*)) + (Sum(SegniPresi) * 7) + (Sum(RisultatiEsatti) * 5) + (Sum(RisultatiCasaTot) * 3) + (Sum(RisultatiFuoriTot) * 3) + " &
+					"(Sum(SommeGoal) * 3) + (Sum(DifferenzeGoal) * 3) + (Sum(Jolly) * 11) + (Sum(C.Punti) * 11) + (Sum(A.PuntiPartitaScelta) * 11)) / Count(*) As Punti " &
 					"From Risultati A " &
 					"Left Join RisultatiAltro B On A.idAnno = B.idAnno And A.idUtente = B.idUtente " &
 					"Left Join SquadreRandom C On A.idAnno = C.idAnno And A.idUtente = C.idUtente " &
@@ -439,7 +439,7 @@ Public Class wsConcorsi
 										Loop
 										Rec.CLose
 
-										Dim Risultati As String = ""
+										Dim TestoRis As String = ""
 
 										sql = "Select A.*, B.NickName, C.Jolly From Risultati A " &
 											"Left Join Utenti B On A.idUtente = B.idUtente " &
@@ -449,34 +449,36 @@ Public Class wsConcorsi
 										If TypeOf (Rec) Is String Then
 											'Ritorno = Rec
 										Else
-											Risultati = "Risultati Campionato<br /><table style=""width: 100%; border: 1px solid #999;"">"
-											Risultati &= "<tr style=""border-bottom: 1px solid #999"">"
-											Risultati &= "<th>Utente</th>"
-											Risultati &= "<th>Punti</th>"
-											Risultati &= "<th>Segni Presi</th>"
-											Risultati &= "<th>Ris. Esatti</th>"
-											Risultati &= "<th>Ris. Casa</th>"
-											Risultati &= "<th>Ris.Fuori</th>"
-											Risultati &= "<th>Somma Goal</th>"
-											Risultati &= "<th>Diff. Goal</th>"
-											Risultati &= "<th>Jolly</th>"
-											Risultati &= "</tr>"
+											TestoRis = "Risultati Campionato<br /><table style=""width: 100%; border: 1px solid #999;"">"
+											TestoRis &= "<tr style=""border-bottom: 1px solid #999"">"
+											TestoRis &= "<th>Utente</th>"
+											TestoRis &= "<th>Punti</th>"
+											TestoRis &= "<th>Segni Presi</th>"
+											TestoRis &= "<th>Ris. Esatti</th>"
+											TestoRis &= "<th>Ris. Casa</th>"
+											TestoRis &= "<th>Ris.Fuori</th>"
+											TestoRis &= "<th>Somma Goal</th>"
+											TestoRis &= "<th>Diff. Goal</th>"
+											TestoRis &= "<th>Jolly</th>"
+											TestoRis &= "<th>P.P.Sc.</th>"
+											TestoRis &= "</tr>"
 											Do Until Rec.Eof
-												Risultati &= "<tr style=""border-bottom: 1px solid #999"">"
-												Risultati &= "<td>" & Rec("NickName").Value & "</td>"
-												Risultati &= "<td style=""text-align: center"">" & Rec("Punti").Value & "</td>"
-												Risultati &= "<td style=""text-align: center"">" & Rec("SegniPresi").Value & "</td>"
-												Risultati &= "<td style=""text-align: center"">" & Rec("RisultatiEsatti").Value & "</td>"
-												Risultati &= "<td style=""text-align: center"">" & Rec("RisultatiCasaTot").Value & "</td>"
-												Risultati &= "<td style=""text-align: center"">" & Rec("RisultatiFuoriTot").Value & "</td>"
-												Risultati &= "<td style=""text-align: center"">" & Rec("SommeGoal").Value & "</td>"
-												Risultati &= "<td style=""text-align: center"">" & Rec("DifferenzeGoal").Value & "</td>"
-												Risultati &= "<td style=""text-align: center"">" & Rec("Jolly").Value & "</td>"
-												Risultati &= "<tr>"
+												TestoRis &= "<tr style=""border-bottom: 1px solid #999"">"
+												TestoRis &= "<td>" & Rec("NickName").Value & "</td>"
+												TestoRis &= "<td style=""text-align: center"">" & Rec("Punti").Value & "</td>"
+												TestoRis &= "<td style=""text-align: center"">" & Rec("SegniPresi").Value & "</td>"
+												TestoRis &= "<td style=""text-align: center"">" & Rec("RisultatiEsatti").Value & "</td>"
+												TestoRis &= "<td style=""text-align: center"">" & Rec("RisultatiCasaTot").Value & "</td>"
+												TestoRis &= "<td style=""text-align: center"">" & Rec("RisultatiFuoriTot").Value & "</td>"
+												TestoRis &= "<td style=""text-align: center"">" & Rec("SommeGoal").Value & "</td>"
+												TestoRis &= "<td style=""text-align: center"">" & Rec("DifferenzeGoal").Value & "</td>"
+												TestoRis &= "<td style=""text-align: center"">" & Rec("Jolly").Value & "</td>"
+												TestoRis &= "<td style=""text-align: center"">" & Rec("PuntiPartitaScelta").Value & "</td>"
+												TestoRis &= "<tr>"
 
 												Rec.MoveNext
 											Loop
-											Risultati &= " </table>"
+											TestoRis &= " </table>"
 											Rec.Close
 										End If
 
@@ -505,18 +507,18 @@ Public Class wsConcorsi
 											Loop
 											Rec.Close
 
-											Risultati &= " <br /><br />"
+											TestoRis &= " <br /><br />"
 											Dim n As Integer = 0
 											For Each id As Integer In idCoppe
-												Risultati &= "Torneo: " & Torneo.Item(n) & " <br />"
-												Risultati &= "<table style=""width: 100%; border: 1px solid #999;"">"
-												Risultati &= "<tr style=""border-bottom: 1px solid #999"">"
-												Risultati &= "<th>Casa</th>"
-												Risultati &= "<th>Fuori</th>"
-												Risultati &= "<th>Risultato 1</th>"
-												Risultati &= "<th>Risultato 2</th>"
-												Risultati &= "<th>Vincente</th>"
-												Risultati &= "</tr>"
+												TestoRis &= "Torneo: " & Torneo.Item(n) & " <br />"
+												TestoRis &= "<table style=""width: 100%; border: 1px solid #999;"">"
+												TestoRis &= "<tr style=""border-bottom: 1px solid #999"">"
+												TestoRis &= "<th>Casa</th>"
+												TestoRis &= "<th>Fuori</th>"
+												TestoRis &= "<th>Risultato 1</th>"
+												TestoRis &= "<th>Risultato 2</th>"
+												TestoRis &= "<th>Vincente</th>"
+												TestoRis &= "</tr>"
 												sql = "Select A.*, B.NickName As Casa, C.NickName As Fuori FROM EventiPartite As A " &
 													"Left Join Utenti As B On A.idAnno = B.idAnno And A.idGiocatore1 = B.idUtente " &
 													"Left Join Utenti As C On A.idAnno = C.idAnno And A.idGiocatore2 = C.idUtente " &
@@ -528,30 +530,30 @@ Public Class wsConcorsi
 													'Ritorno = Rec
 												Else
 													Do Until Rec.Eof
-														Risultati &= "<tr style=""border-bottom: 1px solid #999"">"
-														Risultati &= "<td>" & Rec("Casa").Value & "</td>"
-														Risultati &= "<td>" & Rec("Fuori").Value & "</td>"
-														Risultati &= "<td>" & Rec("Risultato1").Value & "</td>"
-														Risultati &= "<td>" & Rec("Risultato2").Value & "</td>"
+														TestoRis &= "<tr style=""border-bottom: 1px solid #999"">"
+														TestoRis &= "<td>" & Rec("Casa").Value & "</td>"
+														TestoRis &= "<td>" & Rec("Fuori").Value & "</td>"
+														TestoRis &= "<td>" & Rec("Risultato1").Value & "</td>"
+														TestoRis &= "<td>" & Rec("Risultato2").Value & "</td>"
 														If Rec("idVincente").Value = "1" Then
-															Risultati &= "<td>" & Rec("Casa").Value & "</td>"
+															TestoRis &= "<td>" & Rec("Casa").Value & "</td>"
 														Else
 															If Rec("idVincente").Value = "2" Then
-																Risultati &= "<td>" & Rec("Casa").Value & "</td>"
+																TestoRis &= "<td>" & Rec("Casa").Value & "</td>"
 															Else
 																If Rec("idVincente").Value = "-1" Then
 																Else
-																	Risultati &= "<td>Pareggio</td>"
+																	TestoRis &= "<td>Pareggio</td>"
 																End If
 															End If
 														End If
-														Risultati &= "</tr>"
+														TestoRis &= "</tr>"
 
 														Rec.MoveNext
 													Loop
 													Rec.Close
 												End If
-												Risultati &= "</table><br /><br />"
+												TestoRis &= "</table><br /><br />"
 												n += 1
 											Next
 										End If
@@ -563,30 +565,30 @@ Public Class wsConcorsi
 										If TypeOf (Rec) Is String Then
 											'Ritorno = Rec
 										Else
-											Risultati &= " <br />"
-											Risultati &= "23 Aiutame Te<br />"
-											Risultati &= "<table style=""width: 100%; border: 1px solid #999;"">"
-											Risultati &= "<tr style=""border-bottom: 1px solid #999"">"
-											Risultati &= "<th>Utente</th>"
-											Risultati &= "<th>Squadra</th>"
-											Risultati &= "<th>Punti</th>"
-											Risultati &= "</tr>"
+											TestoRis &= " <br />"
+											TestoRis &= "23 Aiutame Te<br />"
+											TestoRis &= "<table style=""width: 100%; border: 1px solid #999;"">"
+											TestoRis &= "<tr style=""border-bottom: 1px solid #999"">"
+											TestoRis &= "<th>Utente</th>"
+											TestoRis &= "<th>Squadra</th>"
+											TestoRis &= "<th>Punti</th>"
+											TestoRis &= "</tr>"
 											Do Until Rec.Eof
-												Risultati &= "<tr style=""border-bottom: 1px solid #999"">"
-												Risultati &= "<td>" & Rec("NickName").Value & "</td>"
-												Risultati &= "<td>" & Rec("Squadra").Value & "</td>"
-												Risultati &= "<td style=""text-align: center;"">" & Rec("Punti").Value & "</td>"
-												Risultati &= "</tr>"
+												TestoRis &= "<tr style=""border-bottom: 1px solid #999"">"
+												TestoRis &= "<td>" & Rec("NickName").Value & "</td>"
+												TestoRis &= "<td>" & Rec("Squadra").Value & "</td>"
+												TestoRis &= "<td style=""text-align: center;"">" & Rec("Punti").Value & "</td>"
+												TestoRis &= "</tr>"
 
 												Rec.MoveNext
 											Loop
 											Rec.Close
-											Risultati &= "</table><br />"
+											TestoRis &= "</table><br />"
 										End If
 
 										Dim Testo As String = ""
 										Testo = "E' stato controllato il concorso TotoMIO numero " & idGiornata & ".<br />"
-										Testo &= "<br />" & Risultati & "<br />"
+										Testo &= "<br />" & TestoRis & "<br />"
 										Testo &= "Per entrare nel sito e vedere il resto: <a href=" & IndirizzoSito & """>Click QUI</a>"
 										InvaMailATutti(Server.MapPath("."), idAnno, "TotoMIO: Controllo concorso " & idGiornata, Testo, Conn, Connessione)
 									End If
@@ -910,6 +912,24 @@ Public Class wsConcorsi
 
 												Dim q As Integer = 0
 												For Each id As String In idUtenti
+													Dim idPartitaScelta As Integer = -1
+
+													sql = "Select Coalesce(idPartita, -1) As idPartita From PartiteScelte Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente=" & id
+													Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+													If TypeOf (Rec) Is String Then
+														Ritorno = Rec
+													Else
+														If Not Rec.Eof Then
+															idPartitaScelta = Rec("idPartita").Value
+														Else
+															idPartitaScelta = GetRandom(1, 10)
+
+															sql = "Insert Into PartiteScelte Values (" & idAnno & ", " & idGiornata & ", " & id & ", " & idPartitaScelta & ")"
+															Dim Ritorno2 As String = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+														End If
+														Rec.Close
+													End If
+
 													Dim NN As String = NickNames.Item(q)
 													q += 1
 													sql = "Select * From Pronostici Where idAnno=" & idAnno & " And idUtente=" & id & " And idConcorso=" & idGiornata & " Order By idPartita"
@@ -920,7 +940,7 @@ Public Class wsConcorsi
 														If Rec.Eof Then
 															Dim Controllo As String = ControllaPunti(idAnno, id, idGiornata, NN,
 																								 Partite, New List(Of String), Conn, Connessione, Server.MapPath("."),
-																								 ModalitaConcorso, PartitaJolly)
+																								 ModalitaConcorso, PartitaJolly, idPartitaScelta)
 															Ritorno &= Controllo & "%"
 														Else
 															Dim Pronostici As New List(Of String)
@@ -934,7 +954,7 @@ Public Class wsConcorsi
 
 															Dim Controllo As String = ControllaPunti(idAnno, id, idGiornata, NN,
 																								 Partite, Pronostici, Conn, Connessione, Server.MapPath("."),
-																								 ModalitaConcorso, PartitaJolly)
+																								 ModalitaConcorso, PartitaJolly, idPartitaScelta)
 															Ritorno &= Controllo & "%"
 														End If
 													End If
@@ -942,6 +962,24 @@ Public Class wsConcorsi
 											End If
 										End If
 									Else
+										Dim idPartitaScelta As Integer = -1
+
+										sql = "Select Coalesce(idPartita, -1) As idPartita From PartiteScelte Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente=" & idUtente
+										Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+										If TypeOf (Rec) Is String Then
+											Ritorno = Rec
+										Else
+											If Not Rec.Eof Then
+												idPartitaScelta = Rec("idPartita").Value
+											Else
+												idPartitaScelta = GetRandom(1, 10)
+
+												sql = "Insert Into PartiteScelte Values (" & idAnno & ", " & idGiornata & ", " & idUtente & ", " & idPartitaScelta & ")"
+												Dim Ritorno2 As String = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+											End If
+											Rec.Close
+										End If
+
 										' Controllo per utente
 										sql = "Select * From Pronostici Where idAnno=" & idAnno & " And idUtente=" & idUtente & " And idConcorso=" & idGiornata & " Order By idPartita"
 										Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
@@ -951,7 +989,7 @@ Public Class wsConcorsi
 											If Rec.Eof Then
 												Dim Controllo As String = ControllaPunti(idAnno, idUtente, idGiornata, NickName,
 																					Partite, New List(Of String), Conn, Connessione, Server.MapPath("."),
-																					ModalitaConcorso, PartitaJolly)
+																					ModalitaConcorso, PartitaJolly, idPartitaScelta)
 												Ritorno &= Controllo & "%"
 											Else
 												Dim Pronostici As New List(Of String)
@@ -965,7 +1003,7 @@ Public Class wsConcorsi
 
 												Dim Controllo As String = ControllaPunti(idAnno, idUtente, idGiornata, NickName,
 																					 Partite, Pronostici, Conn, Connessione, Server.MapPath("."),
-																					 ModalitaConcorso, PartitaJolly)
+																					 ModalitaConcorso, PartitaJolly, idPartitaScelta)
 												Ritorno &= Controllo & "%"
 											End If
 										End If
@@ -1062,7 +1100,7 @@ Public Class wsConcorsi
 		End If
 
 		' 1;28|1;Pippa;Pippetta;1-2;2;1-1;X;3§%
-		' IdUtente;PuntiTotali|idPartita;Squadra1;Squadra2;Risultato;Segno;Pronostico;PronosticoSegno;PuntiPartita;Jolly§%
+		' IdUtente;PuntiTotali|idPartita;Squadra1;Squadra2;Risultato;Segno;Pronostico;PronosticoSegno;PuntiPartita;Jolly;PuntiPartitaScelta§%
 		' idUtente23;Punti§
 
 		If Not Ritorno.Contains("ERROR") Then
@@ -1085,7 +1123,7 @@ Public Class wsConcorsi
 						sql = "Insert Into RisultatiAltro Values (" & idAnno & ", " & idGiornata & ", " & idPrimo & ", 1, 0, 0)"
 						Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 					Else
-						sql = "Update RisultatiAltro Set Vittorie = 1 Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente = " & idPrimo
+						sql = "Update RisultatiAltro Set Ultimo = 1 Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente = " & idPrimo
 						Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 					End If
 				End If
@@ -1099,7 +1137,7 @@ Public Class wsConcorsi
 						sql = "Insert Into RisultatiAltro Values (" & idAnno & ", " & idGiornata & ", " & idUltimo & ", 0, 1, 0)"
 						Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 					Else
-						sql = "Update RisultatiAltro Set Ultimo = 1 Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente = " & idUltimo
+						sql = "Update RisultatiAltro Set Vittorie = 1 Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente = " & idUltimo
 						Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 					End If
 				End If

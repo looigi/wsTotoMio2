@@ -4,7 +4,13 @@ Imports System.Net.Mime
 Imports System.Timers
 
 Public Class mail
+	Private inviaMail As Boolean = False
+
 	Public Function SendEmail(Mp As String, Destinatario As String, ByVal oggetto As String, ByVal newBody As String, ByVal Allegato() As String) As String
+		If Not inviaMail Then
+			Return "*"
+		End If
+
 		Dim Ritorno As String = "*"
 		Dim s As New strutturaMail
 		s.Destinatario = Destinatario

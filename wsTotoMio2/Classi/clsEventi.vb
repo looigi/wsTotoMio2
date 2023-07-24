@@ -13,6 +13,7 @@ Public Class clsEventi
 		Dim SommaGoal As Integer
 		Dim DifferenzaGoal As Integer
 		Dim Giocate As Integer
+		Dim PuntiPartitaScelta As Integer
 	End Structure
 
 	Private Structure StrutturaClassificaTorneo
@@ -571,6 +572,7 @@ Public Class clsEventi
 				s.SommaGoal = Val(Campi(7))
 				s.DifferenzaGoal = Val(Campi(8))
 				s.Giocate = Val(Campi(9))
+				s.PuntiPartitaScelta = Val(Campi(10))
 				Ritorno.Add(s)
 			End If
 		Next
@@ -723,7 +725,7 @@ Public Class clsEventi
 			"E.SegniPresi As SegniPresi1, F.SegniPresi As SegniPresi2, E.RisultatiEsatti As RisEsatti1, F.RisultatiEsatti As RisEsatti2, " &
 			"E.RisultatiCasaTot As RisCasa1, F.RisultatiCasaTot As RisCasa2, E.RisultatiFuoriTot As RisFuori1, F.RisultatiFuoriTot As RisFuori2, " &
 			"E.SommeGoal As SommeGoal1, F.SommeGoal As SommeGoal2, E.DifferenzeGoal As DiffGoal1, F.DifferenzeGoal As DiffGoal2, " &
-			"G.Pronostico As DRisultato1, H.Pronostico As DRisultato2, I.idCoppa " &
+			"G.Pronostico As DRisultato1, H.Pronostico As DRisultato2, I.idCoppa, E.PuntiPartitaScelta As PPScelta1, F.PuntiPartitaScelta As PPScelta2 " &
 			"FROM EventiPartite A " &
 			"Left Join Utenti B On A.idAnno = B.idAnno And A.idGiocatore1 = B.idUtente " &
 			"Left Join Utenti C On A.idAnno = B.idAnno And A.idGiocatore2 = C.idUtente " &
@@ -825,6 +827,22 @@ Public Class clsEventi
 								Vincente = 1
 							Else
 								If Segni1 < Segni2 Then
+									Vincente = 2
+								Else
+									Vincente = 0
+								End If
+							End If
+						Case 6
+							Dim PPS1 As Integer = Rec("PPScelta1").Value
+							Dim PPS2 As Integer = Rec("PPScelta2").Value
+
+							Risultato1 = "PPS " & PPS1
+							Risultato2 = "PPS " & PPS2
+
+							If PPS1 > PPS2 Then
+								Vincente = 1
+							Else
+								If PPS1 < PPS2 Then
 									Vincente = 2
 								Else
 									Vincente = 0

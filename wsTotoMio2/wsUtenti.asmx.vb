@@ -177,12 +177,40 @@ Public Class wsUtenti
 			If Rec.Eof Then
 				Ritorno = "ERROR: Nessun utente rilevato"
 			Else
+				Dim Quante As Integer = 0
+
 				Do Until Rec.Eof
 					Ritorno &= Rec("idPartita").Value & ";" & Rec("Pronostico").Value & ";" & Rec("Segno").Value & "§"
+					Quante += 1
 
 					Rec.MoveNext
 				Loop
 				Rec.Close
+
+				sql = "Select * From PartiteScelte Where idAnno=" & idAnno & " And idConcorso=" & idConcorso & " And idUtente=" & idUtente
+				Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+				If TypeOf (Rec) Is String Then
+					Ritorno = Rec
+				Else
+					Dim idPartitaScelta As Integer = -1
+
+					If Rec.Eof Then
+						sql = "Delete From PartiteScelte Where idAnno=" & idAnno & " And idConcorso=" & idConcorso & " And idUtente=" & idUtente
+						Dim Ritorno2 As String = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+						If Not Ritorno2.Contains("ERROR:") Then
+							idPartitaScelta = GetRandom(1, Quante)
+
+							sql = "Insert Into PartiteScelte Values (" & idAnno & ", " & idConcorso & ", " & idUtente & ", " & idPartitaScelta & ")"
+							Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+							If Not Ritorno2.Contains("ERROR:") Then
+							End If
+						End If
+					Else
+						idPartitaScelta = Rec("idPartita").Value
+					End If
+
+					Ritorno &= "|" & idPartitaScelta
+				End If
 			End If
 		End If
 
@@ -199,7 +227,7 @@ Public Class wsUtenti
 	End Function
 
 	<WebMethod()>
-	Public Function SalvaPronosticoUtente(idAnno As String, idUtente As String, idConcorso As String, Dati As String) As String
+	Public Function SalvaPronosticoUtente(idAnno As String, idUtente As String, idConcorso As String, Dati As String, idPartitaScelta As String) As String
 		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
 		Dim Conn As Object = New clsGestioneDB(TipoServer)
 		Dim Ritorno As String = ""
@@ -232,6 +260,15 @@ Public Class wsUtenti
 						End If
 					End If
 				Next
+
+				If Not Ritorno.Contains("ERROR:") Then
+					sql = "Delete From PartiteScelte Where idAnno=" & idAnno & " And idConcorso=" & idConcorso & " And idUtente=" & idUtente
+					Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+					If Not Ritorno.Contains("ERROR:") Then
+						sql = "Insert Into PartiteScelte Values (" & idAnno & ", " & idConcorso & ", " & idUtente & ", " & idPartitaScelta & ")"
+						Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+					End If
+				End If
 			End If
 
 			If Ritorno = "OK" Then
@@ -264,6 +301,7 @@ Public Class wsUtenti
 					Loop
 					Rec.Close
 					Risultati &= "</table><br />"
+					Risultati &= "Partita scelta: " & idPartitaScelta & "<br />"
 				End If
 
 				Dim EMail As String = ""
