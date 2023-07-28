@@ -6,6 +6,16 @@ Imports System.Timers
 Public Class mail
 	Private inviaMail As Boolean = False
 
+	Public Sub New(Mp As String)
+		If File.Exists(Mp & "/InviaMail.txt") Then
+			Dim gf As New GestioneFilesDirectory
+			Dim Ritorno As String = gf.LeggeFileIntero(Mp & "/InviaMail.txt")
+			If Ritorno.Replace(vbCrLf, "").ToUpper.Trim() = "S" Then
+				inviaMail = True
+			End If
+		End If
+	End Sub
+
 	Public Function SendEmail(Mp As String, Destinatario As String, ByVal oggetto As String, ByVal newBody As String, ByVal Allegato() As String) As String
 		If Not inviaMail Then
 			Return "*"

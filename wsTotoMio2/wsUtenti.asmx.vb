@@ -66,7 +66,7 @@ Public Class wsUtenti
 								"<style=""font-weight: bold;"">" & Nome & " " & Cognome & "</style>"
 							Testo &= "<br /><br />Per accedere: <a href=" & IndirizzoSito & """>Click QUI</a>"
 
-							Dim m As New mail
+							Dim m As New mail(Server.MapPath("."))
 							m.SendEmail(Server.MapPath("."), Mail, "TotoMIO: Registrazione nuovo utente", Testo, {})
 						End If
 					End If
@@ -321,7 +321,7 @@ Public Class wsUtenti
 					Testo &= "<br />" & Risultati & "<br />"
 					Testo &= "Per entrare nel sito e vedere il resto: <a href=" & IndirizzoSito & """>Click QUI</a>"
 
-					Dim m As New mail
+					Dim m As New mail(Server.MapPath("."))
 					m.SendEmail(Server.MapPath("."), EMail, "TotoMIO: Colonna utente per concorso numero " & idConcorso, Testo, {})
 				End If
 

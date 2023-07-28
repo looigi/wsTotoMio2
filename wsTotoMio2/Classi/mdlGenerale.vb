@@ -513,7 +513,7 @@ Module mdlGenerale
 		End If
 
 		If Ritorno <> "" Then
-			Dim m As New mail
+			Dim m As New mail(Mp)
 			Dim lm() As String = Ritorno.Split(";")
 			For Each mm As String In lm
 				m.SendEmail(Mp, mm, Oggetto, Testo, {})
