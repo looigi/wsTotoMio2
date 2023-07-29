@@ -155,10 +155,27 @@ Public Class wsBilancio
 											"" & Movimento & ": <style=""font-weight: bold;"">" & Importo & "</style><br />" &
 											"<style=""font-weight: bold;"">Data: </style>" & Data & "<br />" &
 											"<style=""font-weight: bold;"">Note: </style>" & Note & "<br />"
-										Testo &= "<br /><br />Per accedere: <a href=" & IndirizzoSito & """>Click QUI</a>"
+										Testo &= "<br /><br />Per accedere: <a href=""" & IndirizzoSito & """>Click QUI</a>"
 
 										Dim m As New mail(Server.MapPath("."))
-										m.SendEmail(Server.MapPath("."), Mail, "TotoMIO: Movimento di bilancio", Testo, {})
+
+										Sql = "Select * From Utenti Where idAnno=" & idAnno & " And Eliminato='N' And idTipologia=0"
+										Rec = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
+										If TypeOf (Rec) Is String Then
+											Ritorno = Rec
+										Else
+											Dim Mails As New List(Of String)
+											Mails.Add(Mail)
+											Do Until Rec.Eof
+												Mails.Add(Rec("Mail").Value)
+
+												Rec.MoveNext
+											Loop
+											Rec.Close
+											For Each mm As String In Mails
+												m.SendEmail(Server.MapPath("."), mm, "TotoMIO: Movimento di bilancio", Testo, {})
+											Next
+										End If
 									End If
 								End If
 							End If

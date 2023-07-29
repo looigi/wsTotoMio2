@@ -64,10 +64,27 @@ Public Class wsUtenti
 
 							Dim Testo As String = "Nuovo utente registrato:<br /><br /><style=""font-weight: bold;"">" & NickName & "</style><br />" &
 								"<style=""font-weight: bold;"">" & Nome & " " & Cognome & "</style>"
-							Testo &= "<br /><br />Per accedere: <a href=" & IndirizzoSito & """>Click QUI</a>"
+							Testo &= "<br /><br />Per accedere: <a href=""" & IndirizzoSito & """>Click QUI</a>"
 
 							Dim m As New mail(Server.MapPath("."))
-							m.SendEmail(Server.MapPath("."), Mail, "TotoMIO: Registrazione nuovo utente", Testo, {})
+
+							sql = "Select * From Utenti Where idAnno=" & idAnno & " And Eliminato='N' And idTipologia=0"
+							Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+							If TypeOf (Rec) Is String Then
+								Ritorno = Rec
+							Else
+								Dim Mails As New List(Of String)
+								Mails.Add(Mail)
+								Do Until Rec.Eof
+									Mails.Add(Rec("Mail").Value)
+
+									Rec.MoveNext
+								Loop
+								Rec.Close
+								For Each mm As String In Mails
+									m.SendEmail(Server.MapPath("."), mm, "TotoMIO: Registrazione nuovo utente", Testo, {})
+								Next
+							End If
 						End If
 					End If
 				End If
@@ -305,6 +322,7 @@ Public Class wsUtenti
 				End If
 
 				Dim EMail As String = ""
+				Dim NickName As String = ""
 
 				sql = "Select * From Utenti Where idAnno=" & idAnno & " And idUtente=" & idUtente
 				Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
@@ -312,17 +330,35 @@ Public Class wsUtenti
 					'Ritorno = Rec
 				Else
 					EMail = Rec("Mail").Value
+					NickName = Rec("NickName").Value
 					Rec.Close
 				End If
 
 				If EMail <> "" Then
 					Dim Testo As String = ""
-					Testo = "E' stata giocata la colonna per il concorso TotoMIO numero " & idConcorso & ".<br />"
+					Testo = "E' stata giocata la colonna da " & NickName.ToUpper & " per il concorso TotoMIO numero " & idConcorso & ".<br />"
 					Testo &= "<br />" & Risultati & "<br />"
-					Testo &= "Per entrare nel sito e vedere il resto: <a href=" & IndirizzoSito & """>Click QUI</a>"
+					Testo &= "Per entrare nel sito e vedere il resto: <a href=""" & IndirizzoSito & """>Click QUI</a>"
 
 					Dim m As New mail(Server.MapPath("."))
-					m.SendEmail(Server.MapPath("."), EMail, "TotoMIO: Colonna utente per concorso numero " & idConcorso, Testo, {})
+
+					sql = "Select * From Utenti Where idAnno=" & idAnno & " And Eliminato='N' And idTipologia=0"
+					Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+					If TypeOf (Rec) Is String Then
+						Ritorno = Rec
+					Else
+						Dim Mails As New List(Of String)
+						Mails.Add(EMail)
+						Do Until Rec.Eof
+							Mails.Add(Rec("Mail").Value)
+
+							Rec.MoveNext
+						Loop
+						Rec.Close
+						For Each mm As String In Mails
+							m.SendEmail(Server.MapPath("."), mm, "TotoMIO: Colonna utente per concorso numero " & idConcorso, Testo, {})
+						Next
+					End If
 				End If
 
 				sql = "commit"

@@ -303,7 +303,7 @@ Public Class wsTotoMIO2
 															Sql = "Delete From PartiteScelte Where idAnno=" & idAnno
 															Ritorno = Conn.EsegueSql(Server.MapPath("."), Sql, Connessione, False)
 															If Not Ritorno.Contains(StringaErrore) Then
-
+																Ritorno = CreaEventi()
 															End If
 														End If
 													End If
@@ -692,11 +692,8 @@ Public Class wsTotoMIO2
 			End If
 
 			If Ritorno = "OK" Then
-				Ritorno = CreaEventi()
-				If Ritorno = "OK" Then
-					sql = "commit"
-					Dim Rit As String = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
-				End If
+				sql = "commit"
+				Dim Rit As String = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 			Else
 				sql = "rollback"
 				Dim Rit As String = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)

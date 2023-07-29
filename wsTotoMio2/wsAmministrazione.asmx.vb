@@ -63,7 +63,7 @@ Public Class wsAmministrazione
 					Dim Testo As String = ""
 					Testo = Frase2
 					Testo &= "<br /><br />La scadenza del concorso è " & Scadenza & "<br /><br />"
-					Testo &= "Per entrare nel sito e vedere il resto: <a href=" & IndirizzoSito & """>Click QUI</a>"
+					Testo &= "Per entrare nel sito e vedere il resto: <a href=""" & IndirizzoSito & """>Click QUI</a>"
 
 					Dim m As New mail(Server.MapPath("."))
 					m.SendEmail(Server.MapPath("."), Rec("Mail").Value, "TotoMIO: Reminder concorso " & idConcorso, Testo, Nothing)

@@ -780,10 +780,10 @@ Public Class clsEventi
 								End If
 							End If
 						Case 3
-							Dim Tot1 As Integer = CInt(((Rec("Punti1").Value / 10) + Rec("SegniPresi1").Value + Rec("RisEsatti1").Value +
+							Dim Tot1 As Integer = CInt(((Rec("Punti1").Value / 5) + Rec("SegniPresi1").Value + Rec("RisEsatti1").Value +
 									 Rec("RisCasa1").Value + Rec("RisFuori1").Value + Rec("SommeGoal1").Value +
 									 Rec("DiffGoal1").Value) / 7)
-							Dim Tot2 As Integer = CInt(((Rec("Punti2").Value / 10) + Rec("SegniPresi2").Value + Rec("RisEsatti2").Value +
+							Dim Tot2 As Integer = CInt(((Rec("Punti2").Value / 5) + Rec("SegniPresi2").Value + Rec("RisEsatti2").Value +
 									 Rec("RisCasa2").Value + Rec("RisFuori2").Value + Rec("SommeGoal2").Value +
 									 Rec("DiffGoal2").Value) / 7)
 

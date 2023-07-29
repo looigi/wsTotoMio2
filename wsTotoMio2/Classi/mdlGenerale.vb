@@ -212,10 +212,10 @@ Module mdlGenerale
 
 					If PronosticoCasa = RisultatoCasa And PronosticoFuori = RisultatoFuori Then
 						If idPartita = idPartitaScelta Then
-							PuntiPartitaScelta += 5
+							PuntiPartitaScelta += 8
 						End If
 						If idPartita = PartitaJolly Then
-							Jolly += 5
+							Jolly += 8
 						End If
 						Punti += 10
 						RisultatoEsatto += 1
@@ -227,7 +227,7 @@ Module mdlGenerale
 					Else
 						If PronosticoCasa = RisultatoCasa And PronosticoCasa <> RisultatoFuori Then
 							If idPartita = idPartitaScelta Then
-								PuntiPartitaScelta += 3
+								PuntiPartitaScelta += 4
 							End If
 							If idPartita = PartitaJolly Then
 								Jolly += 2
