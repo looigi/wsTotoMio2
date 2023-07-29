@@ -1,12 +1,13 @@
 ﻿Imports System.ComponentModel
+Imports System.Net
 Imports System.Web.Services
 Imports System.Web.Services.Protocols
 
 ' Per consentire la chiamata di questo servizio Web dallo script utilizzando ASP.NET AJAX, rimuovere il commento dalla riga seguente.
 ' <System.Web.Script.Services.ScriptService()> _
 <System.Web.Services.WebService(Namespace:="http://looBilancioTotoMio.org/")>
-<System.Web.Services.WebServiceBinding(ConformsTo:=WsiProfiles.BasicProfile1_1)> _
-<ToolboxItem(False)> _
+<System.Web.Services.WebServiceBinding(ConformsTo:=WsiProfiles.BasicProfile1_1)>
+<ToolboxItem(False)>
 Public Class wsBilancio
 	Inherits System.Web.Services.WebService
 
@@ -47,7 +48,7 @@ Public Class wsBilancio
 						Do Until Rec.Eof
 							Ritorno &= Rec("idMovimento").Value & ";" & Rec("Descrizione").Value & ";" & Rec("idUtente").Value & ";" &
 								SistemaStringaPerRitorno(Rec("NickName").Value) & ";" & Rec("Importo").Value & ";" &
-								Rec("Data").Value & ";" & SistemaStringaPerRitorno(Rec("Note").Value) & "§"
+								Rec("Data").Value & ";" & SistemaStringaPerRitorno(Rec("Note").Value) & ";" & Rec("Progressivo").Value & "§"
 							Rec.MoveNext
 						Loop
 						Rec.Close
@@ -124,7 +125,8 @@ Public Class wsBilancio
 						" " & idMovimento & ", " &
 						" " & Importo.Replace(",", ".") & ", " &
 						"'" & SistemaStringaPerDB(Data) & "', " &
-						"'" & SistemaStringaPerDB(Note) & "' " &
+						"'" & SistemaStringaPerDB(Note) & "', " &
+						"'N' " &
 						")"
 					Ritorno = Conn.EsegueSql(Server.MapPath("."), Sql, Connessione, False)
 					If Not Ritorno.Contains(StringaErrore) Then
@@ -165,9 +167,14 @@ Public Class wsBilancio
 											Ritorno = Rec
 										Else
 											Dim Mails As New List(Of String)
+											Dim mmm As String = ""
 											Mails.Add(Mail)
+											mmm &= Mail & ";"
 											Do Until Rec.Eof
-												Mails.Add(Rec("Mail").Value)
+												If Not mmm.Contains(Rec("Mail").Value & ";") Then
+													Mails.Add(Rec("Mail").Value)
+													mmm &= Rec("Mail").Value
+												End If
 
 												Rec.MoveNext
 											Loop

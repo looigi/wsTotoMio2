@@ -74,9 +74,14 @@ Public Class wsUtenti
 								Ritorno = Rec
 							Else
 								Dim Mails As New List(Of String)
+								Dim mmm As String = ""
 								Mails.Add(Mail)
+								mmm &= Mail & ";"
 								Do Until Rec.Eof
-									Mails.Add(Rec("Mail").Value)
+									If Not mmm.Contains(Rec("Mail").Value & ";") Then
+										Mails.Add(Rec("Mail").Value)
+										mmm &= Rec("Mail").Value
+									End If
 
 									Rec.MoveNext
 								Loop
@@ -244,6 +249,33 @@ Public Class wsUtenti
 	End Function
 
 	<WebMethod()>
+	Public Function RitornaTuttiGliUtenti(idAnno As String) As String
+		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
+		Dim Conn As Object = New clsGestioneDB(TipoServer)
+		Dim Ritorno As String = ""
+		Dim Sql As String = ""
+
+		Sql = "Select * From Utenti Where idAnno=" & idAnno & " And Eliminato='N' Order By idUtente"
+		Dim Rec As Object = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
+		If TypeOf (Rec) Is String Then
+			Ritorno = Rec
+		Else
+			If Rec.Eof Then
+				Ritorno = "ERROR: nessun movimento rilevato"
+			Else
+				Do Until Rec.Eof
+					Ritorno &= Rec("idUtente").Value & ";" & SistemaStringaPerRitorno(Rec("NickName").Value) & "§"
+
+					Rec.MoveNext
+				Loop
+				Rec.CLose
+			End If
+		End If
+
+		Return Ritorno
+	End Function
+
+	<WebMethod()>
 	Public Function SalvaPronosticoUtente(idAnno As String, idUtente As String, idConcorso As String, Dati As String, idPartitaScelta As String) As String
 		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
 		Dim Conn As Object = New clsGestioneDB(TipoServer)
@@ -348,9 +380,14 @@ Public Class wsUtenti
 						Ritorno = Rec
 					Else
 						Dim Mails As New List(Of String)
+						Dim mmm As String = ""
 						Mails.Add(EMail)
+						mmm &= EMail & ";"
 						Do Until Rec.Eof
-							Mails.Add(Rec("Mail").Value)
+							If Not mmm.Contains(Rec("Mail").Value & ";") Then
+								Mails.Add(Rec("Mail").Value)
+								mmm &= Rec("Mail").Value
+							End If
 
 							Rec.MoveNext
 						Loop
