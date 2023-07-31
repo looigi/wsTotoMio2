@@ -319,7 +319,7 @@ Public Class wsConcorsi
 				Ritorno &= "Campione di TotoMIO;" & Classifica.Item(0).idUtente & ";" & Classifica.Item(0).NickName & ";0§"
 				Ritorno &= "Vice Campione;" & Classifica.Item(1).idUtente & ";" & Classifica.Item(1).NickName & ";999§"
 				Ritorno &= "Terzo;" & Classifica.Item(2).idUtente & ";" & Classifica.Item(2).NickName & ";999§"
-				Ritorno &= "Cucchiarella;" & Classifica.Item(Classifica.Count - 1).idUtente & ";" & Classifica.Item(Classifica.Count - 1).NickName & ";999§"
+				Ritorno &= "Cucchiarella de legno;" & Classifica.Item(Classifica.Count - 1).idUtente & ";" & Classifica.Item(Classifica.Count - 1).NickName & ";999§"
 
 				' COPPE
 				Dim Conta As Integer = 0
@@ -711,6 +711,30 @@ Public Class wsConcorsi
 				Loop
 				Rec.Close
 			End If
+		End If
+
+		Return Ritorno
+	End Function
+
+	<WebMethod()>
+	Public Function RitornaInadempienti(idAnno As String, idGiornata As String) As String
+		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
+		Dim Conn As Object = New clsGestioneDB(TipoServer)
+		Dim Ritorno As String = ""
+		Dim Rec As Object
+
+		Dim sql As String = "SELECT Distinct idUtente, NickName FROM Utenti A " &
+								"Where idAnno = " & idAnno & " And idUtente Not In (Select idUtente From Pronostici Where idAnno = " & idAnno & " And idConcorso = " & idGiornata & ")"
+		Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+		If TypeOf (Rec) Is String Then
+			'Ritorno = Rec
+		Else
+			Do Until Rec.Eof
+				Ritorno &= Rec("NickName").Value & "§"
+
+				Rec.MoveNext
+			Loop
+			Rec.Close
 		End If
 
 		Return Ritorno

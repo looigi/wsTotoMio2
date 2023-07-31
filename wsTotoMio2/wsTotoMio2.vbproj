@@ -116,6 +116,7 @@
     <Content Include="PathDB.txt" />
     <Content Include="Web.config" />
     <Content Include="wsAmministrazione.asmx" />
+    <Content Include="wsChat.asmx" />
     <Content Include="wsAnni.asmx" />
     <Content Include="wsBilancio.asmx" />
     <Content Include="wsConcorsi.asmx" />
@@ -156,6 +157,10 @@
     </Compile>
     <Compile Include="wsAmministrazione.asmx.vb">
       <DependentUpon>wsAmministrazione.asmx</DependentUpon>
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="wsChat.asmx.vb">
+      <DependentUpon>wsChat.asmx</DependentUpon>
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="wsAnni.asmx.vb">
