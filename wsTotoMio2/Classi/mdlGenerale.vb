@@ -38,6 +38,15 @@ Module mdlGenerale
 		Return Ritorno
 	End Function
 
+	Public Function SistemaStringaPerRitorno2(Stringa As String) As String
+		Dim Ritorno As String = Stringa
+
+		Ritorno = Ritorno.Replace("*PV*", ";")
+		Ritorno = Ritorno.Replace("*SS*", "§")
+
+		Return Ritorno
+	End Function
+
 	Public Function ConverteNome(Stringa As String) As String
 		Dim sStringa As String = Stringa
 		sStringa = sStringa.Replace("***AND***", "&")
