@@ -341,7 +341,8 @@ Module mdlGenerale
 		Dim sql As String = "Select * From (" &
 			"SELECT A.idUtente, NickName, Sum(Punti) As Punti, Sum(RisultatiEsatti) As RisultatiEsatti, " &
 			"Sum(RisultatiCasaTot) As RisCasaTot, Sum(RisultatiFuoriTot) As RisFuoriTot, " &
-			"Sum(SegniPresi) As Segni, Sum(SommeGoal) As SommaGoal, Sum(DifferenzeGoal) As DifferenzeGoal, Count(*) As Giocate, " &
+			"Sum(SegniPresi) As Segni, Sum(SommeGoal) As SommaGoal, Sum(DifferenzeGoal) As DifferenzeGoal, " &
+			"(SELECT Count(*) FROM Pronostici Where idUtente = A.idUtente And idPartita = 1 And idConcorso " & Confronto & " A.idConcorso) As Giocate, " &
 			"Coalesce(Sum(C.Vittorie),0) As Vittorie, Coalesce(Sum(C.Ultimo),0) As Ultimo, Coalesce(Sum(C.Jolly), 0) As Jolly, " &
 			"Coalesce(Sum(A.PuntiPartitaScelta), 0) As PuntiPartitaScelta " &
 			"FROM Risultati A Left Join Utenti B On A.idUtente = B.idUtente And A.idAnno = B.idAnno " &
