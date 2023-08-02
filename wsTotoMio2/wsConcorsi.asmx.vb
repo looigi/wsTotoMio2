@@ -374,7 +374,7 @@ Public Class wsConcorsi
 					"Left Join Utenti B On A.idAnno = B.idAnno And A.idUtente = B.idUtente " &
 					"Where A.idAnno = " & idAnno & " " &
 					"Group By A.idUtente, B.NickName " &
-					"Order By 2 Desc "
+					"Order By 3 Desc "
 				Rec = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
 				If TypeOf (Rec) Is String Then
 					Ritorno = Rec
@@ -510,15 +510,39 @@ Public Class wsConcorsi
 
 								Dim TestoRis As String = ""
 
-								sql = "Select A.*, B.NickName, C.Jolly From Risultati A " &
-									"Left Join Utenti B On A.idUtente = B.idUtente " &
-									"Left Join RisultatiAltro C On A.idAnno = C.idAnno And A.idUtente = C.idUtente And A.idConcorso = C.idConcorso " &
-									"Where A.idAnno=" & idAnno & " And A.idConcorso=" & idGiornata
+								sql = "Select * From Pronostici Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " Order By idPartita"
 								Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
 								If TypeOf (Rec) Is String Then
 									'Ritorno = Rec
 								Else
-									TestoRis = "Risultati Campionato<br /><table style=""width: 100%; border: 1px solid #999;"">"
+									TestoRis = "Risultati Concorso<br /><table style=""border: 1px solid #999;"">"
+									TestoRis &= "<tr style=""border-bottom: 1px solid #999"">"
+									TestoRis &= "<th>Casa</th>"
+									TestoRis &= "<th>Fuori</th>"
+									TestoRis &= "<th>Risultato</th>"
+									TestoRis &= "<th>Segno</th>"
+									TestoRis &= "</tr>"
+									Do Until Rec.Eof
+										TestoRis &= "<td>" & Rec("Prima").Value & "</td>"
+										TestoRis &= "<td>" & Rec("Seconda").Value & "</td>"
+										TestoRis &= "<td style=""text-align: center"">" & Rec("Risultato").Value & "</td>"
+										TestoRis &= "<td style=""text-align: center"">" & Rec("Segno").Value & "</td>"
+										TestoRis &= "</tr>"
+										Rec.MoveNext
+									Loop
+									Rec.Close
+									TestoRis &= "</table><br /><br />"
+								End If
+
+								sql = "Select A.*, B.NickName, C.Jolly From Risultati A " &
+									"Left Join Utenti B On A.idUtente = B.idUtente " &
+									"Left Join RisultatiAltro C On A.idAnno = C.idAnno And A.idUtente = C.idUtente And A.idConcorso = C.idConcorso " &
+									"Where A.idAnno=" & idAnno & " And A.idConcorso=" & idGiornata & " Order By A.Punti Desc"
+								Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+								If TypeOf (Rec) Is String Then
+									'Ritorno = Rec
+								Else
+									TestoRis &= "Risultati Campionato<br /><table style=""width: 100%; border: 1px solid #999;"">"
 									TestoRis &= "<tr style=""border-bottom: 1px solid #999"">"
 									TestoRis &= "<th>Utente</th>"
 									TestoRis &= "<th>Punti</th>"
@@ -629,7 +653,7 @@ Public Class wsConcorsi
 
 								sql = "Select * From SquadreRandom A " &
 									"Left Join Utenti B On A.idAnno = B.idAnno And A.idUtente = B.idUtente " &
-									"Where A.idAnno=" & idAnno & " And A.idConcorso=" & idGiornata
+									"Where A.idAnno=" & idAnno & " And A.idConcorso=" & idGiornata & " Order By Punti Desc"
 								Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
 								If TypeOf (Rec) Is String Then
 									'Ritorno = Rec
@@ -717,7 +741,7 @@ Public Class wsConcorsi
 	End Function
 
 	<WebMethod()>
-	Public Function Ritornaassegenti(idAnno As String, idGiornata As String) As String
+	Public Function RitornaInadempienti(idAnno As String, idGiornata As String) As String
 		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
 		Dim Conn As Object = New clsGestioneDB(TipoServer)
 		Dim Ritorno As String = ""

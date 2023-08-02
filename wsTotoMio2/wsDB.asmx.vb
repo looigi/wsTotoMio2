@@ -138,6 +138,8 @@ Public Class wsDB
 						End If
 					End If
 				Next
+
+				Ritorno = QualeBackup
 			End If
 		End If
 
