@@ -50,30 +50,41 @@ Public Class wsChat
 							Dim Mail As String = Rec("Mail").Value
 							Rec.Close
 
-							Dim Datella As String = Format(Now.Day, "00") & "/" & Format(Now.Month, "00") & "/" & Now.Year & " " & Format(Now.Hour, "00") & ":" & Format(Now.Minute, "00") & ":" & Format(Now.Second, "00")
-
-							sql = "Insert Into Chat Values (" &
-								" " & idAnno & ", " &
-								" " & d & ", " &
-								" " & idMittente & ", " &
-								" " & Progressivo & ", " &
-								"'N', " &
-								"'" & SistemaStringaPerDB(Messaggio) & "', " &
-								"'" & datella & "' " &
-								")"
-							Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
-							If Ritorno.Contains(StringaErrore) Then
-								Exit For
+							sql = "Select * From UtentiMails Where idAnno=" & idAnno & " And idUtente=" & d
+							Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+							If TypeOf (Rec) Is String Then
+								Ritorno = Rec
 							Else
-								Dim Testo As String = ""
-								Testo = "Hai ricevuto un nuovo messaggio da parte di " & Mittente & "<br /><br />"
-								Testo &= "Il testo iniziale è:<br />" & Messaggio.Substring(0, 15) & "...<br /><br />"
-								Testo &= "Per entrare nel sito e vedere il resto: <a href=""" & IndirizzoSito & """>Click QUI</a>"
+								Dim Chat As String = Rec("Chat").Value
+								Rec.Close
 
-								Dim m As New mail(Server.MapPath("."))
-								m.SendEmail(Server.MapPath("."), Mail, "TotoMIO: Nuovo messaggio da " & Mittente, Testo, Nothing)
+								Dim Datella As String = Format(Now.Day, "00") & "/" & Format(Now.Month, "00") & "/" & Now.Year & " " & Format(Now.Hour, "00") & ":" & Format(Now.Minute, "00") & ":" & Format(Now.Second, "00")
+
+								sql = "Insert Into Chat Values (" &
+									" " & idAnno & ", " &
+									" " & d & ", " &
+									" " & idMittente & ", " &
+									" " & Progressivo & ", " &
+									"'N', " &
+									"'" & SistemaStringaPerDB(Messaggio) & "', " &
+									"'" & Datella & "' " &
+									")"
+								Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+								If Ritorno.Contains(StringaErrore) Then
+									Exit For
+								Else
+									If Chat = "S" Then
+										Dim Testo As String = ""
+										Testo = "Hai ricevuto un nuovo messaggio da parte di " & Mittente & "<br /><br />"
+										Testo &= "Il testo iniziale è:<br />" & Messaggio.Substring(0, 15) & "...<br /><br />"
+										Testo &= "Per entrare nel sito e vedere il resto: <a href=""" & IndirizzoSito & """>Click QUI</a>"
+
+										Dim m As New mail(Server.MapPath("."))
+										m.SendEmail(Server.MapPath("."), Mail, "TotoMIO: Nuovo messaggio da " & Mittente, Testo, Nothing)
+									End If
+								End If
+								Progressivo += 1
 							End If
-							Progressivo += 1
 						End If
 					End If
 				Next

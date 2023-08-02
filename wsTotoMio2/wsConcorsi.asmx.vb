@@ -149,7 +149,7 @@ Public Class wsConcorsi
 											Testo &= Eventi
 											Testo &= "</style><br />Chiusura concorso: <style=""font-weight: bold;"">" & Scadenza & "</style><br />"
 											Testo &= "Per partecipare: <a href=""" & IndirizzoSito & """>Click QUI</a>"
-											InvaMailATutti(Server.MapPath("."), idAnno, "TotoMIO: Apertura concorso " & idGiornata, Testo, Conn, Connessione)
+											InvaMailATutti(Server.MapPath("."), idAnno, "TotoMIO: Apertura concorso " & idGiornata, Testo, Conn, Connessione, "Apertura")
 										End If
 									End If
 								End If
@@ -683,7 +683,7 @@ Public Class wsConcorsi
 								Testo = "E' stato controllato il concorso TotoMIO numero " & idGiornata & ".<br />"
 								Testo &= "<br />" & TestoRis & "<br />"
 								Testo &= "Per entrare nel sito e vedere il resto: <a href=""" & IndirizzoSito & """>Click QUI</a>"
-								InvaMailATutti(Server.MapPath("."), idAnno, "TotoMIO: Controllo concorso " & idGiornata, Testo, Conn, Connessione)
+								InvaMailATutti(Server.MapPath("."), idAnno, "TotoMIO: Controllo concorso " & idGiornata, Testo, Conn, Connessione, "Controllo")
 							End If
 						End If
 					End If
@@ -840,7 +840,7 @@ Public Class wsConcorsi
 								Testo &= "Squadre assegnate per 23 Aiutame Te:<br />" & Random & "<br /><br />"
 							End If
 							Testo &= "Per entrare nel sito: <a href=""" & IndirizzoSito & """>Click QUI</a>"
-							InvaMailATutti(Server.MapPath("."), idAnno, "TotoMIO: Chiusura concorso " & idGiornata, Testo, Conn, Connessione)
+							InvaMailATutti(Server.MapPath("."), idAnno, "TotoMIO: Chiusura concorso " & idGiornata, Testo, Conn, Connessione, "Chiusura")
 						End If
 					End If
 				End If

@@ -501,9 +501,12 @@ Module mdlGenerale
 		Return Ritorno
 	End Function
 
-	Public Sub InvaMailATutti(Mp As String, idAnno As String, Oggetto As String, Testo As String, Conn As Object, Connessione As String)
+	Public Sub InvaMailATutti(Mp As String, idAnno As String, Oggetto As String, Testo As String, Conn As Object, Connessione As String, Operazione As String)
 		Dim Ritorno As String = ""
 		Dim Sql As String = "Select * From Utenti Where idAnno=" & idAnno & " And Eliminato = 'N'"
+		If Operazione <> "" Then
+			Sql &= " And " & Operazione & "='S'"
+		End If
 		Dim Rec As Object = CreaRecordset(Mp, Conn, Sql, Connessione)
 		If TypeOf (Rec) Is String Then
 			Ritorno = Rec
@@ -512,9 +515,9 @@ Module mdlGenerale
 				Ritorno = ""
 			Else
 				Do Until Rec.Eof
-					If Not Ritorno.Contains(Rec("Mail").Value & ";") Then
-						Ritorno &= Rec("Mail").Value & ";"
-					End If
+					'If Not Ritorno.Contains(Rec("Mail").Value & ";") Then
+					Ritorno &= Rec("Mail").Value & ";"
+					'End If
 
 					Rec.MoveNext
 				Loop

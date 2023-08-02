@@ -57,38 +57,51 @@ Public Class wsUtenti
 							")"
 						Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 						If Not Ritorno.Contains(StringaErrore) Then
-							Ritorno = idUtente
+							sql = "Insert Into UtentiMail Values (" &
+								" " & idAnno & ", " &
+								" " & idUtente & ", " &
+								"'S', " &
+								"'S', " &
+								"'S', " &
+								"'S', " &
+								"'S', " &
+								"'S' " &
+								")"
+							Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+							If Not Ritorno.Contains(StringaErrore) Then
+								Ritorno = idUtente
 
-							Dim gi As New GestioneImmagini
-							gi.CreaAvatar(Server.MapPath("."), idAnno, idUtente, NickName, Nome, Cognome)
+								Dim gi As New GestioneImmagini
+								gi.CreaAvatar(Server.MapPath("."), idAnno, idUtente, NickName, Nome, Cognome)
 
-							Dim Testo As String = "Nuovo utente registrato:<br /><br /><style=""font-weight: bold;"">" & NickName & "</style><br />" &
-								"<style=""font-weight: bold;"">" & Nome & " " & Cognome & "</style>"
-							Testo &= "<br /><br />Per accedere: <a href=""" & IndirizzoSito & """>Click QUI</a>"
+								Dim Testo As String = "Nuovo utente registrato:<br /><br /><style=""font-weight: bold;"">" & NickName & "</style><br />" &
+									"<style=""font-weight: bold;"">" & Nome & " " & Cognome & "</style>"
+								Testo &= "<br /><br />Per accedere: <a href=""" & IndirizzoSito & """>Click QUI</a>"
 
-							Dim m As New mail(Server.MapPath("."))
+								Dim m As New mail(Server.MapPath("."))
 
-							sql = "Select * From Utenti Where idAnno=" & idAnno & " And Eliminato='N' And idTipologia=0"
-							Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
-							If TypeOf (Rec) Is String Then
-								Ritorno = Rec
-							Else
-								Dim Mails As New List(Of String)
-								Dim mmm As String = ""
-								Mails.Add(Mail)
-								mmm &= Mail & ";"
-								Do Until Rec.Eof
-									If Not mmm.Contains(Rec("Mail").Value & ";") Then
-										Mails.Add(Rec("Mail").Value)
-										mmm &= Rec("Mail").Value
-									End If
+								sql = "Select * From Utenti Where idAnno=" & idAnno & " And Eliminato='N' And idTipologia=0"
+								Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+								If TypeOf (Rec) Is String Then
+									Ritorno = Rec
+								Else
+									Dim Mails As New List(Of String)
+									Dim mmm As String = ""
+									Mails.Add(Mail)
+									mmm &= Mail & ";"
+									Do Until Rec.Eof
+										If Not mmm.Contains(Rec("Mail").Value & ";") Then
+											Mails.Add(Rec("Mail").Value)
+											mmm &= Rec("Mail").Value
+										End If
 
-									Rec.MoveNext
-								Loop
-								Rec.Close
-								For Each mm As String In Mails
-									m.SendEmail(Server.MapPath("."), mm, "TotoMIO: Registrazione nuovo utente", Testo, {})
-								Next
+										Rec.MoveNext
+									Loop
+									Rec.Close
+									For Each mm As String In Mails
+										m.SendEmail(Server.MapPath("."), mm, "TotoMIO: Registrazione nuovo utente", Testo, {})
+									Next
+								End If
 							End If
 						End If
 					End If
@@ -356,7 +369,7 @@ Public Class wsUtenti
 				Dim EMail As String = ""
 				Dim NickName As String = ""
 
-				sql = "Select * From Utenti Where idAnno=" & idAnno & " And idUtente=" & idUtente
+				sql = "Select * From Utenti Where idAnno=" & idAnno & " And idUtente=" & idUtente & " And Giocata='S'"
 				Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
 				If TypeOf (Rec) Is String Then
 					'Ritorno = Rec
@@ -374,7 +387,7 @@ Public Class wsUtenti
 
 					Dim m As New mail(Server.MapPath("."))
 
-					sql = "Select * From Utenti Where idAnno=" & idAnno & " And Eliminato='N' And idTipologia=0"
+					sql = "Select * From Utenti Where idAnno=" & idAnno & " And Eliminato='N' And idTipologia=0 And Giocata='S'"
 					Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
 					If TypeOf (Rec) Is String Then
 						Ritorno = Rec
@@ -435,4 +448,47 @@ Public Class wsUtenti
 
 		Return Ritorno
 	End Function
+
+	<WebMethod()>
+	Public Function RitornaUtentiMails(idAnno As String, idUtente As String) As String
+		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
+		Dim Conn As Object = New clsGestioneDB(TipoServer)
+		Dim Ritorno As String = ""
+		Dim Sql As String = "Select * From UtentiMails Where idAnno=" & idAnno & " And idUtente=" & idUtente
+		Dim Rec As Object = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
+		If TypeOf (Rec) Is String Then
+			Ritorno = Rec
+		Else
+			If Rec.Eof Then
+				Ritorno = "ERROR: Nessun utente rilevato"
+			Else
+				Ritorno = Rec("Apertura").Value & ";" & Rec("Reminder").Value & ";" &
+					Rec("Controllo").Value & ";" & Rec("Chiusura").Value & ";" &
+					Rec("Chat").Value & ";" & Rec("Giocata").Value
+				Rec.Close
+			End If
+		End If
+
+		Return Ritorno
+	End Function
+
+	<WebMethod()>
+	Public Function ImpostaUtentiMails(idAnno As String, idUtente As String, Apertura As String, Reminder As String,
+									   Controllo As String, Chiusura As String, Chat As String, Giocata As String) As String
+		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
+		Dim Conn As Object = New clsGestioneDB(TipoServer)
+		Dim Ritorno As String = ""
+		Dim Sql As String = "Update UtentiMails Set " &
+			"Apertura='" & Apertura & "', " &
+			"Reminder='" & Reminder & "', " &
+			"Controllo='" & Controllo & "', " &
+			"Chiusura='" & Chiusura & "', " &
+			"Chat='" & Chat & "', " &
+			"Giocata='" & Giocata & "' " &
+			"Where idAnno=" & idAnno & " And idUtente=" & idUtente
+		Ritorno = Conn.EsegueSql(Server.MapPath("."), Sql, Connessione, False)
+
+		Return Ritorno
+	End Function
+
 End Class

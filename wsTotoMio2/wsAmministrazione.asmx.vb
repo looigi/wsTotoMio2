@@ -49,13 +49,16 @@ Public Class wsAmministrazione
 				"***NOME***, ha detto il mio db di fiducia che non riesce a trovare la tua colonna della settimana... Sei sicuro di averla giocata?",
 				"Uhm... Sento odore di astensionismo... Qualcuno non vuole giocare la schedina della settimana... Tipo ***NOME***",
 				"Daje secco... Ce la puoi fare a giocare la schedina... Su ***NOME*** non ti fare pregare",
-				"***NOME*** fai vincere chi ti sta davanti e butta i soldi che hai puntato.. Non giocare la schedina..."
+				"***NOME*** fai vincere chi ti sta davanti e butta i soldi che hai puntato.. Non giocare la schedina...",
+				"***NOME***!!! SCHEDINA!!!"
 				}
 			Dim x As Integer = GetRandom(0, Frasi.Count - 1)
 			Dim Frase As String = Frasi(x)
 
 			sql = "SELECT Distinct idUtente, NickName, Mail FROM Utenti A " &
-				"Where idAnno = " & idAnno & " And idUtente Not In (Select idUtente From Pronostici Where idAnno = " & idAnno & " And idConcorso = " & idConcorso & ")"
+				"Left Join UtentiMails B On A.idAnno = B.idAnno And A.idUtente=B.idUtente " &
+				"Where idAnno = " & idAnno & " And idUtente Not In (Select idUtente From Pronostici Where idAnno = " & idAnno & " And idConcorso = " & idConcorso & ") " &
+				"And B.Reminder='S'"
 			Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
 			If TypeOf (Rec) Is String Then
 				'Ritorno = Rec
