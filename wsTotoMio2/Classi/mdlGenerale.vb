@@ -18,6 +18,7 @@ Module mdlGenerale
 	Public TipoServer As String = "MARIADB"
 	Public CorpoMail As String = ""
 	Public IndirizzoSito As String = "http://looigi.ddns.net:1080/"
+	Public SceltiPerCreazione As String = ""
 
 	Public Function SistemaStringaPerDB(Stringa As String) As String
 		Dim Ritorno As String = Stringa

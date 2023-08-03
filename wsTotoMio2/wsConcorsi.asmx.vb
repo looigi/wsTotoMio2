@@ -479,6 +479,8 @@ Public Class wsConcorsi
 								idGiornata = Rec("idGiornata").Value
 								Rec.Close
 
+								Dim CreazioneCoppa As String = ""
+
 								sql = "Select A.*, B.Descrizione As Tipologia, C.Descrizione As Torneo, C.QuantiGiocatori, C.Importanza, " &
 									"A.InizioGiornata, C.Descrizione As Torneo, B.Dettaglio " &
 									"From Eventi A " &
@@ -494,12 +496,25 @@ Public Class wsConcorsi
 
 										Do Until Rec.Eof
 											If Rec("idEvento").Value <> 1 Then
+												SceltiPerCreazione = ""
+
 												Ritorno = ev.GestioneEventi(Server.MapPath("."), idAnno, idGiornata, Rec("idEvento").Value,
 																		Rec("QuantiGiocatori").Value, Rec("Importanza").Value,
 																		Rec("InizioGiornata").Value, Rec("Tipologia").Value, Rec("Torneo").Value,
 																		Rec("Dettaglio").Value, Rec("idCoppa").Value, Conn, Connessione)
 												If Ritorno.Contains("ERROR") Then
 													Exit Do
+												Else
+													If SceltiPerCreazione <> "" Then
+														' Creazione coppa
+														CreazioneCoppa &= "Creazione Coppa " & Rec("Torneo").Value & ". Partecipanti:<br /><br />"
+														Dim s() As String = SceltiPerCreazione.Split(";")
+														For Each ss As String In s
+															If ss <> "" Then
+																CreazioneCoppa &= ss & "<br />"
+															End If
+														Next
+													End If
 												End If
 											End If
 
@@ -578,6 +593,9 @@ Public Class wsConcorsi
 									Rec.Close
 								End If
 
+								TestoRis &= " <br /><br />"
+								TestoRis &= CreazioneCoppa
+
 								'sql = "Select A.*, B.NickName, C.Jolly From Risultati A " &
 								'	"Left Join Utenti B On A.idUtente = B.idUtente " &
 								'	"Left Join RisultatiAltro C On A.idAnno = C.idAnno And A.idUtente = C.idUtente And A.idConcorso = C.idConcorso " &
@@ -603,7 +621,6 @@ Public Class wsConcorsi
 									Loop
 									Rec.Close
 
-									TestoRis &= " <br /><br />"
 									Dim n As Integer = 0
 									For Each id As Integer In idCoppe
 										TestoRis &= "Torneo: " & Torneo.Item(n) & " <br />"

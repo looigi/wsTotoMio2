@@ -58,6 +58,18 @@ Public Class wsTotoMIO2
 	End Function
 
 	<WebMethod()>
+	Public Function TesteCreazioneCoppa() As String
+		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
+		Dim Conn As Object = New clsGestioneDB(TipoServer)
+		Dim Ritorno As String = "*"
+
+		Dim c As New clsEventi
+		Ritorno = c.CreazioneCoppa(Server.MapPath("."), 1, 5, 6, 1, 1, Conn, Connessione)
+
+		Return Ritorno
+	End Function
+
+	<WebMethod()>
 	Public Function RitornaDatiGenerali(idAnno As String) As String
 		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
 		Dim Conn As Object = New clsGestioneDB(TipoServer)

@@ -721,11 +721,11 @@ Public Class clsEventi
 
 	Private Function GiocaPartita(Mp As String, idAnno As Integer, idGiornata As Integer, idEvento As Integer, Conn As Object, Connessione As String) As String
 		Dim Ritorno As String = "OK"
-		Dim Sql As String = "SELECT Distinct A.*, B.NickName As Casa, C.NickName As Fuori, J.Descrizione As Torneo, E.Punti As Punti1, F.Punti As Punti2, " &
-			"E.SegniPresi As SegniPresi1, F.SegniPresi As SegniPresi2, E.RisultatiEsatti As RisEsatti1, F.RisultatiEsatti As RisEsatti2, " &
-			"E.RisultatiCasaTot As RisCasa1, F.RisultatiCasaTot As RisCasa2, E.RisultatiFuoriTot As RisFuori1, F.RisultatiFuoriTot As RisFuori2, " &
-			"E.SommeGoal As SommeGoal1, F.SommeGoal As SommeGoal2, E.DifferenzeGoal As DiffGoal1, F.DifferenzeGoal As DiffGoal2, " &
-			"G.Pronostico As DRisultato1, H.Pronostico As DRisultato2, I.idCoppa, E.PuntiPartitaScelta As PPScelta1, F.PuntiPartitaScelta As PPScelta2 " &
+		Dim Sql As String = "SELECT Distinct A.*, B.NickName As Casa, C.NickName As Fuori, J.Descrizione As Torneo, Coalesce(E.Punti, 0) As Punti1, Coalesce(F.Punti, 0) As Punti2, " &
+			"Coalesce(E.SegniPresi, 0) As SegniPresi1, Coalesce(F.SegniPresi, 0) As SegniPresi2, Coalesce(E.RisultatiEsatti, 0) As RisEsatti1, Coalesce(F.RisultatiEsatti, 0) As RisEsatti2, " &
+			"Coalesce(E.RisultatiCasaTot, 0) As RisCasa1, Coalesce(F.RisultatiCasaTot, 0) As RisCasa2, Coalesce(E.RisultatiFuoriTot, 0) As RisFuori1, Coalesce(F.RisultatiFuoriTot, 0) As RisFuori2, " &
+			"Coalesce(E.SommeGoal, 0) As SommeGoal1, Coalesce(F.SommeGoal, 0) As SommeGoal2, Coalesce(E.DifferenzeGoal, 0) As DiffGoal1, Coalesce(F.DifferenzeGoal, 0) As DiffGoal2, " &
+			"G.Pronostico As DRisultato1, H.Pronostico As DRisultato2, I.idCoppa, Coalesce(E.PuntiPartitaScelta, 0) As PPScelta1, Coalesce(F.PuntiPartitaScelta, 0) As PPScelta2 " &
 			"FROM EventiPartite A " &
 			"Left Join Utenti B On A.idAnno = B.idAnno And A.idGiocatore1 = B.idUtente " &
 			"Left Join Utenti C On A.idAnno = B.idAnno And A.idGiocatore2 = C.idUtente " &
@@ -754,6 +754,23 @@ Public Class clsEventi
 					Dim idCoppa As String = Rec("idCoppa").Value
 					Dim Vincente As Integer = -1
 
+					Dim Punti1 As Integer = Val(Rec("Punti1").Value)
+					Dim Punti2 As Integer = Val(Rec("Punti2").Value)
+					Dim SegniPresi1 As Integer = Val(Rec("SegniPresi1").Value)
+					Dim SegniPresi2 As Integer = Val(Rec("SegniPresi2").Value)
+					Dim PPSCelta1 As Integer = Val(Rec("PPScelta1").Value)
+					Dim PPSCelta2 As Integer = Val(Rec("PPScelta2").Value)
+					Dim RisCasa1 As Integer = Val(Rec("RisCasa1").Value)
+					Dim RisCasa2 As Integer = Val(Rec("RisCasa2").Value)
+					Dim RisFuori1 As Integer = Val(Rec("RisFuori1").Value)
+					Dim RisFuori2 As Integer = Val(Rec("RisFuori2").Value)
+					Dim RisEsatti1 As Integer = Val(Rec("RisEsatti1").Value)
+					Dim RisEsatti2 As Integer = Val(Rec("RisEsatti2").Value)
+					Dim DiffGoal1 As Integer = Val(Rec("DiffGoal1").Value)
+					Dim DiffGoal2 As Integer = Val(Rec("DiffGoal2").Value)
+					Dim SommaGoal1 As Integer = Val(Rec("SommeGoal1").Value)
+					Dim SommaGoal2 As Integer = Val(Rec("SommeGoal2").Value)
+
 					Select Case idCoppa
 						Case 1
 							Ris1 = ""
@@ -764,8 +781,8 @@ Public Class clsEventi
 							Risultato1 = Ris1
 							Risultato2 = Ris2
 						Case 2
-							Dim Segni1 As Integer = Rec("SegniPresi1").Value
-							Dim Segni2 As Integer = Rec("SegniPresi2").Value
+							Dim Segni1 As Integer = SegniPresi1
+							Dim Segni2 As Integer = SegniPresi2
 
 							Risultato1 = "Segni " & Segni1
 							Risultato2 = "Segni " & Segni2
@@ -780,12 +797,12 @@ Public Class clsEventi
 								End If
 							End If
 						Case 3
-							Dim Tot1 As Integer = CInt(((Rec("Punti1").Value / 5) + Rec("SegniPresi1").Value + Rec("RisEsatti1").Value +
-									 Rec("RisCasa1").Value + Rec("RisFuori1").Value + Rec("SommeGoal1").Value +
-									 Rec("DiffGoal1").Value) / 7)
-							Dim Tot2 As Integer = CInt(((Rec("Punti2").Value / 5) + Rec("SegniPresi2").Value + Rec("RisEsatti2").Value +
-									 Rec("RisCasa2").Value + Rec("RisFuori2").Value + Rec("SommeGoal2").Value +
-									 Rec("DiffGoal2").Value) / 7)
+							Dim Tot1 As Integer = CInt(((Punti1 / 5) + SegniPresi1 + RisEsatti1 +
+									 RisCasa1 + RisFuori1 + SommaGoal1 +
+									 DiffGoal1) / 7)
+							Dim Tot2 As Integer = CInt(((Punti2 / 5) + SegniPresi2 + RisEsatti2 +
+									 RisCasa2 + RisFuori2 + SommaGoal2 +
+									 DiffGoal2) / 7)
 
 							Risultato1 = "Calcolo " & Tot1
 							Risultato2 = "Calcolo " & Tot2
@@ -801,8 +818,8 @@ Public Class clsEventi
 							End If
 						Case 4
 							' PIPPETTERO
-							Dim Segni1 As Integer = Rec("RisCasa1").Value + Rec("RisFuori1").Value
-							Dim Segni2 As Integer = Rec("RisCasa2").Value + Rec("RisFuori2").Value
+							Dim Segni1 As Integer = RisCasa1 + RisFuori1
+							Dim Segni2 As Integer = RisCasa2 + RisFuori2
 
 							Risultato1 = "Casa+Fuori " & Segni1
 							Risultato2 = "Casa+Fuori " & Segni2
@@ -817,8 +834,8 @@ Public Class clsEventi
 								End If
 							End If
 						Case 5
-							Dim Segni1 As Integer = Rec("Punti1").Value
-							Dim Segni2 As Integer = Rec("Punti2").Value
+							Dim Segni1 As Integer = Punti1
+							Dim Segni2 As Integer = Punti2
 
 							Risultato1 = "Punti " & Segni1
 							Risultato2 = "Punti " & Segni2
@@ -833,8 +850,8 @@ Public Class clsEventi
 								End If
 							End If
 						Case 6
-							Dim PPS1 As Integer = Rec("PPScelta1").Value
-							Dim PPS2 As Integer = Rec("PPScelta2").Value
+							Dim PPS1 As Integer = PPSCelta1
+							Dim PPS2 As Integer = PPSCelta2
 
 							Risultato1 = "PPS " & PPS1
 							Risultato2 = "PPS " & PPS2
@@ -1100,6 +1117,8 @@ Public Class clsEventi
 					Inizio = (Classifica.Count - 1) / 1.7
 					Fine = Inizio + Quanti + 1
 			End Select
+			Inizio -= 1
+			Fine -= 1
 
 			While Fine > Classifica.Count - 1
 				Fine -= 1
@@ -1118,13 +1137,18 @@ Public Class clsEventi
 		Return Scelti
 	End Function
 
-	Private Function CreazioneCoppa(Mp As String, idAnno As Integer, idGiornata As Integer, QuantiGiocatori As Integer, Importanza As Integer,
+	Public Function CreazioneCoppa(Mp As String, idAnno As Integer, idGiornata As Integer, QuantiGiocatori As Integer, Importanza As Integer,
 											idCoppa As Integer, Conn As Object, Connessione As String) As String
 		Dim Ritorno As String = ""
 		Dim Classifica As List(Of StrutturaGiocatore) = PrendeGiocatori(Mp, idAnno, idGiornata, Conn, Connessione)
 		Dim QuantiGiocatoriPresenti As Integer = Classifica.Count - 1
 		If QuantiGiocatoriPresenti > QuantiGiocatori Then
 			Dim Scelti As List(Of StrutturaGiocatore) = RitornaGiocatoriScelti(QuantiGiocatori, Importanza, Classifica)
+
+			For Each s As StrutturaGiocatore In Scelti
+				Dim NickName As String = s.NickName
+				SceltiPerCreazione &= NickName & ";"
+			Next
 
 			Dim GiornateAndata As New List(Of Integer)
 			Dim idEventiAndata As New List(Of Integer)
