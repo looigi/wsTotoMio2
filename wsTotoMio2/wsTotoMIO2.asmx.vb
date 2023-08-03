@@ -1,5 +1,6 @@
 ﻿Imports System.ComponentModel
 Imports System.Diagnostics.Eventing.Reader
+Imports System.Net.Mail
 Imports System.Runtime.InteropServices
 Imports System.Security.Permissions
 Imports System.Web.Services
@@ -43,11 +44,15 @@ Public Class wsTotoMIO2
 	End Function
 
 	<WebMethod()>
-	Public Function TestMail() As String
+	Public Function TestMail(Operazione As String) As String
+		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
+		Dim Conn As Object = New clsGestioneDB(TipoServer)
 		Dim Ritorno As String = "*"
 
-		Dim m As New mail(Server.MapPath("."))
-		m.SendEmail(Server.MapPath("."), "looigi@gmail.com", "Prova invio mail", "Prova prova prova", Nothing)
+		Dim Testo As String = ""
+		Testo = "Prova<br />"
+		Testo &= "Per entrare nel sito e vedere il resto: <a href=""" & IndirizzoSito & """>Click QUI</a>"
+		InvaMailATutti(Server.MapPath("."), 1, "TotoMIO:Mail di prova", Testo, Conn, Connessione, "Controllo")
 
 		Return Ritorno
 	End Function

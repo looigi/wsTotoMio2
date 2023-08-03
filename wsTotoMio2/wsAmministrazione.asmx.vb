@@ -55,9 +55,9 @@ Public Class wsAmministrazione
 			Dim x As Integer = GetRandom(0, Frasi.Count - 1)
 			Dim Frase As String = Frasi(x)
 
-			sql = "SELECT Distinct idUtente, NickName, Mail FROM Utenti A " &
+			sql = "SELECT Distinct A.idUtente, NickName, Mail FROM Utenti A " &
 				"Left Join UtentiMails B On A.idAnno = B.idAnno And A.idUtente=B.idUtente " &
-				"Where idAnno = " & idAnno & " And idUtente Not In (Select idUtente From Pronostici Where idAnno = " & idAnno & " And idConcorso = " & idConcorso & ") " &
+				"Where A.idAnno = " & idAnno & " And A.idUtente Not In (Select C.idUtente From Pronostici As C Where C.idAnno = " & idAnno & " And C.idConcorso = " & idConcorso & ") " &
 				"And B.Reminder='S'"
 			Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
 			If TypeOf (Rec) Is String Then
@@ -76,6 +76,8 @@ Public Class wsAmministrazione
 					Rec.MoveNext
 				Loop
 				Rec.Close
+
+				Ritorno = "OK"
 			End If
 		End If
 

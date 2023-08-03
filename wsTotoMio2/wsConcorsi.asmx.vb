@@ -5,6 +5,7 @@ Imports System.Runtime.CompilerServices
 Imports System.Security.Policy
 Imports System.Web.Services
 Imports System.Web.Services.Protocols
+Imports System.Windows.Forms
 Imports wsTotoMio2.clsRecordset
 
 ' Per consentire la chiamata di questo servizio Web dallo script utilizzando ASP.NET AJAX, rimuovere il commento dalla riga seguente.
@@ -510,7 +511,8 @@ Public Class wsConcorsi
 
 								Dim TestoRis As String = ""
 
-								sql = "Select * From Pronostici Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " Order By idPartita"
+								sql = "Select * From Concorsi A " &
+									"Where A.idAnno=" & idAnno & " And A.idConcorso=" & idGiornata & " Order By A.idPartita"
 								Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
 								If TypeOf (Rec) Is String Then
 									'Ritorno = Rec
@@ -523,6 +525,7 @@ Public Class wsConcorsi
 									TestoRis &= "<th>Segno</th>"
 									TestoRis &= "</tr>"
 									Do Until Rec.Eof
+										TestoRis &= "<tr>"
 										TestoRis &= "<td>" & Rec("Prima").Value & "</td>"
 										TestoRis &= "<td>" & Rec("Seconda").Value & "</td>"
 										TestoRis &= "<td style=""text-align: center"">" & Rec("Risultato").Value & "</td>"

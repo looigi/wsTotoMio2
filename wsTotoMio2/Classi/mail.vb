@@ -7,16 +7,17 @@ Public Class mail
 	Private inviaMail As Boolean = False
 
 	Public Sub New(Mp As String)
-		If File.Exists(Mp & "/InviaMail.txt") Then
-			Dim gf As New GestioneFilesDirectory
-			Dim Ritorno As String = gf.LeggeFileIntero(Mp & "/InviaMail.txt")
-			If Ritorno.Replace(vbCrLf, "").ToUpper.Trim() = "S" Then
-				inviaMail = True
-			End If
-		End If
 	End Sub
 
 	Public Function SendEmail(Mp As String, Destinatario As String, ByVal oggetto As String, ByVal newBody As String, ByVal Allegato() As String) As String
+		If File.Exists(Mp & "/InviaMail.txt") Then
+			Dim gf As New GestioneFilesDirectory
+			Dim Ritorno2 As String = gf.LeggeFileIntero(Mp & "/InviaMail.txt")
+			If Ritorno2.Replace(vbCrLf, "").ToUpper.Trim() = "S" Then
+				inviaMail = True
+			End If
+		End If
+
 		If Not inviaMail Then
 			Return "*"
 		End If
@@ -37,6 +38,12 @@ Public Class mail
 			Dim gf As New GestioneFilesDirectory
 			gf.CreaDirectoryDaPercorso(pathMail)
 			nomeFileLogmail = pathMail & "logMail_" & Now.Day & "_" & Now.Month & "_" & Now.Year & ".txt"
+
+			Dim Datella As String = Format(Now.Day, "00") & "/" & Format(Now.Month, "00") & "/" & Now.Year & " " & Format(Now.Hour, "00") & ":" & Format(Now.Minute, "00") & ":" & Format(Now.Second, "00")
+
+			gf.ApreFileDiTestoPerScrittura(nomeFileLogmail)
+			gf.ScriveTestoSuFileAperto(Datella & " - Mail arrivata: " & Destinatario & " " & oggetto)
+			gf.ChiudeFileDiTestoDopoScrittura()
 		End If
 
 		avviaTimer()
@@ -80,7 +87,7 @@ Public Class mail
 			timerMails.Enabled = True
 		Else
 			timerMails = Nothing
-			listaMails = New List(Of strutturaMail)
+			' listaMails = New List(Of strutturaMail)
 		End If
 	End Sub
 

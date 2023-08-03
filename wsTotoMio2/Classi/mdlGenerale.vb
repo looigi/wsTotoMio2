@@ -505,7 +505,13 @@ Module mdlGenerale
 		Dim Ritorno As String = ""
 		Dim Sql As String = "Select * From Utenti Where idAnno=" & idAnno & " And Eliminato = 'N'"
 		If Operazione <> "" Then
-			Sql &= " And " & Operazione & "='S'"
+			Sql = "Select * From Utenti A " &
+				"Left Join UtentiMails B On A.idAnno = B.idAnno And A.idUtente = B.idUtente " &
+				"Where A.idAnno = " & idAnno & " And Eliminato = 'N' And " & Operazione & "='S' "
+		Else
+			Sql = "Select * From Utenti A " &
+				"Left Join UtentiMails B On A.idAnno = B.idAnno And A.idUtente = B.idUtente " &
+				"Where A.idAnno = " & idAnno & " And Eliminato = 'N'"
 		End If
 		Dim Rec As Object = CreaRecordset(Mp, Conn, Sql, Connessione)
 		If TypeOf (Rec) Is String Then
@@ -515,9 +521,9 @@ Module mdlGenerale
 				Ritorno = ""
 			Else
 				Do Until Rec.Eof
-					'If Not Ritorno.Contains(Rec("Mail").Value & ";") Then
-					Ritorno &= Rec("Mail").Value & ";"
-					'End If
+					If Not Ritorno.Contains(Rec("Mail").Value & ";") Then
+						Ritorno &= Rec("Mail").Value & ";"
+					End If
 
 					Rec.MoveNext
 				Loop
