@@ -137,6 +137,8 @@ Public Class clsEventi
 					Dim idGiornata As String = Rec("idGiornata").Value
 					Dim Vincente As Integer = -1
 
+					GiocataPartita &= Rec("Casa").Value & ";" & Rec("Fuori").Value & ";"
+
 					Select Case idCoppa
 						Case 1
 							Ris1 = ""
@@ -217,6 +219,8 @@ Public Class clsEventi
 							End If
 					End Select
 
+					GiocataPartita &= Risultato1 & ";" & Risultato2 & ";" & Vincente & "§"
+
 					Sql = "Update EventiPartite Set " &
 						"idVincente=" & Vincente & ", Risultato1='" & Risultato1 & "', Risultato2='" & Risultato2 & "' " &
 						"Where idAnno=" & idAnno & " And idEvento=" & idEvento & " And idGiornata=" & idGiornata & " And idPartita=" & idPartita
@@ -274,6 +278,8 @@ Public Class clsEventi
 					Dim idEvento As String = Rec("idEvento").Value
 					Dim idGiornata As String = Rec("idGiornata").Value
 					Dim Vincente As Integer = -1
+
+					GiocataPartita &= Rec("Casa").Value & ";" & Rec("Fuori").Value & ";"
 
 					Select Case idCoppa
 						Case 1
@@ -354,6 +360,8 @@ Public Class clsEventi
 								End If
 							End If
 					End Select
+
+					GiocataPartita &= Risultato1 & ";" & Risultato2 & ";" & Vincente & "§"
 
 					If Primo Then
 						Primo = False
@@ -771,6 +779,8 @@ Public Class clsEventi
 					Dim SommaGoal1 As Integer = Val(Rec("SommeGoal1").Value)
 					Dim SommaGoal2 As Integer = Val(Rec("SommeGoal2").Value)
 
+					GiocataPartita &= Rec("Casa").Value & ";" & Rec("Fuori").Value & ";"
+
 					Select Case idCoppa
 						Case 1
 							Ris1 = ""
@@ -866,6 +876,8 @@ Public Class clsEventi
 								End If
 							End If
 					End Select
+
+					GiocataPartita &= Risultato1 & ";" & Risultato2 & ";" & Vincente & "§"
 
 					Sql = "Update EventiPartite Set " &
 						"idVincente=" & Vincente & ", Risultato1='" & Risultato1 & "', Risultato2='" & Risultato2 & "' " &

@@ -263,6 +263,15 @@ Public Class wsTotoMIO2
 	End Function
 
 	<WebMethod()>
+	Public Function TestRandom() As String
+		Dim Ritorno As String = ""
+		For i As Integer = 1 To 10
+			Ritorno &= GetRandom(1, 10) & ";"
+		Next
+		Return Ritorno
+	End Function
+
+	<WebMethod()>
 	Public Function PuliziaDatiDebug(idAnno As String) As String
 		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
 		Dim Conn As Object = New clsGestioneDB(TipoServer)

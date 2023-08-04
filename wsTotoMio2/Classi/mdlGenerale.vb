@@ -19,6 +19,7 @@ Module mdlGenerale
 	Public CorpoMail As String = ""
 	Public IndirizzoSito As String = "http://looigi.ddns.net:1080/"
 	Public SceltiPerCreazione As String = ""
+	Public GiocataPartita As String = ""
 
 	Public Function SistemaStringaPerDB(Stringa As String) As String
 		Dim Ritorno As String = Stringa
@@ -343,10 +344,11 @@ Module mdlGenerale
 			"SELECT A.idUtente, NickName, Sum(Punti) As Punti, Sum(RisultatiEsatti) As RisultatiEsatti, " &
 			"Sum(RisultatiCasaTot) As RisCasaTot, Sum(RisultatiFuoriTot) As RisFuoriTot, " &
 			"Sum(SegniPresi) As Segni, Sum(SommeGoal) As SommaGoal, Sum(DifferenzeGoal) As DifferenzeGoal, " &
-			"(SELECT Count(*) FROM Pronostici Where idUtente = A.idUtente And idPartita = 1 And idConcorso " & Confronto & " A.idConcorso) As Giocate, " &
+			"(SELECT Count(*) FROM Pronostici Where idAnno = A.idAnno And idUtente = A.idUtente And idPartita = 1 And idConcorso " & Confronto & " A.idConcorso) As Giocate, " &
 			"Coalesce(Sum(C.Vittorie),0) As Vittorie, Coalesce(Sum(C.Ultimo),0) As Ultimo, Coalesce(Sum(C.Jolly), 0) As Jolly, " &
 			"Coalesce(Sum(A.PuntiPartitaScelta), 0) As PuntiPartitaScelta " &
-			"FROM Risultati A Left Join Utenti B On A.idUtente = B.idUtente And A.idAnno = B.idAnno " &
+			"FROM Risultati A " &
+			"Left Join Utenti B On A.idUtente = B.idUtente And A.idAnno = B.idAnno " &
 			"Left Join RisultatiAltro C On A.idAnno = C.idAnno And A.idConcorso = C.idConcorso And A.idUtente = C.idUtente " &
 			"Where A.idAnno=" & idAnno & " And A.idConcorso " & Confronto & " " & idGiornata & " " &
 			"Group By A.idUtente, NickName " &
@@ -391,7 +393,7 @@ Module mdlGenerale
 
 	Public Function CreaPartitaJolly(Mp As String, idAnno As Integer, idConcorso As Integer, Conn As Object, Connessione As String) As String
 		Dim Ritorno As String = ""
-		Dim Sql As String = "Select Coalesce(Count(*),0) From Concorsi Where idAnno=" & idAnno & " And idConcorso=" & idConcorso
+		Dim Sql As String = "Select Coalesce(Count(*), 0) As Quante From Concorsi Where idAnno=" & idAnno & " And idConcorso=" & idConcorso
 		Dim Rec As Object = CreaRecordset(Mp, Conn, Sql, Connessione)
 		If TypeOf (Rec) Is String Then
 			Ritorno = Rec
@@ -399,7 +401,7 @@ Module mdlGenerale
 			If Rec.Eof Then
 				Ritorno = "ERROR: Nessun concorso rilevato"
 			Else
-				Dim Quante As Integer = Rec(0).Value
+				Dim Quante As Integer = Rec("Quante").Value
 				Rec.Close
 
 				Dim x As Integer = GetRandom(1, Quante)

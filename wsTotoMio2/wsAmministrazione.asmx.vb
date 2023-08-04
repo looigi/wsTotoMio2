@@ -39,19 +39,24 @@ Public Class wsAmministrazione
 				"***NOME***... Te devo venì a pija a schiaffi pe' fatte fa la schedina???",
 				"Aoh... A ***NOME***... Che volemo fa con questa colonna?",
 				"***NOME***, ***NOME***, ***NOME***... Ti devo sempre ricordare della colonna da giuocare...",
-				"***NOME***, e allora? Sta schedina la vogliamo compilare si o no?",
+				"***NOME***, e allora? 'Sta schedina la vogliamo compilare si o no?",
 				"Mi hanno detto che c'è qualcuno che deve ancora compilare la colonna... Non è che per caso sei tu ***NOME***?",
 				"Aiuto ***NOME***!!!, se non giochi la schedina qualcuno vincerà al posto tuo...",
-				"Questo astensionismo dalla giocata della colonna mi manda al manicomo...",
+				"Questo astensionismo di ***NOME*** dalla giocata della colonna mi manda al manicomo...",
 				"Sei sempre tu, ***NOME***, che ti dimentichi di compilare la colonna...",
 				"***NOME***, se hai tempo di leggere questa mail, hai anche tempo di compilare la colonna... Forza!!!",
 				"Tutto bene... ***NOME***, non giocare la schedina e permetti ad un altro di vincere",
 				"***NOME***, ha detto il mio db di fiducia che non riesce a trovare la tua colonna della settimana... Sei sicuro di averla giocata?",
 				"Uhm... Sento odore di astensionismo... Qualcuno non vuole giocare la schedina della settimana... Tipo ***NOME***",
 				"Daje secco... Ce la puoi fare a giocare la schedina... Su ***NOME*** non ti fare pregare",
-				"***NOME*** fai vincere chi ti sta davanti e butta i soldi che hai puntato.. Non giocare la schedina...",
-				"***NOME***!!! SCHEDINA!!!"
-				}
+				"***NOME*** fai vincere chi ti sta davanti e butta i soldi che hai puntato... Non giocare la schedina...",
+				"***NOME***!!! La schedina ti sta chiamando!!!",
+				"***NOME***, ***NOME*** perchè abbandonare tutto questo proprio ora che stai andando così bene? Dai, fai questa schedina",
+				"***NOME*** ti ricordo che se non compili la colonna il montepremi se lo becca qualcun altro",
+				"***NOME*** sei sempre il solito... La vuoi fare o no questa schedina?",
+				"La radio ha appena detto che ***NOME*** non ha ancora fatto la schedina... Sarà vero?",
+				"Un tale, al bar, diceva che ***NOME*** non fa mai la schedina... Io non ci credo però, magari, dai un'occhiata..."
+			}
 			Dim x As Integer = GetRandom(0, Frasi.Count - 1)
 			Dim Frase As String = Frasi(x)
 
@@ -67,7 +72,7 @@ Public Class wsAmministrazione
 					Dim Frase2 As String = Frase.Replace("***NOME***", Rec("NickName").Value)
 					Dim Testo As String = ""
 					Testo = Frase2
-					Testo &= "<br /><br />La scadenza del concorso è " & Scadenza & "<br /><br />"
+					Testo &= "<br />(Questo sopra è un pensiero del server dal quale il povero programmatore si dissocia...)<br /><br />La scadenza del concorso è " & Scadenza & "<br /><br />"
 					Testo &= "Per entrare nel sito e vedere il resto: <a href=""" & IndirizzoSito & """>Click QUI</a>"
 
 					Dim m As New mail(Server.MapPath("."))

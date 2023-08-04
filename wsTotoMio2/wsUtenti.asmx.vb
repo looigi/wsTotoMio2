@@ -369,7 +369,9 @@ Public Class wsUtenti
 				Dim EMail As String = ""
 				Dim NickName As String = ""
 
-				sql = "Select * From Utenti Where idAnno=" & idAnno & " And idUtente=" & idUtente & " And Giocata='S'"
+				sql = "Select * From Utenti A " &
+					"Left Join UtentiMails B On A.idAnno=B.idAnno And A.idUtente=B.idUtente " &
+					"Where A.idAnno=" & idAnno & " And A.idUtente=" & idUtente & " And Giocata='S'"
 				Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
 				If TypeOf (Rec) Is String Then
 					'Ritorno = Rec
@@ -379,6 +381,8 @@ Public Class wsUtenti
 					Rec.Close
 				End If
 
+				Dim Mails As New List(Of String)
+
 				If EMail <> "" Then
 					Dim Testo As String = ""
 					Testo = "E' stata giocata la colonna da " & NickName.ToUpper & " per il concorso TotoMIO numero " & idConcorso & ".<br />"
@@ -387,12 +391,13 @@ Public Class wsUtenti
 
 					Dim m As New mail(Server.MapPath("."))
 
-					sql = "Select * From Utenti Where idAnno=" & idAnno & " And Eliminato='N' And idTipologia=0 And Giocata='S'"
+					sql = "Select * From Utenti A " &
+						"Left Join UtentiMails B On A.idAnno=B.idAnno And A.idUtente=B.idUtente " &
+						"Where A.idAnno=" & idAnno & " And Eliminato='N' And idTipologia=0 And Giocata='S'"
 					Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
 					If TypeOf (Rec) Is String Then
 						Ritorno = Rec
 					Else
-						Dim Mails As New List(Of String)
 						Dim mmm As String = ""
 						Mails.Add(EMail)
 						mmm &= EMail & ";"
@@ -405,10 +410,11 @@ Public Class wsUtenti
 							Rec.MoveNext
 						Loop
 						Rec.Close
-						For Each mm As String In Mails
-							m.SendEmail(Server.MapPath("."), mm, "TotoMIO: Colonna utente per concorso numero " & idConcorso, Testo, {})
-						Next
 					End If
+
+					For Each mm As String In Mails
+						m.SendEmail(Server.MapPath("."), mm, "TotoMIO: Colonna utente per concorso numero " & idConcorso, Testo, {})
+					Next
 				End If
 
 				sql = "commit"

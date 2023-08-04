@@ -480,13 +480,15 @@ Public Class wsConcorsi
 								Rec.Close
 
 								Dim CreazioneCoppa As String = ""
+								Dim GiocatePartite As String = ""
 
 								sql = "Select A.*, B.Descrizione As Tipologia, C.Descrizione As Torneo, C.QuantiGiocatori, C.Importanza, " &
-									"A.InizioGiornata, C.Descrizione As Torneo, B.Dettaglio " &
+									"A.InizioGiornata, C.Descrizione As Torneo, B.Dettaglio, D.idGiornataVirtuale As Giornata " &
 									"From Eventi A " &
 									"Left Join EventiTipologie B On A.idTipologia = B.idTipologia " &
 									"Left Join EventiNomi C On A.idCoppa = C.idCoppa " &
-									"Where InizioGiornata=" & idGiornata & " Order By idEvento" ' idAnno=" & idAnno & " And idGiornata=" & idGiornata & " And idEvento<>1"
+									"Left Join EventiPartite D On A.idEvento = D.idEvento And D.idGiornata = A.InizioGiornata And D.idAnno = " & idAnno & " " &
+									"Where A.InizioGiornata=" & idGiornata & " Order By A.idEvento" ' idAnno=" & idAnno & " And idGiornata=" & idGiornata & " And idEvento<>1"
 								Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
 								If TypeOf (Rec) Is String Then
 									Ritorno = Rec
@@ -497,6 +499,7 @@ Public Class wsConcorsi
 										Do Until Rec.Eof
 											If Rec("idEvento").Value <> 1 Then
 												SceltiPerCreazione = ""
+												GiocataPartita = ""
 
 												Ritorno = ev.GestioneEventi(Server.MapPath("."), idAnno, idGiornata, Rec("idEvento").Value,
 																		Rec("QuantiGiocatori").Value, Rec("Importanza").Value,
@@ -507,13 +510,51 @@ Public Class wsConcorsi
 												Else
 													If SceltiPerCreazione <> "" Then
 														' Creazione coppa
-														CreazioneCoppa &= "Creazione Coppa " & Rec("Torneo").Value & ". Partecipanti:<br /><br />"
+														CreazioneCoppa &= "<hr /><span style=""font-weight: bold;"">Creazione Coppa '" & Rec("Torneo").Value & "'. Partecipanti:</span><br /><br />"
 														Dim s() As String = SceltiPerCreazione.Split(";")
 														For Each ss As String In s
 															If ss <> "" Then
 																CreazioneCoppa &= ss & "<br />"
 															End If
 														Next
+														CreazioneCoppa &= "<br />"
+													End If
+													If GiocataPartita <> "" Then
+														' Giocata partita
+														Dim Tabella As String = "<hr /><span style=""font-weight: bold;"">Giocata partita di Coppa '" & Rec("Torneo").Value & "': " & Rec("Dettaglio").Value & " Giornata " & Rec("Giornata").Value & ".</span><br />"
+														Tabella &= "<table style=""width: 100%; border: 1px solid #999;"">"
+														Tabella &= "<tr>"
+														Tabella &= "<th>Casa</th>"
+														Tabella &= "<th>Fuori</th>"
+														Tabella &= "<th>Risultato 1</th>"
+														Tabella &= "<th>Risultato 2</th>"
+														Tabella &= "<th>Vincente</th>"
+														Tabella &= "</tr>"
+														Dim righe() As String = GiocataPartita.Split("§")
+														For Each r As String In righe
+															If r <> "" Then
+																Dim campi() As String = r.Split(";")
+																Dim Vincente As String = campi(4)
+																If Vincente = "1" Then
+																	Vincente = campi(0)
+																Else
+																	If Vincente = "2" Then
+																		Vincente = campi(1)
+																	Else
+																		Vincente = "Pareggio"
+																	End If
+																End If
+																Tabella &= "<tr>"
+																Tabella &= "<td>" & campi(0) & "</td>"
+																Tabella &= "<td>" & campi(1) & "</td>"
+																Tabella &= "<td>" & campi(2) & "</td>"
+																Tabella &= "<td>" & campi(3) & "</td>"
+																Tabella &= "<td>" & vincente & "</td>"
+																Tabella &= "</tr>"
+															End If
+														Next
+														Tabella &= "</table><br />"
+														GiocatePartite &= Tabella
 													End If
 												End If
 											End If
@@ -532,7 +573,7 @@ Public Class wsConcorsi
 								If TypeOf (Rec) Is String Then
 									'Ritorno = Rec
 								Else
-									TestoRis = "Risultati Concorso<br /><table style=""border: 1px solid #999;"">"
+									TestoRis = "<hr /><span style=""font-weight: bold;"">Risultati Concorso</span><br /><table style=""border: 1px solid #999;"">"
 									TestoRis &= "<tr style=""border-bottom: 1px solid #999"">"
 									TestoRis &= "<th>Casa</th>"
 									TestoRis &= "<th>Fuori</th>"
@@ -549,7 +590,7 @@ Public Class wsConcorsi
 										Rec.MoveNext
 									Loop
 									Rec.Close
-									TestoRis &= "</table><br /><br />"
+									TestoRis &= "</table><br />"
 								End If
 
 								sql = "Select A.*, B.NickName, C.Jolly From Risultati A " &
@@ -560,7 +601,7 @@ Public Class wsConcorsi
 								If TypeOf (Rec) Is String Then
 									'Ritorno = Rec
 								Else
-									TestoRis &= "Risultati Campionato<br /><table style=""width: 100%; border: 1px solid #999;"">"
+									TestoRis &= "<hr /><span style=""font-weight: bold;"">Risultati Campionato</span><br /><table style=""width: 100%; border: 1px solid #999;"">"
 									TestoRis &= "<tr style=""border-bottom: 1px solid #999"">"
 									TestoRis &= "<th>Utente</th>"
 									TestoRis &= "<th>Punti</th>"
@@ -593,83 +634,80 @@ Public Class wsConcorsi
 									Rec.Close
 								End If
 
-								TestoRis &= " <br /><br />"
+								TestoRis &= "<br />"
 								TestoRis &= CreazioneCoppa
+								TestoRis &= GiocatePartite
 
-								'sql = "Select A.*, B.NickName, C.Jolly From Risultati A " &
-								'	"Left Join Utenti B On A.idUtente = B.idUtente " &
-								'	"Left Join RisultatiAltro C On A.idAnno = C.idAnno And A.idUtente = C.idUtente And A.idConcorso = C.idConcorso " &
-								'	"Where A.idAnno=" & idAnno & " And A.idConcorso=" & idGiornata
-								sql = "Select C.idCoppa, C.Descrizione As NomeCoppa, D.Descrizione As Tipologia FROM EventiPartite A " &
-									"Left Join Eventi B On A.idEvento = B.idEvento " &
-									"Left Join EventiNomi C On B.idCoppa = C.idCoppa " &
-									"Left Join EventiTipologie D On B.idTipologia = D.idTipologia " &
-									"Where idAnno = " & idAnno & " And idGiornataVirtuale = " & idGiornata & " And D.Descrizione <> 'Creazione' " &
-									"Group By C.idCoppa, C.Descrizione, D.Descrizione"
-								Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
-								If TypeOf (Rec) Is String Then
-									'Ritorno = Rec
-								Else
-									Dim idCoppe As New List(Of Integer)
-									Dim Torneo As New List(Of String)
+								'sql = "Select C.idCoppa, C.Descrizione As NomeCoppa, D.Descrizione As Tipologia FROM EventiPartite A " &
+								'	"Left Join Eventi B On A.idEvento = B.idEvento " &
+								'	"Left Join EventiNomi C On B.idCoppa = C.idCoppa " &
+								'	"Left Join EventiTipologie D On B.idTipologia = D.idTipologia " &
+								'	"Where idAnno = " & idAnno & " And idGiornataVirtuale = " & idGiornata & " And D.Descrizione <> 'Creazione' " &
+								'	"Group By C.idCoppa, C.Descrizione, D.Descrizione"
+								'Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+								'If TypeOf (Rec) Is String Then
+								'	'Ritorno = Rec
+								'Else
+								'	Dim idCoppe As New List(Of Integer)
+								'	Dim Torneo As New List(Of String)
 
-									Do Until Rec.Eof
-										idCoppe.Add(Rec("idCoppa").Value)
-										Torneo.Add(Rec("NomeCoppa").Value)
+								'	Do Until Rec.Eof
+								'		idCoppe.Add(Rec("idCoppa").Value)
+								'		Torneo.Add(Rec("NomeCoppa").Value)
 
-										Rec.MoveNext
-									Loop
-									Rec.Close
+								'		Rec.MoveNext
+								'	Loop
+								'	Rec.Close
 
-									Dim n As Integer = 0
-									For Each id As Integer In idCoppe
-										TestoRis &= "Torneo: " & Torneo.Item(n) & " <br />"
-										TestoRis &= "<table style=""width: 100%; border: 1px solid #999;"">"
-										TestoRis &= "<tr style=""border-bottom: 1px solid #999"">"
-										TestoRis &= "<th>Casa</th>"
-										TestoRis &= "<th>Fuori</th>"
-										TestoRis &= "<th>Risultato 1</th>"
-										TestoRis &= "<th>Risultato 2</th>"
-										TestoRis &= "<th>Vincente</th>"
-										TestoRis &= "</tr>"
-										sql = "Select A.*, B.NickName As Casa, C.NickName As Fuori FROM EventiPartite As A " &
-											"Left Join Utenti As B On A.idAnno = B.idAnno And A.idGiocatore1 = B.idUtente " &
-											"Left Join Utenti As C On A.idAnno = C.idAnno And A.idGiocatore2 = C.idUtente " &
-											"Where A.idAnno = " & idAnno & " And A.idGiornataVirtuale = " & idGiornata & " And " &
-											"A.idEvento In (Select idEvento From Eventi As E Where idCoppa = " & id & " And A.idGiornata = E.InizioGiornata) " &
-											"Order By idPartita"
-										Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
-										If TypeOf (Rec) Is String Then
-											'Ritorno = Rec
-										Else
-											Do Until Rec.Eof
-												TestoRis &= "<tr style=""border-bottom: 1px solid #999"">"
-												TestoRis &= "<td>" & Rec("Casa").Value & "</td>"
-												TestoRis &= "<td>" & Rec("Fuori").Value & "</td>"
-												TestoRis &= "<td>" & Rec("Risultato1").Value & "</td>"
-												TestoRis &= "<td>" & Rec("Risultato2").Value & "</td>"
-												If Rec("idVincente").Value = "1" Then
-													TestoRis &= "<td>" & Rec("Casa").Value & "</td>"
-												Else
-													If Rec("idVincente").Value = "2" Then
-														TestoRis &= "<td>" & Rec("Casa").Value & "</td>"
-													Else
-														If Rec("idVincente").Value = "-1" Then
-														Else
-															TestoRis &= "<td>Pareggio</td>"
-														End If
-													End If
-												End If
-												TestoRis &= "</tr>"
+								'	Dim n As Integer = 0
+								'	For Each id As Integer In idCoppe
+								'		TestoRis &= "Torneo: " & Torneo.Item(n) & " <br />"
+								'		TestoRis &= "<table style=""width: 100%; border: 1px solid #999;"">"
+								'		TestoRis &= "<tr style=""border-bottom: 1px solid #999"">"
+								'		TestoRis &= "<th>Casa</th>"
+								'		TestoRis &= "<th>Fuori</th>"
+								'		TestoRis &= "<th>Risultato 1</th>"
+								'		TestoRis &= "<th>Risultato 2</th>"
+								'		TestoRis &= "<th>Vincente</th>"
+								'		TestoRis &= "</tr>"
+								'		sql = "Select A.*, B.NickName As Casa, C.NickName As Fuori FROM EventiPartite As A " &
+								'			"Left Join Utenti As B On A.idAnno = B.idAnno And A.idGiocatore1 = B.idUtente " &
+								'			"Left Join Utenti As C On A.idAnno = C.idAnno And A.idGiocatore2 = C.idUtente " &
+								'			"Where A.idAnno = " & idAnno & " And A.idGiornataVirtuale = " & idGiornata & " And " &
+								'			"A.idEvento In (Select idEvento From Eventi As E Where idCoppa = " & id & " And A.idGiornata = E.InizioGiornata) " &
+								'			"Order By idPartita"
+								'		Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+								'		If TypeOf (Rec) Is String Then
+								'			'Ritorno = Rec
+								'		Else
+								'			Do Until Rec.Eof
+								'				TestoRis &= "<tr style=""border-bottom: 1px solid #999"">"
+								'				TestoRis &= "<td>" & Rec("Casa").Value & "</td>"
+								'				TestoRis &= "<td>" & Rec("Fuori").Value & "</td>"
+								'				TestoRis &= "<td>" & Rec("Risultato1").Value & "</td>"
+								'				TestoRis &= "<td>" & Rec("Risultato2").Value & "</td>"
+								'				If Rec("idVincente").Value = "1" Then
+								'					TestoRis &= "<td>" & Rec("Casa").Value & "</td>"
+								'				Else
+								'					If Rec("idVincente").Value = "2" Then
+								'						TestoRis &= "<td>" & Rec("Casa").Value & "</td>"
+								'					Else
+								'						If Rec("idVincente").Value = "-1" Then
+								'						Else
+								'							TestoRis &= "<td>Pareggio</td>"
+								'						End If
+								'					End If
+								'				End If
+								'				TestoRis &= "</tr>"
 
-												Rec.MoveNext
-											Loop
-											Rec.Close
-										End If
-										TestoRis &= "</table><br /><br />"
-										n += 1
-									Next
-								End If
+								'				Rec.MoveNext
+								'			Loop
+								'			Rec.Close
+								'		End If
+								'		TestoRis &= "</table><br /><br />"
+								'		n += 1
+								'	Next
+								'End If
 
 								sql = "Select * From SquadreRandom A " &
 									"Left Join Utenti B On A.idAnno = B.idAnno And A.idUtente = B.idUtente " &
@@ -678,8 +716,8 @@ Public Class wsConcorsi
 								If TypeOf (Rec) Is String Then
 									'Ritorno = Rec
 								Else
-									TestoRis &= " <br />"
-									TestoRis &= "23 Aiutame Te<br />"
+									TestoRis &= "<hr />"
+									TestoRis &= "<span style=""font-weight: bold;"">23 Aiutame Te</span><br />"
 									TestoRis &= "<table style=""width: 100%; border: 1px solid #999;"">"
 									TestoRis &= "<tr style=""border-bottom: 1px solid #999"">"
 									TestoRis &= "<th>Utente</th>"
@@ -922,14 +960,13 @@ Public Class wsConcorsi
 						Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 						If Ritorno.Contains(StringaErrore) Then
 							Exit For
-						Else
-							Ritorno = CreaPartitaJolly(Server.MapPath("."), idAnno, idConcorso, Conn, Connessione)
-							If Ritorno.Contains(StringaErrore) Then
-								Exit For
-							End If
 						End If
 					End If
 				Next
+
+				If Not Ritorno.Contains(StringaErrore) Then
+					Ritorno = CreaPartitaJolly(Server.MapPath("."), idAnno, idConcorso, Conn, Connessione)
+				End If
 			End If
 
 			If Ritorno = "OK" Then
