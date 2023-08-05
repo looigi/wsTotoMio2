@@ -318,7 +318,7 @@ Public Class wsConcorsi
 				Dim ev As New clsEventi
 				Dim Classifica As List(Of clsEventi.StrutturaGiocatore) = ev.PrendeGiocatori(Server.MapPath("."), idAnno, 38, Conn, Connessione)
 				Ritorno &= "Campione di TotoMIO;" & Classifica.Item(0).idUtente & ";" & Classifica.Item(0).NickName & ";0§"
-				Ritorno &= "Vice Campione;" & Classifica.Item(1).idUtente & ";" & Classifica.Item(1).NickName & ";999§"
+				Ritorno &= "Secondo;" & Classifica.Item(1).idUtente & ";" & Classifica.Item(1).NickName & ";999§"
 				Ritorno &= "Terzo;" & Classifica.Item(2).idUtente & ";" & Classifica.Item(2).NickName & ";999§"
 				Ritorno &= "Cucchiarella de legno;" & Classifica.Item(Classifica.Count - 1).idUtente & ";" & Classifica.Item(Classifica.Count - 1).NickName & ";999§"
 
