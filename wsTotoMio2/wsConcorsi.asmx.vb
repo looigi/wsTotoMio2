@@ -309,7 +309,8 @@ Public Class wsConcorsi
 				Ritorno = ""
 				Dim c As Integer = 0
 				For Each p As Integer In Percentuale
-					Ritorno &= c & ";" & p & ";" & Totale & ";" & (CInt(Totale * p) / 100) & "§"
+					Dim Vincita As Single = (CInt(Totale * p) / 100)
+					Ritorno &= c & ";" & p & ";" & Totale & ";" & Vincita & "§"
 					c += 1
 				Next
 				Ritorno &= "|"
@@ -371,11 +372,17 @@ Public Class wsConcorsi
 				Next
 
 				' 23 Aiutame Te
-				Sql = "SELECT A.idUtente, B.NickName, Sum(A.Punti) As Punti FROM SquadreRandom As A " &
+				Sql = "Select * From (" &
+					"SELECT A.idUtente, B.NickName, Sum(A.Punti) As Punti FROM SquadreRandom As A " &
 					"Left Join Utenti B On A.idAnno = B.idAnno And A.idUtente = B.idUtente " &
 					"Where A.idAnno = " & idAnno & " " &
-					"Group By A.idUtente, B.NickName " &
-					"Order By 3 Desc "
+					"Union ALL " &
+					"Select idUtente, NickName, 0 As Punti From Utenti " &
+					"Where idUtente Not In (Select idUtente From SquadreRandom Where idAnno = " & idAnno & ") " &
+					"And idAnno = " & idAnno & " " &
+					") As A " &
+					"Group By idUtente, NickName " &
+					"Order By 3 Desc, 2 "
 				Rec = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
 				If TypeOf (Rec) Is String Then
 					Ritorno = Rec
@@ -419,7 +426,7 @@ Public Class wsConcorsi
 					") As A " &
 					"Left Join Utenti B On A.idAnno = B.idAnno And A.idUtente = B.idUtente " &
 					"Group By A.idAnno, A.idUtente " &
-					"Order By Punti Desc"
+					"Order By Punti Desc, NickName"
 				Rec = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
 				If TypeOf (Rec) Is String Then
 					Ritorno = Rec
