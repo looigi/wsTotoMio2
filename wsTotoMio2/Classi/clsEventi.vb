@@ -564,7 +564,7 @@ Public Class clsEventi
 
 	Public Function PrendeGiocatori(Mp As String, idAnno As Integer, idGiornata As Integer, Conn As Object, Connessione As String) As List(Of StrutturaGiocatore)
 		Dim Ritorno As New List(Of StrutturaGiocatore)
-		Dim Giocatori As String = RitornaClassificaGenerale(Mp, idAnno, idGiornata, Conn, Connessione, False)
+		Dim Giocatori As String = RitornaClassificaGenerale(Mp, idAnno, idGiornata, Conn, Connessione, False, "N")
 		Dim Righe() As String = Giocatori.Split("§")
 		For Each R As String In Righe
 			If R <> "" Then

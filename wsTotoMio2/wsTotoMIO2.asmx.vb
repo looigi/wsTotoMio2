@@ -333,7 +333,12 @@ Public Class wsTotoMIO2
 																Sql = "Delete From Chat Where idAnno=" & idAnno
 																Ritorno = Conn.EsegueSql(Server.MapPath("."), Sql, Connessione, False)
 																If Not Ritorno.Contains(StringaErrore) Then
-																	Ritorno = CreaEventi()
+
+																	Sql = "Update PremioPerFinto Set Importo = 0 Where idAnno=" & idAnno
+																	Ritorno = Conn.EsegueSql(Server.MapPath("."), Sql, Connessione, False)
+																	If Not Ritorno.Contains(StringaErrore) Then
+																		Ritorno = CreaEventi()
+																	End If
 																End If
 															End If
 														End If

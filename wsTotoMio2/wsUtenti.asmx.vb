@@ -253,12 +253,12 @@ Public Class wsUtenti
 	End Function
 
 	<WebMethod()>
-	Public Function RitornaClassifica(idAnno As String, idConcorso As String) As String
+	Public Function RitornaClassifica(idAnno As String, idConcorso As String, MostraFinto As String) As String
 		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
 		Dim Conn As Object = New clsGestioneDB(TipoServer)
 		Dim Ritorno As String = ""
 
-		Return RitornaClassificaGenerale(Server.MapPath("."), idAnno, idConcorso, Conn, Connessione, False)
+		Return RitornaClassificaGenerale(Server.MapPath("."), idAnno, idConcorso, Conn, Connessione, False, MostraFinto)
 	End Function
 
 	<WebMethod()>

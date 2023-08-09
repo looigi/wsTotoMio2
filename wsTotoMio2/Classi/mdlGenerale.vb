@@ -1,4 +1,5 @@
-﻿Imports Microsoft.SqlServer
+﻿Imports System.Web.Configuration
+Imports Microsoft.SqlServer
 Imports wsTotoMio2.clsRecordset
 
 Module mdlGenerale
@@ -334,32 +335,41 @@ Module mdlGenerale
 		Return Ritorno
 	End Function
 
-	Public Function RitornaClassificaGenerale(Mp As String, idAnno As Integer, idGiornata As Integer, Conn As Object, Connessione As String, SoloUnaGiornata As Boolean) As String
+	Public Function RitornaClassificaGenerale(Mp As String, idAnno As Integer, idGiornata As Integer, Conn As Object, Connessione As String, SoloUnaGiornata As Boolean,
+											  MostraFinto As String) As String
 		Dim Ritorno As String = ""
+
 		Dim Confronto As String = "<="
 		If SoloUnaGiornata Then
 			Confronto = "="
 		End If
+
+		Dim Altro As String = ""
+		If MostraFinto = "N" Then
+			Altro = "Where idTipologia <> 2 "
+		End If
+
 		Dim sql As String = "Select * From (" &
 			"SELECT A.idUtente, NickName, Sum(Punti) As Punti, Sum(RisultatiEsatti) As RisultatiEsatti, " &
 			"Sum(RisultatiCasaTot) As RisCasaTot, Sum(RisultatiFuoriTot) As RisFuoriTot, " &
 			"Sum(SegniPresi) As Segni, Sum(SommeGoal) As SommaGoal, Sum(DifferenzeGoal) As DifferenzeGoal, " &
 			"(SELECT Count(*) FROM Pronostici Where idAnno = A.idAnno And idUtente = A.idUtente And idPartita = 1 And idConcorso " & Confronto & " A.idConcorso) As Giocate, " &
 			"Coalesce(Sum(C.Vittorie),0) As Vittorie, Coalesce(Sum(C.Ultimo),0) As Ultimo, Coalesce(Sum(C.Jolly), 0) As Jolly, " &
-			"Coalesce(Sum(A.PuntiPartitaScelta), 0) As PuntiPartitaScelta " &
+			"Coalesce(Sum(A.PuntiPartitaScelta), 0) As PuntiPartitaScelta, B.idTipologia " &
 			"FROM Risultati A " &
 			"Left Join Utenti B On A.idUtente = B.idUtente And A.idAnno = B.idAnno " &
 			"Left Join RisultatiAltro C On A.idAnno = C.idAnno And A.idConcorso = C.idConcorso And A.idUtente = C.idUtente " &
 			"Where A.idAnno=" & idAnno & " And A.idConcorso " & Confronto & " " & idGiornata & " " &
-			"Group By A.idUtente, NickName " &
+			"Group By A.idUtente, NickName, B.idTipologia " &
 			"Union ALL " &
 			"Select idUtente, NickName, 0 As Punti, 0 As RisultatiEsatti, " &
 			"0 As RisCasaTot, 0 As RisFuoriTot, " &
 			"0 As Segni, 0 As SommaGoal, 0 As DifferenzeGoal, 0 As Giocate, " &
-			"0 As Vittorie,0 As Ultimo, 0 As Jolly, 0 As PuntiPartitaScelta " &
+			"0 As Vittorie,0 As Ultimo, 0 As Jolly, 0 As PuntiPartitaScelta, idTipologia " &
 			"From Utenti Where idUtente Not In (Select idUtente From Risultati) " &
 			") As A " &
-			"Order By 3 Desc, 4 Desc, 7 Desc, 5 Desc, 6 Desc, 8 Desc, 9 Desc, 10 Desc, 12 Desc, 13, 2"
+			" " & Altro & " " &
+			"Order By 3 Desc, 4 Desc, 7 Desc, 5 Desc, 6 Desc, 8 Desc, 9 Desc, 10 Desc, 12 Desc, 13, 2, idTipologia"
 		Dim Rec As Object = CreaRecordset(Mp, Conn, sql, Connessione)
 		If TypeOf (Rec) Is String Then
 			Ritorno = Rec
@@ -377,6 +387,142 @@ Module mdlGenerale
 					Rec.MoveNext
 				Loop
 				Rec.Close
+			End If
+		End If
+
+		Return Ritorno
+	End Function
+
+	Public Function CreaColonnaUtenteFinto(Mp As String, idAnno As String, idGiornata As String, Conn As Object, Connessione As String) As String
+		Dim Ritorno As String = ""
+		Dim sql As String = "Select * From Utenti Where idTipologia=2 And idAnno=" & idAnno
+		Dim Rec As Object = CreaRecordset(Mp, Conn, sql, Connessione)
+
+		If TypeOf (Rec) Is String Then
+		Else
+			If Rec.Eof Then
+				' Ritorno = "ERROR: Nessun fintone rilevato"
+			Else
+				Dim ids As New List(Of String)
+
+				Do Until Rec.Eof
+					ids.Add(Rec("idUtente").Value)
+
+					Rec.MoveNext
+				Loop
+				Rec.Close
+
+				sql = "Select Coalesce(Count(*), 0) As Quante From Concorsi Where idAnno=" & idAnno & " And idConcorso=" & idGiornata
+				Rec = CreaRecordset(Mp, Conn, sql, Connessione)
+				If TypeOf (Rec) Is String Then
+				Else
+					If Rec.Eof Then
+						' Ritorno = "ERROR: Nessun concorso rilevato"
+					Else
+						Dim Quante As Integer = Rec("Quante").Value
+						Rec.Close
+
+						For Each id As String In ids
+							Dim Pron As New List(Of String)
+
+							For i As Integer = 1 To Quante
+								sql = "Select Pronostico, Segno From Pronostici Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idPartita=" & i
+								Rec = CreaRecordset(Mp, Conn, sql, Connessione)
+								If TypeOf (Rec) Is String Then
+								Else
+									If Rec.Eof Then
+										' Ritorno = "ERROR: Nessun pronostico rilevato"
+									Else
+										Dim q As Integer = 0
+										Dim TotC As Integer = 0
+										Dim TotF As Integer = 0
+										Dim Segni1 As Integer = 0
+										Dim SegniX As Integer = 0
+										Dim Segni2 As Integer = 0
+
+										Do Until Rec.Eof
+											Dim Pronostico As String = Rec("Pronostico").Value
+
+											If Pronostico <> "" And Pronostico.Contains("-") Then
+												Dim P() As String = Pronostico.Split("-")
+												Dim Casa As Integer = Val(P(0))
+												Dim Fuori As Integer = Val(P(1))
+
+												Select Case Rec("Segno").Value
+													Case "1"
+														Segni1 += 1
+													Case "X"
+														SegniX += 1
+													Case "2"
+														Segni2 += 1
+												End Select
+
+												TotC += Casa
+												TotF += Fuori
+												q += 1
+											End If
+
+											Rec.MoveNext
+										Loop
+										Rec.Close
+
+										If q > 0 Then
+											Dim MediaC As Integer = Math.Floor(TotC / q)
+											Dim MediaF As Integer = Math.Floor(TotF / q)
+											Dim Segno As String = ""
+
+											If Segni1 > SegniX And Segni1 > Segni2 Then
+												Segno = "1"
+											Else
+												If SegniX > Segni1 And SegniX > Segni2 Then
+													Segno = "X"
+												Else
+													If Segni2 > Segni1 And Segni2 > SegniX Then
+														Segno = "2"
+													Else
+														If MediaC > MediaF Then
+															Segno = "1"
+														Else
+															If MediaC < MediaF Then
+																Segno = "2"
+															Else
+																Segno = "X"
+															End If
+														End If
+													End If
+												End If
+											End If
+
+											Pron.Add(MediaC & "-" & MediaF & ";" & Segno)
+										End If
+									End If
+								End If
+							Next
+
+							Dim idPartita As Integer = 1
+
+							For Each p As String In Pron
+								Dim PP() As String = p.Split(";")
+
+								sql = "Insert Into Pronostici Values (" &
+									" " & idAnno & ", " &
+									" " & id & ", " &
+									" " & idGiornata & ", " &
+									" " & idPartita & ", " &
+									"'" & PP(0) & "', " &
+									"'" & PP(1) & "' " &
+									")"
+								Dim Rit As String = Conn.EsegueSql(Mp, sql, Connessione, False)
+								If Rit.Contains("ERROR") Then
+									Ritorno = Rit
+									Exit For
+								End If
+
+								idPartita += 1
+							Next
+						Next
+					End If
+				End If
 			End If
 		End If
 

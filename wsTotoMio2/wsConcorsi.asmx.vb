@@ -3,6 +3,7 @@ Imports System.Drawing.Drawing2D
 Imports System.Linq.Expressions
 Imports System.Runtime.CompilerServices
 Imports System.Security.Policy
+Imports System.Threading
 Imports System.Web.Services
 Imports System.Web.Services.Protocols
 Imports System.Windows.Forms
@@ -262,7 +263,7 @@ Public Class wsConcorsi
 					Rec.Close
 				End If
 
-				Sql = "Select Coalesce(Sum(Importo),0) As Totale From Bilancio Where idAnno=" & idAnno & " And idMovimento=2 And Eliminato='N'"
+				Sql = "Select Coalesce(Sum(Importo),0) As Totale From Bilancio Where idAnno=" & idAnno & " And idMovimento<>1 And Eliminato='N'"
 				Rec = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
 				If TypeOf (Rec) Is String Then
 					Ritorno = Rec
@@ -438,6 +439,27 @@ Public Class wsConcorsi
 						Rec.MoveLast
 						Ritorno &= "Pippone dei pipponi (che non perde niente) con punti media " & Rec("Totale").Value & ";" & Rec("idUtente").Value & ";" & Rec("NickName").Value & "§"
 						Rec.Close
+
+						Ritorno &= "|"
+						Sql = "SELECT A.idUtente, B.NickName, Sum(Importo) As Totale FROM Bilancio As A " &
+							"Left Join Utenti B On A.idAnno = B.idAnno And A.idUtente = B.idUtente " &
+							"Where A.idAnno = " & idAnno & " And A.idMovimento = 3 " &
+							"Group By A.idUtente, B.NickName"
+						Rec = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
+						If TypeOf (Rec) Is String Then
+							Ritorno = Rec
+						Else
+							If Rec.Eof Then
+								' Ritorno = "ERROR: Nessuna coppa rilevata"
+							Else
+								Do Until Rec.Eof
+									Ritorno &= Rec("idUtente").Value & ";" & Rec("NickName").Value & ";" & Rec("Totale").Value & "§"
+
+									Rec.MoveNext
+								Loop
+								Rec.Close
+							End If
+						End If
 					End If
 				End If
 
@@ -556,7 +578,7 @@ Public Class wsConcorsi
 																Tabella &= "<td>" & campi(1) & "</td>"
 																Tabella &= "<td>" & campi(2) & "</td>"
 																Tabella &= "<td>" & campi(3) & "</td>"
-																Tabella &= "<td>" & vincente & "</td>"
+																Tabella &= "<td>" & Vincente & "</td>"
 																Tabella &= "</tr>"
 															End If
 														Next
@@ -895,17 +917,23 @@ Public Class wsConcorsi
 								Rec.Close
 							End If
 
-							Dim Testo As String = ""
-							Testo = "E' stato chiuso il concorso TotoMIO numero " & idGiornata & ".<br />"
-							Testo &= "Non sarà più possibile giocare la schedina<br /><br />"
-							If Assenti <> "" Then
-								Testo &= "Non adempienti:<br />" & Assenti & "<br /><br />"
+							' Crea colonna utente finto se esistente
+							Dim Rit As String = CreaColonnaUtenteFinto(Server.MapPath("."), idAnno, idGiornata, Conn, Connessione)
+							If Rit.Contains(StringaErrore) Then
+								Ritorno = Rit
+							Else
+								Dim Testo As String = ""
+								Testo = "E' stato chiuso il concorso TotoMIO numero " & idGiornata & ".<br />"
+								Testo &= "Non sarà più possibile giocare la schedina<br /><br />"
+								If Assenti <> "" Then
+									Testo &= "Non adempienti:<br />" & Assenti & "<br /><br />"
+								End If
+								If Random <> "" Then
+									Testo &= "Squadre assegnate per 23 Aiutame Te:<br />" & Random & "<br /><br />"
+								End If
+								Testo &= "Per entrare nel sito: <a href=""" & IndirizzoSito & """>Click QUI</a>"
+								InvaMailATutti(Server.MapPath("."), idAnno, "TotoMIO: Chiusura concorso " & idGiornata, Testo, Conn, Connessione, "Chiusura")
 							End If
-							If Random <> "" Then
-								Testo &= "Squadre assegnate per 23 Aiutame Te:<br />" & Random & "<br /><br />"
-							End If
-							Testo &= "Per entrare nel sito: <a href=""" & IndirizzoSito & """>Click QUI</a>"
-							InvaMailATutti(Server.MapPath("."), idAnno, "TotoMIO: Chiusura concorso " & idGiornata, Testo, Conn, Connessione, "Chiusura")
 						End If
 					End If
 				End If
@@ -1304,7 +1332,8 @@ Public Class wsConcorsi
 
 		If Not Ritorno.Contains("ERROR") Then
 			' Aggiorna primi ultimi
-			Dim Classifica As String = RitornaClassificaGenerale(Server.MapPath("."), idAnno, idGiornata, Conn, Connessione, True)
+			Dim Classifica As String = RitornaClassificaGenerale(Server.MapPath("."), idAnno, idGiornata, Conn, Connessione, True, "S")
+
 			If Classifica <> "" Then
 				Dim c() As String = Classifica.Split("§")
 				Dim PrimaRiga() As String = c(0).Split(";")
@@ -1312,36 +1341,92 @@ Public Class wsConcorsi
 				Dim UltimaRiga() As String = c(c.Count - 2).Split(";")
 				Dim idPrimo As Integer = UltimaRiga(0)
 				Dim Ritorno2 As String = "OK"
+				Dim idUtenteFinto As Integer = -1
 
-				sql = "Select * From RisultatiAltro Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente=" & idPrimo
+				sql = "Select idUtente From Utenti Where idAnno=" & idAnno & " And idTipologia=2"
+				Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+				If TypeOf (Rec) Is String Then
+					Ritorno2 = Rec
+				Else
+					idUtenteFinto = Rec("idUtente").Value
+					Rec.Close
+				End If
+				Dim Premio As Integer = 0
+
+				sql = "Select * From PremioPerFinto Where idAnno=" & idAnno
 				Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
 				If TypeOf (Rec) Is String Then
 					Ritorno2 = Rec
 				Else
 					If Rec.Eof Then
-						sql = "Insert Into RisultatiAltro Values (" & idAnno & ", " & idGiornata & ", " & idPrimo & ", 1, 0, 0)"
+						Premio = 0
+						sql = "Insert Into PremioPerFinto Values (1, 0)"
 						Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 					Else
-						sql = "Update RisultatiAltro Set Ultimo = 1 Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente = " & idPrimo
-						Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+						Premio = Rec("Importo").Value
 					End If
+					Rec.Close
 				End If
 
-				sql = "Select * From RisultatiAltro Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente=" & idUltimo
-				Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
-				If TypeOf (Rec) Is String Then
-					Ritorno2 = Rec
-				Else
-					If Rec.Eof Then
-						sql = "Insert Into RisultatiAltro Values (" & idAnno & ", " & idGiornata & ", " & idUltimo & ", 0, 1, 0)"
-						Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+				If idUltimo <> idUtenteFinto Then
+					sql = "Select Coalesce(Max(Progressivo)+1, 1) As Progressivo From Bilancio Where idAnno=" & idAnno
+					Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+					If TypeOf (Rec) Is String Then
+						Ritorno2 = Rec
 					Else
-						sql = "Update RisultatiAltro Set Vittorie = 1 Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente = " & idUltimo
+						Dim Progressivo As String = Rec("Progressivo").Value
+						Rec.Close
+
+						Premio += 1
+						sql = "Insert Into Bilancio Values (" &
+							" " & idAnno & ", " &
+							" " & idUltimo & ", " &
+							" " & Progressivo & ", " &
+							"3, " &
+							" " & Premio & ", " &
+							"'', " &
+							"'Vittoria TotoMIO Concorso N° " & idGiornata & "', " &
+							"'N'" &
+							")"
 						Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+
+						sql = "Update PremioPerFinto Set Importo = 0 Where idAnno = " & idAnno
+						Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+					End If
+				Else
+					sql = "Update PremioPerFinto Set Importo = Importo + 1 Where idAnno = " & idAnno
+					Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+				End If
+
+				sql = "Select * From RisultatiAltro Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente=" & idPrimo
+					Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+					If TypeOf (Rec) Is String Then
+						Ritorno = Rec
+					Else
+						If Rec.Eof Then
+							sql = "Insert Into RisultatiAltro Values (" & idAnno & ", " & idGiornata & ", " & idPrimo & ", 1, 0, 0)"
+							Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+						Else
+							sql = "Update RisultatiAltro Set Ultimo = 1 Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente = " & idPrimo
+							Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+						End If
+					End If
+
+					sql = "Select * From RisultatiAltro Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente=" & idUltimo
+					Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+					If TypeOf (Rec) Is String Then
+						Ritorno = Rec
+					Else
+						If Rec.Eof Then
+							sql = "Insert Into RisultatiAltro Values (" & idAnno & ", " & idGiornata & ", " & idUltimo & ", 0, 1, 0)"
+							Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+						Else
+							sql = "Update RisultatiAltro Set Vittorie = 1 Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente = " & idUltimo
+							Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+						End If
 					End If
 				End If
 			End If
-		End If
 
 		Return Ritorno
 	End Function

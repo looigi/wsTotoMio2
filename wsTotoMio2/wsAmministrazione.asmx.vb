@@ -12,6 +12,57 @@ Public Class wsAmministrazione
 	Inherits System.Web.Services.WebService
 
 	<WebMethod()>
+	Public Function CreaFintone(idAnno As String) As String
+		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
+		Dim Conn As Object = New clsGestioneDB(TipoServer)
+		Dim Ritorno As String = ""
+		Dim sql As String = "Select * From Utenti Where idAnno=" & idAnno & " And idTipologia=2"
+		Dim Rec As Object
+		Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+		If TypeOf (Rec) Is String Then
+			Ritorno = Rec
+		Else
+			If Not Rec.Eof Then
+				Ritorno = "ERROR: Utente Fintone già esistente"
+			Else
+				Rec.Close
+
+				sql = "Select Coalesce(Max(idUtente)+1, 1) As Id From Utenti Where idAnno=" & idAnno
+				Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+				If TypeOf (Rec) Is String Then
+					Ritorno = Rec
+				Else
+					Dim idUtente As Integer = Rec("Id").Value
+					Rec.Close
+
+					sql = "Insert Into Utenti Values (" &
+						" " & idAnno & ", " &
+						" " & idUtente & ", " &
+						"'Fintone', " &
+						"'Fintissimo', " &
+						"'Fintarello', " &
+						"'password', " &
+						"'finto@finto.fi', " &
+						"2, " &
+						"'N' " &
+						")"
+					Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+					If Not Ritorno.Contains(StringaErrore) Then
+						Dim u As New wsUtenti
+
+						Ritorno = u.CreaImmagineStandard(idAnno, idUtente)
+						If Not Ritorno.Contains(StringaErrore) Then
+							Ritorno = idUtente
+						End If
+					End If
+				End If
+			End If
+		End If
+
+		Return Ritorno
+	End Function
+
+	<WebMethod()>
 	Public Function InviaPromemoria(idAnno As String) As String
 		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
 		Dim Conn As Object = New clsGestioneDB(TipoServer)
