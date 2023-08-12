@@ -508,8 +508,8 @@ Public Class wsUtenti
 		Dim Ritorno2 As String = ElaboraStatistiche("", Conn, Connessione)
 		If Not Ritorno1.Contains(StringaErrore) And Not Ritorno2.Contains(StringaErrore) Then
 			Ritorno = "{"
-			Ritorno &= "Annuale: " & Ritorno1 & ","
-			Ritorno &= "Storico: " & Ritorno2
+			Ritorno &= "" & Chr(34) & "Annuale" & Chr(34) & ": " & Ritorno1 & ","
+			Ritorno &= "" & Chr(34) & "Storico" & Chr(34) & ": " & Ritorno2
 			Ritorno &= "}"
 		End If
 		Return Ritorno
@@ -545,27 +545,30 @@ Public Class wsUtenti
 			'	Ritorno = "ERROR: Nessun utente rilevato"
 			'Else
 			Dim StatisticheRisultati As String = "["
+			Dim Riga As Boolean = True
 			Do Until Rec.Eof
 				StatisticheRisultati &= "{"
-				StatisticheRisultati &= "idUtente: " & Rec("idUtente").Value & ", "
-				StatisticheRisultati &= "NickName: " & Chr(34) & Rec("NickName").Value & Chr(34) & ", "
-				StatisticheRisultati &= "SommaPunti: " & SistemaNumeroDaDB(Rec("SommaPunti").Value, False) & ", "
-				StatisticheRisultati &= "SommaSegni: " & SistemaNumeroDaDB(Rec("SommaSegni").Value, False) & ", "
-				StatisticheRisultati &= "SommaRisEsatti: " & SistemaNumeroDaDB(Rec("SommaRisEsatti").Value, False) & ", "
-				StatisticheRisultati &= "SommaRisCasa: " & SistemaNumeroDaDB(Rec("SommaRisCasa").Value, False) & ", "
-				StatisticheRisultati &= "SommaRisFuori: " & SistemaNumeroDaDB(Rec("SommaRisFuori").Value, False) & ", "
-				StatisticheRisultati &= "SommaSomma: " & SistemaNumeroDaDB(Rec("SommaSomma").Value, False) & ", "
-				StatisticheRisultati &= "SommaDiff: " & SistemaNumeroDaDB(Rec("SommaDiff").Value, False) & ", "
-				StatisticheRisultati &= "SommaPuntiPS: " & SistemaNumeroDaDB(Rec("SommaPuntiPS").Value, False) & ", "
-				StatisticheRisultati &= "MediaPunti: " & SistemaNumeroDaDB(Rec("MediaPunti").Value, True) & ", "
-				StatisticheRisultati &= "MediaSegni: " & SistemaNumeroDaDB(Rec("MediaSegni").Value, True) & ", "
-				StatisticheRisultati &= "MediaRisEsatti: " & SistemaNumeroDaDB(Rec("MediaRisEsatti").Value, True) & ", "
-				StatisticheRisultati &= "MediaRisCasa: " & SistemaNumeroDaDB(Rec("MediaRisCasa").Value, True) & ", "
-				StatisticheRisultati &= "MediaRisFuori: " & SistemaNumeroDaDB(Rec("MediaRisFuori").Value, True) & ", "
-				StatisticheRisultati &= "MediaSomma: " & SistemaNumeroDaDB(Rec("MediaSomma").Value, True) & ", "
-				StatisticheRisultati &= "MediaDiff: " & SistemaNumeroDaDB(Rec("MediaDiff").Value, True) & ", "
-				StatisticheRisultati &= "MediaPuntiPS: " & SistemaNumeroDaDB(Rec("MediaPuntiPS").Value, True) & " "
+				StatisticheRisultati &= "" & Chr(34) & "idUtente" & Chr(34) & ": " & Rec("idUtente").Value & ", "
+				StatisticheRisultati &= "" & Chr(34) & "NickName" & Chr(34) & ": " & Chr(34) & Rec("NickName").Value & Chr(34) & ", "
+				StatisticheRisultati &= "" & Chr(34) & "SommaPunti" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("SommaPunti").Value, False) & ", "
+				StatisticheRisultati &= "" & Chr(34) & "SommaSegni" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("SommaSegni").Value, False) & ", "
+				StatisticheRisultati &= "" & Chr(34) & "SommaRisEsatti" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("SommaRisEsatti").Value, False) & ", "
+				StatisticheRisultati &= "" & Chr(34) & "SommaRisCasa" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("SommaRisCasa").Value, False) & ", "
+				StatisticheRisultati &= "" & Chr(34) & "SommaRisFuori" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("SommaRisFuori").Value, False) & ", "
+				StatisticheRisultati &= "" & Chr(34) & "SommaSomma" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("SommaSomma").Value, False) & ", "
+				StatisticheRisultati &= "" & Chr(34) & "SommaDiff" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("SommaDiff").Value, False) & ", "
+				StatisticheRisultati &= "" & Chr(34) & "SommaPuntiPS" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("SommaPuntiPS").Value, False) & ", "
+				StatisticheRisultati &= "" & Chr(34) & "MediaPunti" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("MediaPunti").Value, True) & ", "
+				StatisticheRisultati &= "" & Chr(34) & "MediaSegni" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("MediaSegni").Value, True) & ", "
+				StatisticheRisultati &= "" & Chr(34) & "MediaRisEsatti" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("MediaRisEsatti").Value, True) & ", "
+				StatisticheRisultati &= "" & Chr(34) & "MediaRisCasa" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("MediaRisCasa").Value, True) & ", "
+				StatisticheRisultati &= "" & Chr(34) & "MediaRisFuori" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("MediaRisFuori").Value, True) & ", "
+				StatisticheRisultati &= "" & Chr(34) & "MediaSomma" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("MediaSomma").Value, True) & ", "
+				StatisticheRisultati &= "" & Chr(34) & "MediaDiff" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("MediaDiff").Value, True) & ", "
+				StatisticheRisultati &= "" & Chr(34) & "MediaPuntiPS" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("MediaPuntiPS").Value, True) & ", "
+				StatisticheRisultati &= "" & Chr(34) & "Pari" & Chr(34) & ": " & Chr(34) & Riga & Chr(34) & " "
 				StatisticheRisultati &= "}, "
+				Riga = Not Riga
 
 				Rec.MoveNext
 			Loop
@@ -592,17 +595,20 @@ Public Class wsUtenti
 				'	Ritorno = "ERROR: Nessun utente rilevato"
 				'Else
 				Dim StatisticheRisultatiA As String = "["
+				Riga = True
 				Do Until Rec.Eof
 					StatisticheRisultatiA &= "{"
-					StatisticheRisultatiA &= "idUtente: " & Rec("idUtente").Value & ", "
-					StatisticheRisultatiA &= "NickName: " & Chr(34) & Rec("NickName").Value & Chr(34) & ", "
-					StatisticheRisultatiA &= "SommaVittorie: " & SistemaNumeroDaDB(Rec("SommaVittorie").Value, False) & ", "
-					StatisticheRisultatiA &= "SommaUltimo: " & SistemaNumeroDaDB(Rec("SommaUltimo").Value, False) & ", "
-					StatisticheRisultatiA &= "SommaJolly: " & SistemaNumeroDaDB(Rec("SommaJolly").Value, False) & ", "
-					StatisticheRisultatiA &= "MediaVittorie: " & SistemaNumeroDaDB(Rec("MediaVittorie").Value, True) & ", "
-					StatisticheRisultatiA &= "MediaUltimo: " & SistemaNumeroDaDB(Rec("MediaUltimo").Value, True) & ", "
-					StatisticheRisultatiA &= "MediaJolly: " & SistemaNumeroDaDB(Rec("MediaJolly").Value, True) & " "
+					StatisticheRisultatiA &= "" & Chr(34) & "idUtente" & Chr(34) & ": " & Rec("idUtente").Value & ", "
+					StatisticheRisultatiA &= "" & Chr(34) & "NickName" & Chr(34) & ": " & Chr(34) & Rec("NickName").Value & Chr(34) & ", "
+					StatisticheRisultatiA &= "" & Chr(34) & "SommaVittorie" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("SommaVittorie").Value, False) & ", "
+					StatisticheRisultatiA &= "" & Chr(34) & "SommaUltimo" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("SommaUltimo").Value, False) & ", "
+					StatisticheRisultatiA &= "" & Chr(34) & "SommaJolly" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("SommaJolly").Value, False) & ", "
+					StatisticheRisultatiA &= "" & Chr(34) & "MediaVittorie" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("MediaVittorie").Value, True) & ", "
+					StatisticheRisultatiA &= "" & Chr(34) & "MediaUltimo" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("MediaUltimo").Value, True) & ", "
+					StatisticheRisultatiA &= "" & Chr(34) & "MediaJolly" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("MediaJolly").Value, True) & ", "
+					StatisticheRisultatiA &= "" & Chr(34) & "Pari" & Chr(34) & ": " & Chr(34) & Riga & Chr(34) & " "
 					StatisticheRisultatiA &= "}, "
+					Riga = Not Riga
 
 					Rec.MoveNext
 				Loop
@@ -653,18 +659,21 @@ Public Class wsUtenti
 					'	Ritorno = "ERROR: Nessun utente rilevato"
 					'Else
 					Dim StatisticheScontriDiretti As String = "["
+					Riga = True
 					Do Until Rec.Eof
 						StatisticheScontriDiretti &= "{"
-						StatisticheScontriDiretti &= "idUtente: " & Rec("idUtente").Value & ", "
-						StatisticheScontriDiretti &= "NickName: " & Chr(34) & Rec("NickName").Value & Chr(34) & ", "
-						StatisticheScontriDiretti &= "Vinte: " & SistemaNumeroDaDB(Rec("Vinte").Value, False) & ", "
-						StatisticheScontriDiretti &= "Pareggiate: " & SistemaNumeroDaDB(Rec("Pareggiate").Value, False) & ", "
-						StatisticheScontriDiretti &= "Perse: " & SistemaNumeroDaDB(Rec("Perse").Value, False) & ", "
-						StatisticheScontriDiretti &= "Giocate: " & SistemaNumeroDaDB(Rec("Giocate").Value, False) & ", "
-						StatisticheScontriDiretti &= "MediaVinte: " & SistemaNumeroDaDB(Rec("Vinte").Value / Rec("Giocate").Value, False) & ", "
-						StatisticheScontriDiretti &= "MediaPareggiate: " & SistemaNumeroDaDB(Rec("Pareggiate").Value / Rec("Giocate").Value, False) & ", "
-						StatisticheScontriDiretti &= "MediaPerse: " & SistemaNumeroDaDB(Rec("Perse").Value / Rec("Giocate").Value, False) & ", "
+						StatisticheScontriDiretti &= "" & Chr(34) & "idUtente" & Chr(34) & ": " & Rec("idUtente").Value & ", "
+						StatisticheScontriDiretti &= "" & Chr(34) & "NickName" & Chr(34) & ": " & Chr(34) & Rec("NickName").Value & Chr(34) & ", "
+						StatisticheScontriDiretti &= "" & Chr(34) & "Vinte" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("Vinte").Value, False) & ", "
+						StatisticheScontriDiretti &= "" & Chr(34) & "Pareggiate" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("Pareggiate").Value, False) & ", "
+						StatisticheScontriDiretti &= "" & Chr(34) & "Perse" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("Perse").Value, False) & ", "
+						StatisticheScontriDiretti &= "" & Chr(34) & "Giocate" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("Giocate").Value, False) & ", "
+						StatisticheScontriDiretti &= "" & Chr(34) & "MediaVinte" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("Vinte").Value / Rec("Giocate").Value, False) & ", "
+						StatisticheScontriDiretti &= "" & Chr(34) & "MediaPareggiate" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("Pareggiate").Value / Rec("Giocate").Value, False) & ", "
+						StatisticheScontriDiretti &= "" & Chr(34) & "MediaPerse" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("Perse").Value / Rec("Giocate").Value, False) & ", "
+						StatisticheScontriDiretti &= "" & Chr(34) & "Pari" & Chr(34) & ": " & Chr(34) & Riga & Chr(34) & " "
 						StatisticheScontriDiretti &= "}, "
+						Riga = Not Riga
 
 						Rec.MoveNext
 					Loop
@@ -700,7 +709,7 @@ Public Class wsUtenti
 						End If
 					End If
 
-					sql = "Select idUtente, NickName, Sum(Entrate) As SommaEntrate, Sum(Uscite) As SommaUscite, Sum(Vincita) As SommaVincita, " &
+					sql = "Select idUtente, NickName, Sum(Entrate) As SommaEntrate, Sum(Uscite) As SommaUscite, Sum(Vincita) As SommaVincite, " &
 						"(Sum(Entrate) + Sum(Vincita)) - Sum(Uscite) As SommaBilancio From ( " &
 						"SELECT A.idUtente, B.NickName, Sum(Importo) As Entrate, 0 As Uscite, 0 As Vincita FROM Bilancio As A " &
 						"Left Join Utenti B On A.idAnno = B.idAnno And A.idUtente = B.idUtente " &
@@ -727,15 +736,18 @@ Public Class wsUtenti
 						'	Ritorno = "ERROR: Nessun utente rilevato"
 						'Else
 						Dim StatisticheBilancio As String = "["
+						Riga = True
 						Do Until Rec.Eof
 							StatisticheBilancio &= "{"
-							StatisticheBilancio &= "idUtente: " & Rec("idUtente").Value & ", "
-							StatisticheBilancio &= "NickName: " & Chr(34) & Rec("NickName").Value & Chr(34) & ", "
-							StatisticheBilancio &= "Entrate: " & SistemaNumeroDaDB(Rec("SommaEntrate").Value, True) & ", "
-							StatisticheBilancio &= "Uscite: " & SistemaNumeroDaDB(Rec("SommaUscite").Value, True) & ", "
-							StatisticheBilancio &= "Vincite: " & SistemaNumeroDaDB(Rec("SommaVincite").Value, True) & ", "
-							StatisticheBilancio &= "Bilancio: " & SistemaNumeroDaDB(Rec("SommaBilancio").Value, True) & " "
+							StatisticheBilancio &= "" & Chr(34) & "idUtente" & Chr(34) & ": " & Rec("idUtente").Value & ", "
+							StatisticheBilancio &= "" & Chr(34) & "NickName" & Chr(34) & ": " & Chr(34) & Rec("NickName").Value & Chr(34) & ", "
+							StatisticheBilancio &= "" & Chr(34) & "Entrate" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("SommaEntrate").Value, True) & ", "
+							StatisticheBilancio &= "" & Chr(34) & "Uscite" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("SommaUscite").Value, True) & ", "
+							StatisticheBilancio &= "" & Chr(34) & "Vincite" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("SommaVincite").Value, True) & ", "
+							StatisticheBilancio &= "" & Chr(34) & "Bilancio" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("SommaBilancio").Value, True) & ", "
+							StatisticheBilancio &= "" & Chr(34) & "Pari" & Chr(34) & ": " & Chr(34) & Riga & Chr(34) & " "
 							StatisticheBilancio &= "}, "
+							Riga = Not Riga
 
 							Rec.MoveNext
 						Loop
@@ -776,12 +788,15 @@ Public Class wsUtenti
 								'	Ritorno = "ERROR: Nessun utente rilevato"
 								'Else
 								Dim StatistichePronostici As String = "["
+								Riga = True
 								Do Until Rec.Eof
 									StatistichePronostici &= "{"
-									StatistichePronostici &= "idUtente: " & Rec("idUtente").Value & ", "
-									StatistichePronostici &= "NickName: " & Chr(34) & Rec("NickName").Value & Chr(34) & ", "
-									StatistichePronostici &= "Giocate: " & SistemaNumeroDaDB(Rec("Quanti").Value, False) & " "
+									StatistichePronostici &= "" & Chr(34) & "idUtente" & Chr(34) & ": " & Rec("idUtente").Value & ", "
+									StatistichePronostici &= "" & Chr(34) & "NickName" & Chr(34) & ": " & Chr(34) & Rec("NickName").Value & Chr(34) & ", "
+									StatistichePronostici &= "" & Chr(34) & "Giocate" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("Quanti").Value, False) & ", "
+									StatistichePronostici &= "" & Chr(34) & "Pari" & Chr(34) & ": " & Chr(34) & Riga & Chr(34) & " "
 									StatistichePronostici &= "}, "
+									Riga = Not Riga
 
 									Rec.MoveNext
 								Loop
@@ -794,16 +809,16 @@ Public Class wsUtenti
 								Dim SquadrePrese As String = GeneraSquadrePrese(Server.MapPath("."), idAnno, Conn, Connessione)
 
 								Ritorno &= "{"
-								Ritorno &= "Anno: " & Chr(34) & Anno & Chr(34) & ", "
-								Ritorno &= "Anni: " & QuantiAnni & ", "
-								Ritorno &= "Giornata: " & Chr(34) & idGiornata & Chr(34) & ", "
-								Ritorno &= "ConcorsiAperti: " & Quanti & ", "
-								Ritorno &= "Risultati: " & StatisticheRisultati & ", "
-								Ritorno &= "RisultatiAltro: " & StatisticheRisultatiA & ", "
-								Ritorno &= "ScontriDiretti: " & StatisticheScontriDiretti & ", "
-								Ritorno &= "Pronostici: " & StatistichePronostici & ", "
-								Ritorno &= "SquadrePrese: " & SquadrePrese & ", "
-								Ritorno &= "Bilancio: " & StatisticheBilancio
+								Ritorno &= "" & Chr(34) & "Anno" & Chr(34) & ": " & Chr(34) & Anno & Chr(34) & ", "
+								Ritorno &= "" & Chr(34) & "Anni" & Chr(34) & ": " & QuantiAnni & ", "
+								Ritorno &= "" & Chr(34) & "Giornata" & Chr(34) & ": " & Chr(34) & idGiornata & Chr(34) & ", "
+								Ritorno &= "" & Chr(34) & "ConcorsiAperti" & Chr(34) & ": " & Quanti & ", "
+								Ritorno &= "" & Chr(34) & "Risultati" & Chr(34) & ": " & StatisticheRisultati & ", "
+								Ritorno &= "" & Chr(34) & "RisultatiAltro" & Chr(34) & ": " & StatisticheRisultatiA & ", "
+								Ritorno &= "" & Chr(34) & "ScontriDiretti" & Chr(34) & ": " & StatisticheScontriDiretti & ", "
+								Ritorno &= "" & Chr(34) & "Pronostici" & Chr(34) & ": " & StatistichePronostici & ", "
+								Ritorno &= "" & Chr(34) & "SquadrePrese" & Chr(34) & ": " & SquadrePrese & ", "
+								Ritorno &= "" & Chr(34) & "Bilancio" & Chr(34) & ": " & StatisticheBilancio
 								Ritorno &= "}"
 							End If
 						End If

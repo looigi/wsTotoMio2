@@ -10,9 +10,11 @@ Module mdlGenerale
 		Dim newBody As String
 		Dim Allegato() As String
 	End Structure
+
 	Public Structure SquadrePrese
 		Dim Squadra As String
 		Dim Quante As Integer
+		Dim Totale As Integer
 	End Structure
 
 	Public listaMails As New List(Of strutturaMail)
@@ -735,9 +737,30 @@ Module mdlGenerale
 
 			Dim conta2 As Integer = 0
 			For Each id As String In Utenti
-				Sql = "SELECT Prima, Seconda FROM Pronostici As A " &
+				Sql = "Select Squadra, Sum(Quante) As Prese, (Select Count(*) From Concorsi Where " & Altro.Replace("A.", "") & " (Prima=Squadra Or Seconda=Squadra) Group By Squadra) As Tot " &
+					"From ( " &
+					"SELECT Prima As Squadra, Count(*) As Quante FROM Pronostici As A " &
 					"Left Join Concorsi B On A.idAnno = B.idAnno And A.idConcorso = B.idConcorso And A.idPartita = B.idPartita " &
-					"Where " & Altro & " A.idUtente = " & id & " And A.Segno = B.Segno"
+					"Where " & Altro & " A.idUtente = 1 And A.Segno = B.Segno " &
+					"Group By Prima " &
+					"Union ALL " &
+					"Select Seconda As Squadra, Count(*) As Quante FROM Pronostici As A " &
+					"Left Join Concorsi B On A.idAnno = B.idAnno And A.idConcorso = B.idConcorso And A.idPartita = B.idPartita " &
+					"Where " & Altro & " A.idUtente = 1 And A.Segno = B.Segno " &
+					"Group By Prima " &
+					"Union ALL " &
+					"Select Prima As Squadra, 0 As Quante FROM Pronostici As A " &
+					"Left Join Concorsi B On A.idAnno = B.idAnno And A.idConcorso = B.idConcorso And A.idPartita = B.idPartita " &
+					"Where " & Altro & " A.idUtente = 1 And A.Segno <> B.Segno " &
+					"Group By Prima " &
+					"Union ALL " &
+					"Select Seconda As Squadra, 0 As Quante FROM Pronostici As A " &
+					"Left Join Concorsi B On A.idAnno = B.idAnno And A.idConcorso = B.idConcorso And A.idPartita = B.idPartita " &
+					"Where " & Altro & " A.idUtente = 1 And A.Segno <> B.Segno " &
+					"Group By Prima " &
+					") As A " &
+					"Group By Squadra " &
+					"Order By 2 Desc, 3 "
 				Rec = CreaRecordset(Mp, Conn, Sql, Connessione)
 				If TypeOf (Rec) Is String Then
 					Ritorno = Rec
@@ -745,101 +768,45 @@ Module mdlGenerale
 					Dim Prese As New List(Of SquadrePrese)
 
 					Do Until Rec.Eof
-						Dim q1 As Integer = -1
-						Dim q2 As Integer = -1
-						Dim conta As Integer = 0
-						For Each s As SquadrePrese In Prese
-							If s.Squadra = Rec("Prima").Value Then
-								q1 = conta
-							End If
-							If s.Squadra = Rec("Seconda").Value Then
-								q2 = conta
-							End If
-							conta += 1
-						Next
-						If q1 > -1 Then
-							Dim p As SquadrePrese = Prese.Item(q1)
-							p.Quante += 1
-							Prese.Item(q1) = p
-						Else
-							Dim p As New SquadrePrese
-							p.Squadra = Rec("Prima").Value
-							p.Quante = 1
-
-							Prese.Add(p)
-						End If
-						If q2 > -1 Then
-							Dim p As SquadrePrese = Prese.Item(q2)
-							p.Quante += 1
-							Prese.Item(q2) = p
-						Else
-							Dim p As New SquadrePrese
-							p.Squadra = Rec("Seconda").Value
-							p.Quante = 1
-
-							Prese.Add(p)
-						End If
+						Dim p As New SquadrePrese
+						p.Squadra = Rec("Squadra").Value
+						p.Quante = Rec("Prese").Value
+						p.Totale = Rec("Tot").Value
+						Prese.Add(p)
 
 						Rec.MoveNext
 					Loop
 					Rec.Close
 
-					If Prese.Count > 0 Then
-						For i As Integer = 0 To Prese.Count - 1
-							For k As Integer = i + 1 To Prese.Count - 1
-								If Prese.Item(i).Quante > Prese.Item(k).Quante Then
-									Dim p As SquadrePrese = Prese.Item(i)
-									Prese.Item(i) = Prese.Item(k)
-									Prese.Item(k) = p
-								End If
-							Next
-						Next
+					Ritorno &= "{"
 
-						Dim Prima As SquadrePrese = Prese.Item(0)
-						Dim Ultima As SquadrePrese = Prese.Item(Prese.Count - 1)
-						Dim TotalePrima As Integer = 0
+					Ritorno &= "" & Chr(34) & "idUtente" & Chr(34) & ": " & id & ", "
+					Ritorno &= "" & Chr(34) & "NickName" & Chr(34) & ": " & Chr(34) & NickName.Item(conta2) & Chr(34) & ", "
+					Ritorno &= "" & Chr(34) & "Prese" & Chr(34) & ": ["
 
-						Sql = "Select Count(*) From Concorsi Where Prima='" & Prima.Squadra & "' Or Seconda='" & Prima.Squadra & "'"
-						Rec = CreaRecordset(Mp, Conn, Sql, Connessione)
-						If TypeOf (Rec) Is String Then
-							Ritorno = Rec
-						Else
-							TotalePrima = Rec(0).Value
-							Rec.Close
-						End If
+					Dim Ritorno2 As String = ""
+					Dim Riga As Boolean = True
 
-						Dim TotaleSeconda As Integer = 0
+					For Each s As SquadrePrese In Prese
+						Ritorno2 &= "{"
+						Ritorno2 &= "" & Chr(34) & "Squadra" & Chr(34) & ": " & Chr(34) & s.Squadra & Chr(34) & ", "
+						Ritorno2 &= "" & Chr(34) & "Prese" & Chr(34) & ": " & s.Quante & ", "
+						Ritorno2 &= "" & Chr(34) & "Totale" & Chr(34) & ": " & s.Totale & ", "
+						Ritorno2 &= "" & Chr(34) & "Pari" & Chr(34) & ": " & Chr(34) & Riga & Chr(34) & " "
+						Ritorno2 &= "}, "
+						Riga = Not Riga
+					Next
 
-						Sql = "Select Count(*) From Concorsi Where Prima='" & Ultima.Squadra & "' Or Seconda='" & Ultima.Squadra & "'"
-						Rec = CreaRecordset(Mp, Conn, Sql, Connessione)
-						If TypeOf (Rec) Is String Then
-							Ritorno = Rec
-						Else
-							TotaleSeconda = Rec(0).Value
-							Rec.Close
-						End If
-
-						Ritorno &= "{"
-
-						Ritorno &= "idUtente: " & id & ", "
-						Ritorno &= "NickName: " & Chr(34) & NickName.Item(conta2) & Chr(34) & ", "
-						Ritorno &= "Maggiore: {"
-						Ritorno &= "Squadra: '" & Prima.Squadra & "', "
-						Ritorno &= "Prese: " & Prima.Quante & ", "
-						Ritorno &= "Totale: " & TotalePrima & " "
-						Ritorno &= "}, "
-
-						Ritorno &= "Minore: {"
-						Ritorno &= "Squadra: '" & Ultima.Squadra & "', "
-						Ritorno &= "Prese: " & Ultima.Quante & ", "
-						Ritorno &= "Totale: " & TotaleSeconda & " "
-						Ritorno &= "}"
-
-						Ritorno &= "},"
+					If Ritorno2.Length > 0 Then
+						Ritorno2 = Mid(Ritorno2, 1, Ritorno2.Length - 2)
 					End If
-				End If
+					Ritorno &= Ritorno2
 
-				conta2 += 1
+					Ritorno &= "]"
+					Ritorno &= "},"
+
+					conta2 += 1
+				End If
 			Next
 		End If
 		If Ritorno.Length > 0 Then
