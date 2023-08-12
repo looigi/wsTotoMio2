@@ -844,16 +844,17 @@ Public Class clsEventi
 								End If
 							End If
 						Case 5
+							' CIAPA NO
 							Dim Segni1 As Integer = Punti1
 							Dim Segni2 As Integer = Punti2
 
-							Risultato1 = "Punti " & Segni1
-							Risultato2 = "Punti " & Segni2
+							Risultato1 = "Meno Punti " & Segni1
+							Risultato2 = "Meno Punti " & Segni2
 
-							If Segni1 > Segni2 Then
+							If Segni1 < Segni2 Then
 								Vincente = 1
 							Else
-								If Segni1 < Segni2 Then
+								If Segni1 > Segni2 Then
 									Vincente = 2
 								Else
 									Vincente = 0

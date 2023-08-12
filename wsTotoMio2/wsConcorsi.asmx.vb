@@ -1377,6 +1377,9 @@ Public Class wsConcorsi
 						Dim Progressivo As String = Rec("Progressivo").Value
 						Rec.Close
 
+						sql = "Delete From Bilancio Where idAnno=" & idAnno & " And Note = 'Vittoria TotoMIO Concorso N° " & idGiornata & "'"
+						Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+
 						Premio += 1
 						sql = "Insert Into Bilancio Values (" &
 							" " & idAnno & ", " &
@@ -1397,6 +1400,10 @@ Public Class wsConcorsi
 					sql = "Update PremioPerFinto Set Importo = Importo + 1 Where idAnno = " & idAnno
 					Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 				End If
+
+				'If idPrimo <> idUtenteFinto Then
+
+				'End If
 
 				sql = "Select * From RisultatiAltro Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente=" & idPrimo
 					Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
@@ -1459,7 +1466,7 @@ Public Class wsConcorsi
 		Dim Ritorno As String = ""
 		Dim sql As String = "SELECT A.idUtente, B.NickName, Sum(A.Punti) As Punti FROM SquadreRandom As A " &
 			"Left Join Utenti B On A.idAnno = B.idAnno And A.idUtente = B.idUtente " &
-			"Where A.idAnno = " & idAnno & " And A.idConcorso <= " & idConcorso & " " &
+			"Where A.idAnno = " & idAnno & " And A.idConcorso <= " & idConcorso & " And B.idTipologia <> 2 " &
 			"Group By A.idUtente, B.NickName " &
 			"Order By 2 Desc "
 		Dim Rec As Object = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
@@ -1477,7 +1484,7 @@ Public Class wsConcorsi
 
 			sql = "SELECT A.idUtente, B.NickName, A.Squadra, A.Punti As Punti FROM SquadreRandom As A " &
 				"Left Join Utenti B On A.idAnno = B.idAnno And A.idUtente = B.idUtente " &
-				"Where A.idAnno = " & idAnno & " And A.idConcorso = " & idConcorso & " " &
+				"Where A.idAnno = " & idAnno & " And A.idConcorso = " & idConcorso & " And B.idTipologia <> 2 " &
 				"Group By A.idUtente, B.NickName"
 			Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
 			If TypeOf (Rec) Is String Then

@@ -1,4 +1,5 @@
-﻿Imports System.Web.Configuration
+﻿Imports System.Drawing.Printing
+Imports System.Web.Configuration
 Imports Microsoft.SqlServer
 Imports wsTotoMio2.clsRecordset
 
@@ -9,6 +10,11 @@ Module mdlGenerale
 		Dim newBody As String
 		Dim Allegato() As String
 	End Structure
+	Public Structure SquadrePrese
+		Dim Squadra As String
+		Dim Quante As Integer
+	End Structure
+
 	Public listaMails As New List(Of strutturaMail)
 	Public timerMails As Timers.Timer = Nothing
 	Public path1 As String = ""
@@ -634,7 +640,7 @@ Module mdlGenerale
 								" " & idAnno & ", " &
 								" " & idConcorso & ", " &
 								" " & id & ", " &
-								"'" & SistemaStringaPerDB(squadra) & "', " &
+								"'" & SistemaStringaPerDB(Squadra) & "', " &
 								"0 " &
 								")"
 							Ritorno = Conn.EsegueSql(Mp, Sql, Connessione, False)
@@ -689,4 +695,158 @@ Module mdlGenerale
 		End If
 
 	End Sub
+
+	Public Function SistemaNumeroDaDB(Numero As Object, Decimale As Boolean) As String
+		Dim N As String = Numero
+
+		If Decimale Then
+			N = CInt(Val(N) * 100) / 100
+		End If
+		N = N.ToString.Replace(",", ".")
+		N = N.Replace(".0000", "")
+
+		Return N
+	End Function
+
+	Public Function GeneraSquadrePrese(Mp As String, idAnno As String, Conn As Object, Connessione As String) As String
+		Dim Sql As String = ""
+		Dim Rec As Object
+		Dim Ritorno As String = "["
+
+		Sql = "Select * From Utenti " &
+			IIf(idAnno <> "", "Where idAnno=" & idAnno & " And Eliminato = 'N' And idTIpologia <> 2", "Where Eliminato = 'N' And idTIpologia <> 2")
+		Rec = CreaRecordset(Mp, Conn, Sql, Connessione)
+		If TypeOf (Rec) Is String Then
+			Ritorno = Rec
+		Else
+			Dim Utenti As New List(Of String)
+			Dim NickName As New List(Of String)
+
+			Do Until Rec.Eof
+				Utenti.Add(Rec("idUtente").Value)
+				NickName.Add(Rec("NickName").Value)
+
+				Rec.MoveNext
+			Loop
+			Rec.Close
+
+			Dim Altro As String = ""
+			If idAnno <> "" Then Altro = " A.idAnno = 1 And "
+
+			Dim conta2 As Integer = 0
+			For Each id As String In Utenti
+				Sql = "SELECT Prima, Seconda FROM Pronostici As A " &
+					"Left Join Concorsi B On A.idAnno = B.idAnno And A.idConcorso = B.idConcorso And A.idPartita = B.idPartita " &
+					"Where " & Altro & " A.idUtente = " & id & " And A.Segno = B.Segno"
+				Rec = CreaRecordset(Mp, Conn, Sql, Connessione)
+				If TypeOf (Rec) Is String Then
+					Ritorno = Rec
+				Else
+					Dim Prese As New List(Of SquadrePrese)
+
+					Do Until Rec.Eof
+						Dim q1 As Integer = -1
+						Dim q2 As Integer = -1
+						Dim conta As Integer = 0
+						For Each s As SquadrePrese In Prese
+							If s.Squadra = Rec("Prima").Value Then
+								q1 = conta
+							End If
+							If s.Squadra = Rec("Seconda").Value Then
+								q2 = conta
+							End If
+							conta += 1
+						Next
+						If q1 > -1 Then
+							Dim p As SquadrePrese = Prese.Item(q1)
+							p.Quante += 1
+							Prese.Item(q1) = p
+						Else
+							Dim p As New SquadrePrese
+							p.Squadra = Rec("Prima").Value
+							p.Quante = 1
+
+							Prese.Add(p)
+						End If
+						If q2 > -1 Then
+							Dim p As SquadrePrese = Prese.Item(q2)
+							p.Quante += 1
+							Prese.Item(q2) = p
+						Else
+							Dim p As New SquadrePrese
+							p.Squadra = Rec("Seconda").Value
+							p.Quante = 1
+
+							Prese.Add(p)
+						End If
+
+						Rec.MoveNext
+					Loop
+					Rec.Close
+
+					If Prese.Count > 0 Then
+						For i As Integer = 0 To Prese.Count - 1
+							For k As Integer = i + 1 To Prese.Count - 1
+								If Prese.Item(i).Quante > Prese.Item(k).Quante Then
+									Dim p As SquadrePrese = Prese.Item(i)
+									Prese.Item(i) = Prese.Item(k)
+									Prese.Item(k) = p
+								End If
+							Next
+						Next
+
+						Dim Prima As SquadrePrese = Prese.Item(0)
+						Dim Ultima As SquadrePrese = Prese.Item(Prese.Count - 1)
+						Dim TotalePrima As Integer = 0
+
+						Sql = "Select Count(*) From Concorsi Where Prima='" & Prima.Squadra & "' Or Seconda='" & Prima.Squadra & "'"
+						Rec = CreaRecordset(Mp, Conn, Sql, Connessione)
+						If TypeOf (Rec) Is String Then
+							Ritorno = Rec
+						Else
+							TotalePrima = Rec(0).Value
+							Rec.Close
+						End If
+
+						Dim TotaleSeconda As Integer = 0
+
+						Sql = "Select Count(*) From Concorsi Where Prima='" & Ultima.Squadra & "' Or Seconda='" & Ultima.Squadra & "'"
+						Rec = CreaRecordset(Mp, Conn, Sql, Connessione)
+						If TypeOf (Rec) Is String Then
+							Ritorno = Rec
+						Else
+							TotaleSeconda = Rec(0).Value
+							Rec.Close
+						End If
+
+						Ritorno &= "{"
+
+						Ritorno &= "idUtente: " & id & ", "
+						Ritorno &= "NickName: " & Chr(34) & NickName.Item(conta2) & Chr(34) & ", "
+						Ritorno &= "Maggiore: {"
+						Ritorno &= "Squadra: '" & Prima.Squadra & "', "
+						Ritorno &= "Prese: " & Prima.Quante & ", "
+						Ritorno &= "Totale: " & TotalePrima & " "
+						Ritorno &= "}, "
+
+						Ritorno &= "Minore: {"
+						Ritorno &= "Squadra: '" & Ultima.Squadra & "', "
+						Ritorno &= "Prese: " & Ultima.Quante & ", "
+						Ritorno &= "Totale: " & TotaleSeconda & " "
+						Ritorno &= "}"
+
+						Ritorno &= "},"
+					End If
+				End If
+
+				conta2 += 1
+			Next
+		End If
+		If Ritorno.Length > 0 Then
+			Ritorno = Mid(Ritorno, 1, Ritorno.Length - 1)
+		End If
+		Ritorno &= "]"
+
+		Return Ritorno
+	End Function
 End Module
