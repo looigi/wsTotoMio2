@@ -736,6 +736,7 @@ Module mdlGenerale
 			If idAnno <> "" Then Altro = " A.idAnno = 1 And "
 
 			Dim conta2 As Integer = 0
+			Dim Riga2 As Boolean = True
 			For Each id As String In Utenti
 				Sql = "Select Squadra, Sum(Quante) As Prese, (Select Count(*) From Concorsi Where " & Altro.Replace("A.", "") & " (Prima=Squadra Or Seconda=Squadra) Group By Squadra) As Tot " &
 					"From ( " &
@@ -782,7 +783,9 @@ Module mdlGenerale
 
 					Ritorno &= "" & Chr(34) & "idUtente" & Chr(34) & ": " & id & ", "
 					Ritorno &= "" & Chr(34) & "NickName" & Chr(34) & ": " & Chr(34) & NickName.Item(conta2) & Chr(34) & ", "
+					Ritorno &= "" & Chr(34) & "Pari" & Chr(34) & ": " & Chr(34) & Riga2 & Chr(34) & ", "
 					Ritorno &= "" & Chr(34) & "Prese" & Chr(34) & ": ["
+					Riga2 = Not Riga2
 
 					Dim Ritorno2 As String = ""
 					Dim Riga As Boolean = True
@@ -792,7 +795,8 @@ Module mdlGenerale
 						Ritorno2 &= "" & Chr(34) & "Squadra" & Chr(34) & ": " & Chr(34) & s.Squadra & Chr(34) & ", "
 						Ritorno2 &= "" & Chr(34) & "Prese" & Chr(34) & ": " & s.Quante & ", "
 						Ritorno2 &= "" & Chr(34) & "Totale" & Chr(34) & ": " & s.Totale & ", "
-						Ritorno2 &= "" & Chr(34) & "Pari" & Chr(34) & ": " & Chr(34) & Riga & Chr(34) & " "
+						Ritorno2 &= "" & Chr(34) & "Pari" & Chr(34) & ": " & Chr(34) & Riga & Chr(34) & ", "
+						Ritorno2 &= "" & Chr(34) & "Visibile" & Chr(34) & ": " & Chr(34) & "False" & Chr(34) & " "
 						Ritorno2 &= "}, "
 						Riga = Not Riga
 					Next
