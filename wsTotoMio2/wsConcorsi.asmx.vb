@@ -1381,13 +1381,14 @@ Public Class wsConcorsi
 						Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 
 						Premio += 1
+						Dim Datella As String = Format(Now.Day, "00") & "/" & Format(Now.Month, "00") & "/" & Now.Year
 						sql = "Insert Into Bilancio Values (" &
 							" " & idAnno & ", " &
 							" " & idUltimo & ", " &
 							" " & Progressivo & ", " &
 							"3, " &
 							" " & Premio & ", " &
-							"'', " &
+							"'" & datella & "', " &
 							"'Vittoria TotoMIO Concorso N° " & idGiornata & "', " &
 							"'N'" &
 							")"

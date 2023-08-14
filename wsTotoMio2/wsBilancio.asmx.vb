@@ -27,23 +27,20 @@ Public Class wsBilancio
 				Dim idTipologia As Integer = Rec("idTipologia").Value
 				Rec.Close
 
-				'If idTipologia = 0 Then
+				Dim Altro As String = ""
+
+				If idTipologia > 0 Then
+					Altro = "And A.idUtente=" & idUtente
+				End If
+
 				Sql = "Select C.idMovimento, C.Descrizione, A.idUtente, B.NickName, A.Importo, A.Data, A.Note, A.Progressivo, " &
-					"D.idPosizione, D.Descrizione As Posizione " &
+					"D.idPosizione, D.Descrizione As Posizione, Presentati " &
 					"From Bilancio A " &
 					"Left Join Movimenti C On A.idMovimento=C.idMovimento " &
 					"Left Join Utenti B On A.idAnno=B.idAnno And A.idUtente=B.idUtente " &
 					"Left Join Posizioni D On A.idPosizione = D.idPosizione " &
-					"Where A.idAnno=" & idAnno & " And A.Eliminato='N' Order By Progressivo"
-				'Else
-				'	Sql = "Select C.idMovimento, C.Descrizione, A.idUtente, A.NickName, A.Importo, A.Data, A.Note, A.Progressivo, " &
-				'		"D.idPosizione, D.Posizione " &
-				'		"From Bilancio A " &
-				'		"Left Join Movimenti C On A.idMovimento=C.idMovimento " &
-				'		"Left Join Utenti B On A.idAnno=B.idAnno And A.idUtente=B.idUtente " &
-				'		"Left Join Posizioni D On A.idPosizione = D.idPosizione " &
-				'		"Where A.idAnno=" & idAnno & " And A.idUtente=" & idUtente & " And A.Eliminato='N' Order By Progressivo"
-				'End If
+					"Left Join Presentati E On A.idAnno = E.idAnno And A.idUtente = E.idUtente " &
+					"Where A.idAnno=" & idAnno & " " & Altro & " And A.Eliminato='N' Order By Progressivo"
 				Rec = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
 				If TypeOf (Rec) Is String Then
 					Ritorno = Rec
@@ -55,10 +52,51 @@ Public Class wsBilancio
 							Ritorno &= Rec("idMovimento").Value & ";" & Rec("Descrizione").Value & ";" & Rec("idUtente").Value & ";" &
 								SistemaStringaPerRitorno(Rec("NickName").Value) & ";" & Rec("Importo").Value & ";" &
 								Rec("Data").Value & ";" & SistemaStringaPerRitorno(Rec("Note").Value) & ";" & Rec("Progressivo").Value & ";" &
-								Rec("idPosizione").Value & ";" & Rec("Posizione").Value & "§"
+								Rec("idPosizione").Value & ";" & Rec("Posizione").Value & ";" & Rec("Presentati").Value & "§"
 							Rec.MoveNext
 						Loop
 						Rec.Close
+
+						Ritorno &= "|"
+
+						Sql = "Select idUtente, NickName, Sum(Totale) As Totale From ( " &
+							"SELECT A.idUtente, C.NickName, A.idMovimento, B.Descrizione, -Importo As Totale FROM Bilancio As A " &
+							"Left Join Movimenti B On A.idMovimento = B.idMovimento " &
+							"Left Join Utenti C On A.idAnno = C.idAnno And A.idUtente = C.idUtente " &
+							"Where B.Descrizione = 'Entrata' And A.idAnno= " & idAnno & " " & Altro & " And C.Eliminato='N' " &
+							"Union All " &
+							"SELECT A.idUtente, C.NickName, A.idMovimento, B.Descrizione, Importo As Totale FROM Bilancio As A " &
+							"Left Join Movimenti B On A.idMovimento = B.idMovimento " &
+							"Left Join Utenti C On A.idAnno = C.idAnno And A.idUtente = C.idUtente " &
+							"Where B.Descrizione = 'Uscita' And A.idAnno= " & idAnno & " " & Altro & " And C.Eliminato='N' " &
+							"Union All " &
+							"SELECT A.idUtente, C.NickName, A.idMovimento, B.Descrizione, Importo As Totale FROM Bilancio As A " &
+							"Left Join Movimenti B On A.idMovimento = B.idMovimento " &
+							"Left Join Utenti C On A.idAnno = C.idAnno And A.idUtente = C.idUtente " &
+							"Where B.Descrizione = 'Vincita' And A.idAnno= " & idAnno & " " & Altro & " And C.Eliminato='N' " &
+							"Union All " &
+							"SELECT A.idUtente, C.NickName, A.idMovimento, B.Descrizione, Importo As Totale FROM Bilancio As A " &
+							"Left Join Movimenti B On A.idMovimento = B.idMovimento " &
+							"Left Join Utenti C On A.idAnno = C.idAnno And A.idUtente = C.idUtente " &
+							"Where B.Descrizione = 'Presentazione' And A.idAnno= " & idAnno & " " & Altro & " And C.Eliminato='N' " &
+							") As A " &
+							"Group By idUtente, NickName " &
+							"Order By Totale Desc"
+						Rec = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
+						If TypeOf (Rec) Is String Then
+							Ritorno = Rec
+						Else
+							If Rec.Eof Then
+								Ritorno = "ERROR: Nessun movimento 2 rilevato"
+							Else
+								Do Until Rec.Eof
+									Ritorno &= Rec("idUtente").Value & ";" & Rec("NickName").Value & ";" & Rec("Totale").Value & "§"
+
+									Rec.MoveNext
+								Loop
+								Rec.Close
+							End If
+						End If
 					End If
 				End If
 			End If

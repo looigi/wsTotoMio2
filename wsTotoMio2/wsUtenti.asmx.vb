@@ -15,7 +15,7 @@ Public Class wsUtenti
 
 	<WebMethod()>
 	Public Function AggiungeUtente(idAnno As String, NickName As String, Cognome As String, Nome As String,
-								   Password As String, Mail As String, idTipologia As String) As String
+								   Password As String, Mail As String, idTipologia As String, Presentatore As String) As String
 		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
 		Dim Conn As Object = New clsGestioneDB(TipoServer)
 		Dim Ritorno As String = ""
@@ -73,6 +73,106 @@ Public Class wsUtenti
 							Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 							If Not Ritorno.Contains(StringaErrore) Then
 								Ritorno = idUtente
+
+								' INSERIMENTO SQUADRA RANDOM IN CASO DI CONCORSO APERTO / DA CONTROLLARE
+								sql = "Select * From Globale Where idAnno=" & idAnno
+								Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+								If TypeOf (Rec) Is String Then
+									Ritorno = Rec
+								Else
+									Dim ModalitaConcorso As Integer = Rec("idModalitaConcorso").Value
+									Dim Giornata As Integer = Rec("idGiornata").Value
+									Rec.Close
+
+									If ModalitaConcorso = 1 Or ModalitaConcorso = 2 Then
+										sql = "Delete From SquadreRandom Where idAnno=" & idAnno & " And idConcorso=" & Giornata & " And idUtente=" & idUtente
+										Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+										If Not Ritorno.Contains(StringaErrore) Then
+											sql = "Select* From Concorsi Where idAnno=" & idAnno & " And idConcorso=" & Giornata
+											Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+											If TypeOf (Rec) Is String Then
+												Ritorno = Rec
+											Else
+												If Rec.Eof Then
+													'Ritorno = "ERROR: Nessun concorso rilevato"
+												Else
+													Dim Squadre As New List(Of String)
+
+													Do Until Rec.eof
+														Squadre.Add(Rec("Prima").Value)
+														Squadre.Add(Rec("Seconda").Value)
+
+														Rec.MoveNext
+													Loop
+													Rec.Close
+
+													Dim Quante As Integer = Squadre.Count - 1
+
+													Dim x As Integer = GetRandom(1, Quante)
+													Dim Squadra As String = Squadre.Item(x)
+
+													sql = "Insert Into SquadreRandom Values (" &
+														" " & idAnno & ", " &
+														" " & Giornata & ", " &
+														" " & idUtente & ", " &
+														" " & Squadra & ", " &
+														"0 " &
+														")"
+													Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+												End If
+											End If
+										End If
+									End If
+								End If
+								' INSERIMENTO SQUADRA RANDOM IN CASO DI CONCORSO APERTO / DA CONTROLLARE
+
+								' EVENTUALE PRESENTAZIONE
+								If Presentatore <> "0" Then
+									sql = "Select Coalesce(Count(*), 0) As Quanti From Presentati Where idAnno=" & idAnno & " And idUtente=" & Presentatore
+									Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+									If TypeOf (Rec) Is String Then
+										Ritorno = Rec
+									Else
+										Dim Quanti As Integer = Rec("Quanti").Value
+
+										If Quanti = 0 Then
+											sql = "Insert Into Presentati Values (" & idAnno & ", " & Presentatore & ", 1)"
+										Else
+											sql = "Update Presentati Set Presentati = Presentati + 1 Where idAnno=" & idAnno & " And idUtente=" & Presentatore
+										End If
+										Rec.Close
+
+										If Quanti < 6 Then
+											Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+											If Not Ritorno.Contains(StringaErrore) Then
+												sql = "Select Coalesce(Max(Progressivo), 1) As Progressivo From Bilancio Where idAnno=" & idAnno
+												Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+												If TypeOf (Rec) Is String Then
+													Ritorno = Rec
+												Else
+													Dim Progressivo As Integer = Rec("Progressivo").Value
+													Rec.Close
+
+													Dim Datella As String = Format(Now.Day, "00") & "/" & Format(Now.Month, "00") & "/" & Now.Year
+
+													sql = "Insert Into Bilancio Values (" &
+														" " & idAnno & ", " &
+														" " & idUtente & ", " &
+														" " & Progressivo & ", " &
+														"4, " &
+														"1.5, " &
+														"'" & Datella & "', " &
+														"'Sconto per presentazione " & NickName & "', " &
+														"'N', " &
+														"0 " &
+														")"
+													Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+												End If
+											End If
+										End If
+									End If
+								End If
+								' EVENTUALE PRESENTAZIONE
 
 								Dim gi As New GestioneImmagini
 								gi.CreaAvatar(Server.MapPath("."), idAnno, idUtente, NickName, Nome, Cognome)
@@ -306,7 +406,8 @@ Public Class wsUtenti
 				Ritorno = "ERROR: nessun movimento rilevato"
 			Else
 				Do Until Rec.Eof
-					Ritorno &= Rec("idUtente").Value & ";" & SistemaStringaPerRitorno(Rec("NickName").Value) & "§"
+					Ritorno &= Rec("idUtente").Value & ";" & SistemaStringaPerRitorno(Rec("NickName").Value) & ";" &
+						SistemaStringaPerRitorno(Rec("Cognome").Value) & ";" & SistemaStringaPerRitorno(Rec("Nome").Value) & "§"
 
 					Rec.MoveNext
 				Loop
