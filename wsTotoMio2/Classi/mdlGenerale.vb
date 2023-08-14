@@ -664,11 +664,11 @@ Module mdlGenerale
 		If Operazione <> "" Then
 			Sql = "Select * From Utenti A " &
 				"Left Join UtentiMails B On A.idAnno = B.idAnno And A.idUtente = B.idUtente " &
-				"Where A.idAnno = " & idAnno & " And Eliminato = 'N' And " & Operazione & "='S' "
+				"Where A.idAnno = " & idAnno & " And Eliminato = 'N' And " & Operazione & "='S' And idTipologia<>2 "
 		Else
 			Sql = "Select * From Utenti A " &
 				"Left Join UtentiMails B On A.idAnno = B.idAnno And A.idUtente = B.idUtente " &
-				"Where A.idAnno = " & idAnno & " And Eliminato = 'N'"
+				"Where A.idAnno = " & idAnno & " And Eliminato = 'N' And idTipologia<>2"
 		End If
 		Dim Rec As Object = CreaRecordset(Mp, Conn, Sql, Connessione)
 		If TypeOf (Rec) Is String Then

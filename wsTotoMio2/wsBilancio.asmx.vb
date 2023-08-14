@@ -27,17 +27,23 @@ Public Class wsBilancio
 				Dim idTipologia As Integer = Rec("idTipologia").Value
 				Rec.Close
 
-				If idTipologia = 0 Then
-					Sql = "Select * From Bilancio A " &
-						"Left Join Movimenti C On A.idMovimento=C.idMovimento " &
-						"Left Join Utenti B On A.idAnno=B.idAnno And A.idUtente=B.idUtente " &
-						"Where A.idAnno=" & idAnno & " And A.Eliminato='N' Order By Progressivo"
-				Else
-					Sql = "Select * From Bilancio A " &
-						"Left Join Movimenti C On A.idMovimento=C.idMovimento " &
-						"Left Join Utenti B On A.idAnno=B.idAnno And A.idUtente=B.idUtente " &
-						"Where A.idAnno=" & idAnno & " And A.idUtente=" & idUtente & " And A.Eliminato='N' Order By Progressivo"
-				End If
+				'If idTipologia = 0 Then
+				Sql = "Select C.idMovimento, C.Descrizione, A.idUtente, B.NickName, A.Importo, A.Data, A.Note, A.Progressivo, " &
+					"D.idPosizione, D.Descrizione As Posizione " &
+					"From Bilancio A " &
+					"Left Join Movimenti C On A.idMovimento=C.idMovimento " &
+					"Left Join Utenti B On A.idAnno=B.idAnno And A.idUtente=B.idUtente " &
+					"Left Join Posizioni D On A.idPosizione = D.idPosizione " &
+					"Where A.idAnno=" & idAnno & " And A.Eliminato='N' Order By Progressivo"
+				'Else
+				'	Sql = "Select C.idMovimento, C.Descrizione, A.idUtente, A.NickName, A.Importo, A.Data, A.Note, A.Progressivo, " &
+				'		"D.idPosizione, D.Posizione " &
+				'		"From Bilancio A " &
+				'		"Left Join Movimenti C On A.idMovimento=C.idMovimento " &
+				'		"Left Join Utenti B On A.idAnno=B.idAnno And A.idUtente=B.idUtente " &
+				'		"Left Join Posizioni D On A.idPosizione = D.idPosizione " &
+				'		"Where A.idAnno=" & idAnno & " And A.idUtente=" & idUtente & " And A.Eliminato='N' Order By Progressivo"
+				'End If
 				Rec = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
 				If TypeOf (Rec) Is String Then
 					Ritorno = Rec
@@ -48,7 +54,8 @@ Public Class wsBilancio
 						Do Until Rec.Eof
 							Ritorno &= Rec("idMovimento").Value & ";" & Rec("Descrizione").Value & ";" & Rec("idUtente").Value & ";" &
 								SistemaStringaPerRitorno(Rec("NickName").Value) & ";" & Rec("Importo").Value & ";" &
-								Rec("Data").Value & ";" & SistemaStringaPerRitorno(Rec("Note").Value) & ";" & Rec("Progressivo").Value & "§"
+								Rec("Data").Value & ";" & SistemaStringaPerRitorno(Rec("Note").Value) & ";" & Rec("Progressivo").Value & ";" &
+								Rec("idPosizione").Value & ";" & Rec("Posizione").Value & "§"
 							Rec.MoveNext
 						Loop
 						Rec.Close
@@ -92,6 +99,25 @@ Public Class wsBilancio
 					Rec.MoveNext
 				Loop
 				Rec.CLose
+
+				Ritorno &= "|"
+
+				Sql = "Select * From Posizioni Order By idPosizione"
+				Rec = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
+				If TypeOf (Rec) Is String Then
+					Ritorno = Rec
+				Else
+					If Rec.Eof Then
+						Ritorno = "ERROR: nessuna posizione rilevata"
+					Else
+						Do Until Rec.Eof
+							Ritorno &= Rec("idPosizione").Value & ";" & SistemaStringaPerRitorno(Rec("Descrizione").Value) & "§"
+
+							Rec.MoveNext
+						Loop
+						Rec.CLose
+					End If
+				End If
 			End If
 		End If
 
@@ -100,7 +126,7 @@ Public Class wsBilancio
 
 	<WebMethod()>
 	Public Function ScriveModificaMovimento(idAnno As String, idUtente As String, idMovimento As String, Importo As String,
-											Data As String, Note As String, Progressivo As String) As String
+											Data As String, Note As String, Progressivo As String, idPosizione As String) As String
 		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
 		Dim Conn As Object = New clsGestioneDB(TipoServer)
 		Dim Ritorno As String = ""
@@ -126,7 +152,8 @@ Public Class wsBilancio
 						" " & Importo.Replace(",", ".") & ", " &
 						"'" & SistemaStringaPerDB(Data) & "', " &
 						"'" & SistemaStringaPerDB(Note) & "', " &
-						"'N' " &
+						"'N', " &
+						" " & idPosizione & " " &
 						")"
 					Ritorno = Conn.EsegueSql(Server.MapPath("."), Sql, Connessione, False)
 					If Not Ritorno.Contains(StringaErrore) Then
@@ -141,47 +168,61 @@ Public Class wsBilancio
 								Dim Movimento As String = Rec("Descrizione").Value
 								Rec.Close
 
-								Sql = "Select * From Utenti Where idAnno=" & idAnno & " And idUtente=" & idUtente
+								Sql = "Select * From Posizioni Where idPosizione=" & idPosizione
 								Rec = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
 								If TypeOf (Rec) Is String Then
 									Ritorno = Rec
 								Else
 									If Rec.Eof Then
-										Ritorno = "ERROR: Nessun Utente rilevato"
+										Ritorno = "ERROR: Nessuna posizione rilevata"
 									Else
-										Dim NickName As String = Rec("NickName").Value
-										Dim Mail As String = Rec("Mail").Value
+										Dim Posizione As String = Rec("Descrizione").Value
 										Rec.Close
 
-										Dim Testo As String = "Movimento di bilancio:<br /><br /><style=""font-weight: bold;"">" & NickName & "</style><br />" &
-											"" & Movimento & ": <style=""font-weight: bold;"">" & Importo & "</style><br />" &
-											"<style=""font-weight: bold;"">Data: </style>" & Data & "<br />" &
-											"<style=""font-weight: bold;"">Note: </style>" & Note & "<br />"
-										Testo &= "<br /><br />Per accedere: <a href=""" & IndirizzoSito & """>Click QUI</a>"
-
-										Dim m As New mail(Server.MapPath("."))
-
-										Sql = "Select * From Utenti Where idAnno=" & idAnno & " And Eliminato='N' And idTipologia=0"
+										Sql = "Select * From Utenti Where idAnno=" & idAnno & " And idUtente=" & idUtente
 										Rec = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
 										If TypeOf (Rec) Is String Then
 											Ritorno = Rec
 										Else
-											Dim Mails As New List(Of String)
-											Dim mmm As String = ""
-											Mails.Add(Mail)
-											mmm &= Mail & ";"
-											Do Until Rec.Eof
-												If Not mmm.Contains(Rec("Mail").Value & ";") Then
-													Mails.Add(Rec("Mail").Value)
-													mmm &= Rec("Mail").Value
-												End If
+											If Rec.Eof Then
+												Ritorno = "ERROR: Nessun Utente rilevato"
+											Else
+												Dim NickName As String = Rec("NickName").Value
+												Dim Mail As String = Rec("Mail").Value
+												Rec.Close
 
-												Rec.MoveNext
-											Loop
-											Rec.Close
-											For Each mm As String In Mails
-												m.SendEmail(Server.MapPath("."), mm, "TotoMIO: Movimento di bilancio", Testo, {})
-											Next
+												Dim Testo As String = "Movimento di bilancio:<br /><br /><style=""font-weight: bold;"">" & NickName & "</style><br />" &
+													"" & Movimento & ": <style=""font-weight: bold;"">" & Importo & "</style><br />" &
+													"<style=""font-weight: bold;"">Data: </style>" & Data & "<br />" &
+													"<style=""font-weight: bold;"">Note: </style>" & Note & "<br />" &
+													"<style=""font-weight: bold;"">Modalità di pagamento: </style>" & Posizione & "<br />"
+												Testo &= "<br /><br />Per accedere: <a href=""" & IndirizzoSito & """>Click QUI</a>"
+
+												Dim m As New mail(Server.MapPath("."))
+
+												Sql = "Select * From Utenti Where idAnno=" & idAnno & " And Eliminato='N' And idTipologia=0"
+												Rec = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
+												If TypeOf (Rec) Is String Then
+													Ritorno = Rec
+												Else
+													Dim Mails As New List(Of String)
+													Dim mmm As String = ""
+													Mails.Add(Mail)
+													mmm &= Mail & ";"
+													Do Until Rec.Eof
+														If Not mmm.Contains(Rec("Mail").Value & ";") Then
+															Mails.Add(Rec("Mail").Value)
+															mmm &= Rec("Mail").Value
+														End If
+
+														Rec.MoveNext
+													Loop
+													Rec.Close
+													For Each mm As String In Mails
+														m.SendEmail(Server.MapPath("."), mm, "TotoMIO: Movimento di bilancio", Testo, {})
+													Next
+												End If
+											End If
 										End If
 									End If
 								End If

@@ -1,4 +1,5 @@
-﻿Imports System.ComponentModel
+﻿Imports System.Buffers
+Imports System.ComponentModel
 Imports System.Web.Services
 Imports System.Web.Services.Protocols
 Imports System.Windows.Forms
@@ -59,7 +60,7 @@ Public Class wsUtenti
 							")"
 						Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 						If Not Ritorno.Contains(StringaErrore) Then
-							sql = "Insert Into UtentiMail Values (" &
+							sql = "Insert Into UtentiMails Values (" &
 								" " & idAnno & ", " &
 								" " & idUtente & ", " &
 								"'S', " &
@@ -145,6 +146,32 @@ Public Class wsUtenti
 			If Not Ritorno.Contains(StringaErrore) Then
 				Ritorno = "*"
 			End If
+		End If
+
+		Return Ritorno
+	End Function
+
+	<WebMethod()>
+	Public Function RitornaPassword(idAnno As String, NickName As String) As String
+		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
+		Dim Conn As Object = New clsGestioneDB(TipoServer)
+		Dim Ritorno As String = ""
+		Dim sql As String = "Select * From Utenti Where idAnno=" & idAnno & " And Upper(Trim(NickName))='" & SistemaStringaPerDB(NickName).Trim.ToUpper & "'"
+		Dim Rec As Object = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+		If TypeOf (Rec) Is String Then
+			Ritorno = Rec
+		Else
+			Dim Mail As String = Rec("Mail").Value
+			Dim Password As String = Rec("Password").Value
+			Rec.Close
+
+			Dim Testo As String = ""
+			Testo = "Invio la password per l'utente " & NickName & " che è smemorato:<br /><br />"
+			Testo &= "La password è: " & Password & "<br /><br />"
+			Testo &= "Per accedere: <a href=""" & IndirizzoSito & """>Click QUI</a>"
+
+			Dim m As New mail(Server.MapPath("."))
+			m.SendEmail(Server.MapPath("."), Mail, "TotoMIO: Ti ricordo la password visto che sei un babbeo... :-)", Testo, {})
 		End If
 
 		Return Ritorno
