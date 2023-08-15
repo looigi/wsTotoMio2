@@ -114,7 +114,7 @@ Public Class wsAmministrazione
 			sql = "SELECT Distinct A.idUtente, NickName, Mail FROM Utenti A " &
 				"Left Join UtentiMails B On A.idAnno = B.idAnno And A.idUtente=B.idUtente " &
 				"Where A.idAnno = " & idAnno & " And A.idUtente Not In (Select C.idUtente From Pronostici As C Where C.idAnno = " & idAnno & " And C.idConcorso = " & idConcorso & ") " &
-				"And B.Reminder='S'"
+				"And B.Reminder='S' And A.idTipologia<>2"
 			Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
 			If TypeOf (Rec) Is String Then
 				'Ritorno = Rec

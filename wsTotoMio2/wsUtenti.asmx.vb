@@ -157,14 +157,14 @@ Public Class wsUtenti
 
 													sql = "Insert Into Bilancio Values (" &
 														" " & idAnno & ", " &
-														" " & idUtente & ", " &
+														" " & Presentatore & ", " &
 														" " & Progressivo & ", " &
 														"4, " &
 														"1.5, " &
 														"'" & Datella & "', " &
 														"'Sconto per presentazione " & NickName & "', " &
 														"'N', " &
-														"0 " &
+														"1 " &
 														")"
 													Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 												End If
@@ -436,6 +436,7 @@ Public Class wsUtenti
 				For Each r As String In Righe
 					If r <> "" Then
 						Dim Campi() As String = r.Split(";")
+
 						sql = "Insert Into Pronostici Values (" &
 							" " & idAnno & ", " &
 							" " & idUtente & ", " &
@@ -459,6 +460,10 @@ Public Class wsUtenti
 					If Not Ritorno.Contains("ERROR:") Then
 						sql = "Insert Into PartiteScelte Values (" & idAnno & ", " & idConcorso & ", " & idUtente & ", " & idPartitaScelta & ")"
 						Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+						If Not Ritorno.Contains("ERROR:") Then
+							Dim wsC As New wsConcorsi
+							Ritorno = wsC.SistemaPronostici(idAnno, idConcorso)
+						End If
 					End If
 				End If
 			End If

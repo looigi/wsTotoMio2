@@ -95,6 +95,27 @@ Public Class wsBilancio
 									Rec.MoveNext
 								Loop
 								Rec.Close
+
+								Ritorno &= "|"
+
+								Sql = "Select * From Utenti " &
+									"Where idAnno = " & idAnno & " And idUtente Not In (Select idUtente From Bilancio Where idAnno=1 And Upper(Trim(Note)) Like '%INIZIALE%') " &
+									"And idTipologia <> 2 Order By NickName"
+								Rec = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
+								If TypeOf (Rec) Is String Then
+									Ritorno = Rec
+								Else
+									If Rec.Eof Then
+										Ritorno = "ERROR: Nessun movimento 3 rilevato"
+									Else
+										Do Until Rec.Eof
+											Ritorno &= Rec("idUtente").Value & ";" & Rec("NickName").Value & "§"
+
+											Rec.MoveNext
+										Loop
+										Rec.Close
+									End If
+								End If
 							End If
 						End If
 					End If

@@ -17,6 +17,11 @@ Imports wsTotoMio2.clsRecordset
 Public Class wsConcorsi
 	Inherits System.Web.Services.WebService
 
+	Public Structure StruttPronostico
+		Dim Pronostico As String
+		Dim Quante As Integer
+	End Structure
+
 	'<WebMethod()>
 	'Public Function AggiungeConcorso(idAnno As String, Dati As String) As String
 	'	Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
@@ -443,7 +448,7 @@ Public Class wsConcorsi
 						Ritorno &= "|"
 						Sql = "SELECT A.idUtente, B.NickName, Sum(Importo) As Totale FROM Bilancio As A " &
 							"Left Join Utenti B On A.idAnno = B.idAnno And A.idUtente = B.idUtente " &
-							"Where A.idAnno = " & idAnno & " And A.idMovimento = 3 " &
+							"Where A.idAnno = " & idAnno & " And (A.idMovimento = 3 Or A.idMovimento = 4) " &
 							"Group By A.idUtente, B.NickName"
 						Rec = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
 						If TypeOf (Rec) Is String Then
@@ -835,7 +840,9 @@ Public Class wsConcorsi
 		Dim Rec As Object
 
 		Dim sql As String = "SELECT Distinct idUtente, NickName FROM Utenti A " &
-								"Where idAnno = " & idAnno & " And idUtente Not In (Select idUtente From Pronostici Where idAnno = " & idAnno & " And idConcorso = " & idGiornata & ")"
+								"Where idAnno = " & idAnno & " And idUtente Not In (Select idUtente From Pronostici Where idAnno = " & idAnno & " And idConcorso = " & idGiornata & ") " &
+								"And idTipologia<>2 " &
+								"Order By NickName"
 		Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
 		If TypeOf (Rec) Is String Then
 			'Ritorno = Rec
@@ -1499,6 +1506,207 @@ Public Class wsConcorsi
 				Rec.Close
 
 			End If
+		End If
+
+		Return Ritorno
+	End Function
+
+	<WebMethod()>
+	Public Function StatistichePartite(idAnno As String, idConcorso As String) As String
+		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
+		Dim Conn As Object = New clsGestioneDB(TipoServer)
+		Dim Ritorno As String = ""
+		Dim Sql As String = "Select idPartita, Prima, Seconda, Segno, Quanti, TotalePartite, Round((Quanti / TotalePartite) * 100) As Media From ( " &
+			"Select *, (Select Count(*) From Pronostici Where idAnno= " & idAnno & " And idConcorso = " & idConcorso & " And idPartita=1) As TotalePartite From ( " &
+			"Select A.idPartita, B.Prima, B.Seconda, A.Segno, Count(*) As Quanti From Pronostici As A " &
+			"Left Join Concorsi B On A.idAnno = B.idAnno And A.idConcorso = B.idConcorso And A.idPartita = B.idPartita " &
+			"Where A.idAnno = " & idAnno & " And A.idConcorso=" & idConcorso & " " &
+			"Group By A.idPartita, A.Segno " &
+			") As A " &
+			") As B"
+		Dim Rec As Object = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
+		If TypeOf (Rec) Is String Then
+			Ritorno = Rec
+		Else
+			Do Until Rec.Eof
+				Dim idPartita As String = Rec("idPartita").Value
+				Dim Casa As String = Rec("Prima").Value
+				Dim Fuori As String = Rec("Seconda").Value
+				Dim Segno As String = Rec("Segno").Value
+				Dim Quanti As String = Rec("Quanti").Value
+				Dim Percentuale As String = Rec("Media").Value
+				Sql = "Select Pronostico From Pronostici Where idAnno=" & idAnno & " And idConcorso=" & idConcorso & " And idPartita=" & idPartita
+				Dim Rec2 As Object = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
+				If TypeOf (Rec2) Is String Then
+					Ritorno = Rec2
+				Else
+					Dim RisultatoPiuGiocato As New List(Of StruttPronostico)
+					Dim GoalCasaPiuGiocato As New List(Of StruttPronostico)
+					Dim GoalFuoriPiuGiocato As New List(Of StruttPronostico)
+
+					Do Until Rec2.Eof
+						Dim Pronostico As String = Rec2("Pronostico").Value
+						Dim Ok As Boolean = False
+						Dim C As Integer = 0
+						For Each r As StruttPronostico In RisultatoPiuGiocato
+							If RisultatoPiuGiocato.Item(C).Pronostico = Pronostico Then
+								Dim g As StruttPronostico = RisultatoPiuGiocato.Item(C)
+								g.Quante += 1
+								RisultatoPiuGiocato.Item(C) = g
+								Ok = True
+								Exit For
+							End If
+							C += 1
+						Next
+						If Not Ok Then
+							Dim p2 As New StruttPronostico
+							p2.Pronostico = Pronostico
+							p2.Quante = 1
+
+							RisultatoPiuGiocato.Add(p2)
+						End If
+
+						Dim p() As String = Pronostico.Split("-")
+						Ok = False
+						Dim RisCasa As Integer = p(0)
+						C = 0
+						For Each r As StruttPronostico In GoalCasaPiuGiocato
+							If Val(GoalCasaPiuGiocato.Item(C).Pronostico) = RisCasa Then
+								Dim g As StruttPronostico = GoalCasaPiuGiocato.Item(C)
+								g.Quante += 1
+								GoalCasaPiuGiocato.Item(C) = g
+								Ok = True
+								Exit For
+							End If
+							C += 1
+						Next
+						If Not Ok Then
+							Dim p2 As New StruttPronostico
+							p2.Pronostico = RisCasa
+							p2.Quante = 1
+
+							GoalCasaPiuGiocato.Add(p2)
+						End If
+
+						Dim RisFuori As Integer = p(1)
+						C = 0
+						Ok = False
+						For Each r As StruttPronostico In GoalFuoriPiuGiocato
+							If Val(GoalFuoriPiuGiocato.Item(C).Pronostico) = RisCasa Then
+								Dim g As StruttPronostico = GoalFuoriPiuGiocato.Item(C)
+								g.Quante += 1
+								GoalFuoriPiuGiocato.Item(C) = g
+								Ok = True
+								Exit For
+							End If
+							C += 1
+						Next
+						If Not Ok Then
+							Dim p2 As New StruttPronostico
+							p2.Pronostico = RisFuori
+							p2.Quante = 1
+
+							GoalFuoriPiuGiocato.Add(p2)
+						End If
+
+						Rec2.MoveNext
+					Loop
+					Rec2.Close
+
+					For i As Integer = 0 To RisultatoPiuGiocato.Count - 1
+						For k As Integer = i + 1 To RisultatoPiuGiocato.Count - 1
+							If RisultatoPiuGiocato.Item(i).Quante < RisultatoPiuGiocato.Item(k).Quante Then
+								Dim App As StruttPronostico = RisultatoPiuGiocato.Item(i)
+								RisultatoPiuGiocato.Item(i) = RisultatoPiuGiocato.Item(k)
+								RisultatoPiuGiocato.Item(k) = App
+							End If
+						Next
+					Next
+
+					Dim RisPiuGiocato As String = RisultatoPiuGiocato.Item(0).Pronostico & ";" & RisultatoPiuGiocato.Item(0).Quante
+					Dim u As Integer = RisultatoPiuGiocato.Count - 1
+					Dim RisMenoGiocato As String = RisultatoPiuGiocato.Item(u).Pronostico & ";" & RisultatoPiuGiocato.Item(u).Quante
+
+					For i As Integer = 0 To GoalCasaPiuGiocato.Count - 1
+						For k As Integer = i + 1 To GoalCasaPiuGiocato.Count - 1
+							If GoalCasaPiuGiocato.Item(i).Quante < GoalCasaPiuGiocato.Item(k).Quante Then
+								Dim App As StruttPronostico = GoalCasaPiuGiocato.Item(i)
+								GoalCasaPiuGiocato.Item(i) = GoalCasaPiuGiocato.Item(k)
+								GoalCasaPiuGiocato.Item(k) = App
+							End If
+						Next
+					Next
+
+					Dim GoalPiuGiocatoCasa As String = GoalCasaPiuGiocato.Item(0).Pronostico & ";" & GoalCasaPiuGiocato.Item(0).Quante
+					u = GoalCasaPiuGiocato.Count - 1
+					Dim GoalCasaMenoGiocato As String = GoalCasaPiuGiocato.Item(u).Pronostico & ";" & GoalCasaPiuGiocato.Item(u).Quante
+
+					For i As Integer = 0 To GoalFuoriPiuGiocato.Count - 1
+						For k As Integer = i + 1 To GoalFuoriPiuGiocato.Count - 1
+							If GoalFuoriPiuGiocato.Item(i).Quante < GoalFuoriPiuGiocato.Item(k).Quante Then
+								Dim App As StruttPronostico = GoalFuoriPiuGiocato.Item(i)
+								GoalFuoriPiuGiocato.Item(i) = GoalFuoriPiuGiocato.Item(k)
+								GoalFuoriPiuGiocato.Item(k) = App
+							End If
+						Next
+					Next
+
+					Dim GoalPiuGiocatoFuori As String = GoalFuoriPiuGiocato.Item(0).Pronostico & ";" & GoalFuoriPiuGiocato.Item(0).Quante
+					u = GoalFuoriPiuGiocato.Count - 1
+					Dim GoalFuoriMenoGiocato As String = GoalFuoriPiuGiocato.Item(u).Pronostico & ";" & GoalFuoriPiuGiocato.Item(u).Quante
+
+					Ritorno &= idPartita & ";" & Casa & ";" & Fuori & ";" & Segno & ";" & Quanti & ";" & Percentuale & ";" &
+						RisPiuGiocato & ";" & RisMenoGiocato & ";" & GoalPiuGiocatoCasa & ";" & GoalCasaMenoGiocato & ";" &
+						GoalPiuGiocatoFuori & ";" & GoalFuoriMenoGiocato & "§"
+				End If
+
+				Rec.MoveNext
+			Loop
+			Rec.Close
+		End If
+
+		Return Ritorno
+	End Function
+
+	<WebMethod()>
+	Public Function SistemaPronostici(idAnno As String, idConcorso As String) As String
+		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
+		Dim Conn As Object = New clsGestioneDB(TipoServer)
+		Dim Ritorno As String = ""
+		Dim Sql As String = "SELECT * FROM Pronostici Where idAnno=" & idAnno & " And idConcorso=" & idConcorso & " And (Segno = '' Or Segno Is Null)"
+		Dim Rec As Object = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
+		If TypeOf (Rec) Is String Then
+			Ritorno = Rec
+		Else
+			Dim Sqls As New List(Of String)
+
+			Do Until Rec.Eof
+				Dim Risultato As String = Rec("Pronostico").Value
+				Dim c() As String = Risultato.Split("-")
+				Dim Casa As Integer = Val(c(0))
+				Dim Fuori As Integer = Val(c(1))
+				Dim idPartita As String = Rec("idPartita").Value
+				Dim idUtente As String = Rec("idUtente").Value
+				Dim Segno As String = ""
+				If Casa > Fuori Then
+					segno = "1"
+				Else
+					If Casa < Fuori Then
+						Segno = "2"
+					Else
+						Segno = "X"
+					End If
+				End If
+				Sql = "Update Pronostici Set Segno = '" & Segno & "' Where idAnno=" & idAnno & " And idConcorso=" & idConcorso & " And idUtente=" & idUtente & " And idPartita=" & idPartita
+				Sqls.Add(Sql)
+
+				Rec.MoveNext
+			Loop
+			Rec.Close
+
+			For Each s As String In Sqls
+				Ritorno = Conn.EsegueSql(Server.MapPath("."), s, Connessione, False)
+			Next
 		End If
 
 		Return Ritorno
