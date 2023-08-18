@@ -1395,9 +1395,10 @@ Public Class wsConcorsi
 							" " & Progressivo & ", " &
 							"3, " &
 							" " & Premio & ", " &
-							"'" & datella & "', " &
+							"'" & Datella & "', " &
 							"'Vittoria TotoMIO Concorso N° " & idGiornata & "', " &
-							"'N'" &
+							"'N', " &
+							"1 " &
 							")"
 						Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 
@@ -1707,6 +1708,10 @@ Public Class wsConcorsi
 			For Each s As String In Sqls
 				Ritorno = Conn.EsegueSql(Server.MapPath("."), s, Connessione, False)
 			Next
+		End If
+
+		If Ritorno = "" Then
+			Ritorno = "OK"
 		End If
 
 		Return Ritorno

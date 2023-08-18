@@ -126,7 +126,11 @@ Public Class wsDB
 								Do Until Rec.Eof
 									Dim Riga As String = ""
 									For i As Integer = 0 To QuantiCampi - 1
-										Riga &= SistemaStringaPerRitorno(Rec(i).Value) & ";"
+										If Rec(i).Value = "" Then
+											Riga &= "null;"
+										Else
+											Riga &= SistemaStringaPerRitorno(Rec(i).Value) & ";"
+										End If
 									Next
 									gf.ScriveTestoSuFileAperto(Riga)
 
@@ -156,8 +160,8 @@ Public Class wsDB
 		Dim NomeFileFinale As String = Server.MapPath(".") & Barra & "Backups" & Barra & "Esecuzione.txt"
 		Dim Esecuzione As String = ""
 		Dim gf As New GestioneFilesDirectory
-		gf.CreaDirectoryDaPercorso(Cartella & Barra)
-		gf.ScansionaDirectorySingola(Cartella & Barra)
+		gf.CreaDirectoryDaPercorso(Cartella & Barra & QualeBackup & Barra)
+		gf.ScansionaDirectorySingola(Cartella & Barra & QualeBackup)
 		Dim Filetti() As String = gf.RitornaFilesRilevati
 		Dim qFiletti As Integer = gf.RitornaQuantiFilesRilevati
 		Dim Ok As Boolean = True
@@ -165,6 +169,8 @@ Public Class wsDB
 		Dim sql As String = "Start transaction"
 		If EsegueBackup = "SI" Then
 			Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+		Else
+			Esecuzione &= "ESEGUE BACKUP: " & EsegueBackup
 		End If
 
 		For i As Integer = 1 To qFiletti
@@ -196,6 +202,7 @@ Public Class wsDB
 					Crea = Crea.Substring(0, Crea.Length - 2)
 
 					If EsegueBackup = "SI" Then
+						sql = "DROP TABLE " & NomeTabella
 						Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 						If Ritorno <> "OK" Then
 							Ok = False
@@ -207,7 +214,7 @@ Public Class wsDB
 
 					Crea = "CREATE TABLE " & NomeTabella & " (" & Crea & " " & Chiave & ") ENGINE = InnoDB"
 					If EsegueBackup = "SI" Then
-						Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+						Ritorno = Conn.EsegueSql(Server.MapPath("."), Crea, Connessione, False)
 						If Ritorno <> "OK" Then
 							Ok = False
 							Exit For
@@ -230,12 +237,19 @@ Public Class wsDB
 							Dim Campi() As String = r.Split(";")
 							Dim Riga As String = ""
 							For Each c As String In Campi
+								c = c.Replace(vbLf, "").Replace(vbCrLf, "")
 								If c <> "" Then
-									If ControllaNumerico(c) Then
-										Riga &= c.Replace(vbLf, "").Replace(vbCrLf, "") & ","
+									If c = "null" Then
+										Riga &= c & ","
 									Else
-										Riga &= "'" & SistemaStringaPerRitorno2(c.Replace(vbLf, "").Replace(vbCrLf, "")) & "',"
+										If ControllaNumerico(c) Then
+											Riga &= c & ","
+										Else
+											Riga &= "'" & SistemaStringaPerRitorno2(c) & "',"
+										End If
 									End If
+									'Else
+									'	Riga &= "null,"
 								End If
 							Next
 							If Riga <> "" Then
@@ -276,7 +290,9 @@ Public Class wsDB
 
 	Private Function ControllaNumerico(Campo As String) As Boolean
 		Dim c As Integer = Val(Campo)
-		If c > 0 And Not Campo.Contains("/") And Not Campo.Contains("-") And Not Campo.Contains(":") Then
+		Dim l1 As Integer = c.ToString.Trim.Length
+		Dim l2 As Integer = Campo.Trim.Length
+		If c > 0 And l1 = l2 And Not Campo.Contains(" ") And Not Campo.Contains("/") And Not Campo.Contains("-") And Not Campo.Contains(":") Then
 			Return True
 		Else
 			If Campo = "0" Then

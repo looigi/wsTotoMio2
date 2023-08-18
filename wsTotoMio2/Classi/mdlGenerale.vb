@@ -21,7 +21,7 @@ Module mdlGenerale
 	Public timerMails As Timers.Timer = Nothing
 	Public path1 As String = ""
 	Public pathMail As String = ""
-	Public effettuaLogMail As Boolean = True
+	Public effettuaLogMail As Boolean = False
 	Public nomeFileLogmail As String = ""
 	Public StringaErrore As String = "ERROR: "
 	Public TipoServer As String = "MARIADB"
