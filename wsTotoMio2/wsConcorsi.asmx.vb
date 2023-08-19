@@ -894,7 +894,8 @@ Public Class wsConcorsi
 							Dim Assenti As String = ""
 
 							sql = "SELECT Distinct idUtente, NickName FROM Utenti A " &
-								"Where idAnno = " & idAnno & " And idUtente Not In (Select idUtente From Pronostici Where idAnno = " & idAnno & " And idConcorso = " & idGiornata & ")"
+								"Where idAnno = " & idAnno & " And idUtente Not In (Select idUtente From Pronostici Where idAnno = " & idAnno & " And idConcorso = " & idGiornata & ") " &
+								"And A.idTipologia<>2"
 							Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
 							If TypeOf (Rec) Is String Then
 								'Ritorno = Rec
@@ -911,13 +912,15 @@ Public Class wsConcorsi
 
 							sql = "Select * From SquadreRandom A " &
 								"Left Join Utenti B On A.idAnno = B.idAnno And A.idUtente = B.idUtente " &
-								"Where A.idAnno=" & idAnno & " And A.idConcorso=" & idGiornata
+								"Where A.idAnno=" & idAnno & " And A.idConcorso=" & idGiornata & " And B.idTipologia<>2"
 							Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
 							If TypeOf (Rec) Is String Then
 								'Ritorno = Rec
 							Else
 								Do Until Rec.eof
-									Random &= Rec("NickName").Value & ": " & Rec("Squadra").Value & "<br />"
+									If Rec("NickName").Value <> "" Then
+										Random &= Rec("NickName").Value & ": " & Rec("Squadra").Value & "<br />"
+									End If
 
 									Rec.MoveNext
 								Loop
@@ -997,7 +1000,8 @@ Public Class wsConcorsi
 							"'" & SistemaStringaPerDB(D2(1)) & "', " &
 							"'" & SistemaStringaPerDB(D2(2)) & "', " &
 							"'" & SistemaStringaPerDB(D2(3)) & "', " &
-							"'" & SistemaStringaPerDB(D2(4)) & "' " &
+							"'" & SistemaStringaPerDB(D2(4)) & "', " &
+							"'" & SistemaStringaPerDB(D2(5)) & "' " &
 							")"
 						Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 						If Ritorno.Contains(StringaErrore) Then
@@ -1041,7 +1045,7 @@ Public Class wsConcorsi
 				Do Until Rec.Eof
 					Ritorno &= Rec("idPartita").Value & ";" & SistemaStringaPerRitorno(Rec("Prima").Value) & ";" &
 						SistemaStringaPerRitorno(Rec("Seconda").Value) & ";" & Rec("Risultato").Value & ";" &
-						Rec("Segno").Value & "§"
+						Rec("Segno").Value & ";" & Rec("Sospesa").Value & "§"
 					Rec.MoveNext
 				Loop
 				Rec.Close
@@ -1084,9 +1088,19 @@ Public Class wsConcorsi
 						Dim Partite As New List(Of String)
 
 						Do Until Rec.Eof
-							Partite.Add(Rec("idPartita").Value & ";" & SistemaStringaPerRitorno(Rec("Prima").Value) & ";" &
+							If Rec("Sospesa").Value = "S" Then
+								Partite.Add(Rec("idPartita").Value & ";" & SistemaStringaPerRitorno(Rec("Prima").Value) & ";" &
 										SistemaStringaPerRitorno(Rec("Seconda").Value) & ";" &
-										Rec("Risultato").Value & ";" & Rec("Segno").Value)
+										";" & Rec("Segno").Value & ";" & Rec("Sospesa").Value)
+							Else
+								If Rec("Risultato").Value = "" Or Rec("Segno").Value = "" Then
+									Ritorno = "ERROR: Risultato della partita " & Rec("idPartita").Value & " vuoto"
+									Exit Do
+								End If
+								Partite.Add(Rec("idPartita").Value & ";" & SistemaStringaPerRitorno(Rec("Prima").Value) & ";" &
+										SistemaStringaPerRitorno(Rec("Seconda").Value) & ";" &
+										Rec("Risultato").Value & ";" & Rec("Segno").Value & ";" & Rec("Sospesa").Value)
+							End If
 
 							Rec.MoveNext
 						Loop
@@ -1094,17 +1108,19 @@ Public Class wsConcorsi
 
 						Dim PartitaJolly As Integer = -1
 
-						sql = "Select Coalesce(idPartita, -1) As idPartita From PartiteJolly Where idAnno=" & idAnno & " And idConcorso=" & idGiornata
-						Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
-						If TypeOf (Rec) Is String Then
-							Ritorno = Rec
-						Else
-							If Not Rec.Eof Then
-								PartitaJolly = Rec("idPartita").Value
+						If Not Ritorno.Contains(StringaErrore) Then
+							sql = "Select Coalesce(idPartita, -1) As idPartita From PartiteJolly Where idAnno=" & idAnno & " And idConcorso=" & idGiornata
+							Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+							If TypeOf (Rec) Is String Then
+								Ritorno = Rec
 							Else
-								Ritorno = "ERROR: Nessuna partita jolly rilevata"
+								If Not Rec.Eof Then
+									PartitaJolly = Rec("idPartita").Value
+								Else
+									Ritorno = "ERROR: Nessuna partita jolly rilevata"
+								End If
+								Rec.Close
 							End If
-							Rec.Close
 						End If
 
 						If Not Ritorno.Contains("ERROR") Then
@@ -1122,6 +1138,8 @@ Public Class wsConcorsi
 									Dim NickName As String = Rec("NickName").Value
 									Dim Tipologia As String = Rec("Descrizione").Value
 									Rec.Close
+
+									Dim Sorprese As List(Of StrutturaSorprese) = PrendeSorprese(Server.MapPath("."), Conn, Connessione, idAnno, idGiornata)
 
 									If idTipologia = 0 Or ModalitaConcorso = "Controllato" Then
 										' Controllo per amministratore
@@ -1174,7 +1192,7 @@ Public Class wsConcorsi
 														If Rec.Eof Then
 															Dim Controllo As String = ControllaPunti(idAnno, id, idGiornata, NN,
 																								 Partite, New List(Of String), Conn, Connessione, Server.MapPath("."),
-																								 ModalitaConcorso, PartitaJolly, idPartitaScelta)
+																								 ModalitaConcorso, PartitaJolly, idPartitaScelta, Sorprese)
 															Ritorno &= Controllo & "%"
 														Else
 															Dim Pronostici As New List(Of String)
@@ -1188,7 +1206,7 @@ Public Class wsConcorsi
 
 															Dim Controllo As String = ControllaPunti(idAnno, id, idGiornata, NN,
 																								 Partite, Pronostici, Conn, Connessione, Server.MapPath("."),
-																								 ModalitaConcorso, PartitaJolly, idPartitaScelta)
+																								 ModalitaConcorso, PartitaJolly, idPartitaScelta, Sorprese)
 															Ritorno &= Controllo & "%"
 														End If
 													End If
@@ -1223,7 +1241,7 @@ Public Class wsConcorsi
 											If Rec.Eof Then
 												Dim Controllo As String = ControllaPunti(idAnno, idUtente, idGiornata, NickName,
 																					Partite, New List(Of String), Conn, Connessione, Server.MapPath("."),
-																					ModalitaConcorso, PartitaJolly, idPartitaScelta)
+																					ModalitaConcorso, PartitaJolly, idPartitaScelta, Sorprese)
 												Ritorno &= Controllo & "%"
 											Else
 												Dim Pronostici As New List(Of String)
@@ -1237,7 +1255,7 @@ Public Class wsConcorsi
 
 												Dim Controllo As String = ControllaPunti(idAnno, idUtente, idGiornata, NickName,
 																					 Partite, Pronostici, Conn, Connessione, Server.MapPath("."),
-																					 ModalitaConcorso, PartitaJolly, idPartitaScelta)
+																					 ModalitaConcorso, PartitaJolly, idPartitaScelta, Sorprese)
 												Ritorno &= Controllo & "%"
 											End If
 										End If
@@ -1293,33 +1311,35 @@ Public Class wsConcorsi
 										Punti += 5
 									End If
 
-									Dim r() As String = Risultato.Split("-")
-									Dim p() As String = Pronostico.Split("-")
+									If Risultato <> "" And Risultato.Contains("-") Then
+										Dim r() As String = Risultato.Split("-")
+										Dim p() As String = Pronostico.Split("-")
 
-									Dim r1 As Integer = r(0)
-									Dim r2 As Integer = r(1)
+										Dim r1 As Integer = r(0)
+										Dim r2 As Integer = r(1)
 
-									Dim p1 As Integer = p(0)
-									Dim p2 As Integer = p(1)
+										Dim p1 As Integer = p(0)
+										Dim p2 As Integer = p(1)
 
-									If r1 = p1 Or r2 = p2 Then
-										Punti += 3
+										If r1 = p1 Or r2 = p2 Then
+											Punti += 3
+										End If
+										If Math.Abs(r1 - r2) = Math.Abs(p1 - p2) Then
+											Punti += 1
+										End If
+										If Math.Abs(r1 + r2) = Math.Abs(p1 + p2) Then
+											Punti += 1
+										End If
+
+										If Not Casa Then
+											Punti *= 1.75
+											Punti = CInt(Punti)
+										End If
+
+										sql = "Update SquadreRandom Set Punti=" & Punti & " Where " &
+											"idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente=" & idUtente23
+										Dim Ritorno2 As String = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 									End If
-									If Math.Abs(r1 - r2) = Math.Abs(p1 - p2) Then
-										Punti += 1
-									End If
-									If Math.Abs(r1 + r2) = Math.Abs(p1 + p2) Then
-										Punti += 1
-									End If
-
-									If Not Casa Then
-										Punti *= 1.75
-										Punti = CInt(Punti)
-									End If
-
-									sql = "Update SquadreRandom Set Punti=" & Punti & " Where " &
-										"idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente=" & idUtente23
-									Dim Ritorno2 As String = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 
 									' Ritorno &= idUtente23 & ";" & Punti & "§"
 								End If

@@ -12,6 +12,27 @@ Public Class wsAmministrazione
 	Inherits System.Web.Services.WebService
 
 	<WebMethod()>
+	Public Function CeFintone(idAnno As String) As String
+		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
+		Dim Conn As Object = New clsGestioneDB(TipoServer)
+		Dim Ritorno As String = ""
+		Dim sql As String = "Select * From Utenti Where idAnno=" & idAnno & " And idTipologia=2"
+		Dim Rec As Object
+		Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+		If TypeOf (Rec) Is String Then
+			Ritorno = Rec
+		Else
+			If Not Rec.Eof Then
+				Ritorno = "OK"
+			Else
+				Ritorno = "KO"
+			End If
+		End If
+
+		Return Ritorno
+	End Function
+
+	<WebMethod()>
 	Public Function CreaFintone(idAnno As String) As String
 		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
 		Dim Conn As Object = New clsGestioneDB(TipoServer)

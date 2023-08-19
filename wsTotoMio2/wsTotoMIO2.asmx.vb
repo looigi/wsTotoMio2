@@ -637,7 +637,8 @@ Public Class wsTotoMIO2
 											"'" & Casa & "', " &
 											"'" & Fuori & "', " &
 											"'" & Risultato & "', " &
-											"'" & Segno & "' " &
+											"'" & Segno & "', " &
+											"'N' " &
 											")"
 										Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 										If Ritorno.Contains(StringaErrore) Then

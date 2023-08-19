@@ -17,6 +17,14 @@ Module mdlGenerale
 		Dim Totale As Integer
 	End Structure
 
+	Public Structure StrutturaSorprese
+		Dim idPartita As Integer
+		Dim Casa As String
+		Dim Fuori As String
+		Dim Segno As String
+		Dim Percentuale As Integer
+	End Structure
+
 	Public listaMails As New List(Of strutturaMail)
 	Public timerMails As Timers.Timer = Nothing
 	Public path1 As String = ""
@@ -166,7 +174,8 @@ Module mdlGenerale
 	End Function
 
 	Public Function ControllaPunti(idAnno As String, idUtente As String, idConcorso As String, NickName As String, Partite As List(Of String), Pronostici As List(Of String),
-								   Conn As Object, Connessione As String, MP As String, Modalita As String, PartitaJolly As Integer, idPartitaScelta As Integer) As String
+								   Conn As Object, Connessione As String, MP As String, Modalita As String, PartitaJolly As Integer, idPartitaScelta As Integer,
+								   ListaSorprese As List(Of StrutturaSorprese)) As String
 		Dim PuntiTotali As Integer = 0
 		Dim Ritorno As String = ""
 		Dim SegniPresi As Integer = 0
@@ -177,6 +186,7 @@ Module mdlGenerale
 		Dim DifferenzaGoal As Integer = 0
 		Dim PuntiPartitaScelta2 As Integer = 0
 		Dim Jolly2 As Integer = 0
+		Dim PuntiSorpresa2 As Integer = 0
 
 		Jolly2 = 0
 		For Each Partita As String In Partite
@@ -189,10 +199,15 @@ Module mdlGenerale
 			Dim Squadra1 As String = Campi2(1)
 			Dim Squadra2 As String = Campi2(2)
 			Dim Risultato As String = Campi2(3)
-			Dim r2() As String = Risultato.Split("-")
-			Dim RisultatoCasa As Integer = r2(0)
-			Dim RisultatoFuori As Integer = r2(1)
+			Dim RisultatoCasa As Integer = -1
+			Dim RisultatoFuori As Integer = -1
+			If Risultato <> "" And Risultato.Contains("-") Then
+				Dim r2() As String = Risultato.Split("-")
+				RisultatoCasa = r2(0)
+				RisultatoFuori = r2(1)
+			End If
 			Dim RisultatoSegno As String = Campi2(4)
+			Dim PartitaSospesa As Boolean = IIf(Campi2(5) = "S", True, False)
 			Dim PartitaTrovata As Boolean = False
 
 			Dim SegnoPreso As Integer = 0
@@ -202,6 +217,19 @@ Module mdlGenerale
 			Dim SommaGoalPartita As Integer = 0
 			Dim DifferenzaGoalPartita As Integer = 0
 
+			Dim PartitaSorpresa As Boolean = False
+			Dim SegniSorpresa As String = ""
+			For Each Sorpresa As StrutturaSorprese In ListaSorprese
+				Dim idSorpresa As Integer = Sorpresa.idPartita
+				If idSorpresa = idPartita2 Then
+					If PartitaSorpresa = False Then
+						PartitaSorpresa = True
+					End If
+					SegniSorpresa &= Sorpresa.Segno & ";"
+				End If
+			Next
+			Dim PuntiSorpresa As Integer = 0
+
 			For Each Pronostico As String In Pronostici
 				Dim Jolly As Integer = 0
 				Dim PuntiPartitaScelta As Integer = 0
@@ -209,54 +237,51 @@ Module mdlGenerale
 				Dim Campi() As String = Pronostico.Split(";")
 				Dim idPartita As Integer = Campi(0)
 
-				If idPartita = idPartita2 Then
-					PartitaTrovata = True
-					Dim Pronostico2 As String = Campi(1)
-					Dim r() As String = Pronostico2.Split("-")
-					Dim PronosticoCasa As Integer = r(0)
-					Dim PronosticoFuori As Integer = r(1)
-					Dim PronosticoSegno As String = Campi(2)
+				If PartitaSospesa = False Then
+					If idPartita = idPartita2 Then
+						PartitaTrovata = True
+						Dim Pronostico2 As String = Campi(1)
+						Dim r() As String = Pronostico2.Split("-")
+						Dim PronosticoCasa As Integer = r(0)
+						Dim PronosticoFuori As Integer = r(1)
+						Dim PronosticoSegno As String = Campi(2)
 
-					Punti += 1
-					If RisultatoSegno = PronosticoSegno Then
-						If idPartita = idPartitaScelta Then
-							PuntiPartitaScelta += 5
+						If PartitaSorpresa Then
+							If SegniSorpresa.Contains(PronosticoSegno & ";") Then
+								Punti += 15
+								PuntiSorpresa += 15
+							End If
 						End If
-						If idPartita = PartitaJolly Then
-							Jolly += 3
-						End If
-						Punti += 5
-						SegniPresi += 1
-						SegnoPreso = 1
-					End If
 
-					If PronosticoCasa = RisultatoCasa And PronosticoFuori = RisultatoFuori Then
-						If idPartita = idPartitaScelta Then
-							PuntiPartitaScelta += 8
-						End If
-						If idPartita = PartitaJolly Then
-							Jolly += 8
-						End If
-						Punti += 10
-						RisultatoEsatto += 1
-						RisultatoCasaTot += 1
-						RisultatoFuoriTot += 1
-						RisultatoEsattoPartita = 1
-						RisultatoCasaPartita = 1
-						RisultatoFuoriPartita = 1
-					Else
-						If PronosticoCasa = RisultatoCasa And PronosticoCasa <> RisultatoFuori Then
+						Punti += 1
+						If RisultatoSegno = PronosticoSegno Then
 							If idPartita = idPartitaScelta Then
-								PuntiPartitaScelta += 4
+								PuntiPartitaScelta += 5
 							End If
 							If idPartita = PartitaJolly Then
-								Jolly += 2
+								Jolly += 3
 							End If
-							Punti += 3
+							Punti += 5
+							SegniPresi += 1
+							SegnoPreso = 1
+						End If
+
+						If PronosticoCasa = RisultatoCasa And PronosticoFuori = RisultatoFuori Then
+							If idPartita = idPartitaScelta Then
+								PuntiPartitaScelta += 8
+							End If
+							If idPartita = PartitaJolly Then
+								Jolly += 8
+							End If
+							Punti += 10
+							RisultatoEsatto += 1
 							RisultatoCasaTot += 1
+							RisultatoFuoriTot += 1
+							RisultatoEsattoPartita = 1
 							RisultatoCasaPartita = 1
+							RisultatoFuoriPartita = 1
 						Else
-							If PronosticoCasa <> RisultatoCasa And PronosticoFuori = RisultatoFuori Then
+							If PronosticoCasa = RisultatoCasa And PronosticoCasa <> RisultatoFuori Then
 								If idPartita = idPartitaScelta Then
 									PuntiPartitaScelta += 4
 								End If
@@ -264,48 +289,61 @@ Module mdlGenerale
 									Jolly += 2
 								End If
 								Punti += 3
-								RisultatoFuoriTot += 1
-								RisultatoFuoriPartita = 1
+								RisultatoCasaTot += 1
+								RisultatoCasaPartita = 1
+							Else
+								If PronosticoCasa <> RisultatoCasa And PronosticoFuori = RisultatoFuori Then
+									If idPartita = idPartitaScelta Then
+										PuntiPartitaScelta += 4
+									End If
+									If idPartita = PartitaJolly Then
+										Jolly += 2
+									End If
+									Punti += 3
+									RisultatoFuoriTot += 1
+									RisultatoFuoriPartita = 1
+								End If
 							End If
 						End If
+
+						If PronosticoCasa + PronosticoFuori = RisultatoCasa + RisultatoFuori Then
+							If idPartita = idPartitaScelta Then
+								PuntiPartitaScelta += 2
+							End If
+							If idPartita = PartitaJolly Then
+								Jolly += 1
+							End If
+							Punti += 2
+							SommaGoal += 1
+							SommaGoalPartita = 1
+						End If
+
+						If Math.Abs(PronosticoCasa - PronosticoFuori) = Math.Abs(RisultatoCasa - RisultatoFuori) Then
+							If idPartita = idPartitaScelta Then
+								PuntiPartitaScelta += 2
+							End If
+							If idPartita = PartitaJolly Then
+								Jolly += 1
+							End If
+							Punti += 2
+							DifferenzaGoal += 1
+							DifferenzaGoalPartita = 1
+						End If
+
+						Punti += Jolly
+						Punti += PuntiPartitaScelta
+
+						Ritorno &= idPartita & ";" & Squadra1 & ";" & Squadra2 & ";" & Risultato & ";" & RisultatoSegno & ";" & Pronostico2 & ";" & PronosticoSegno & ";" &
+							SegnoPreso & ";" & RisultatoEsattoPartita & ";" & RisultatoCasaPartita & ";" & RisultatoFuoriPartita & ";" & SommaGoalPartita & ";" &
+							DifferenzaGoalPartita & ";"
+						Ritorno &= Punti & ";" & Jolly & ";" & PuntiPartitaScelta & ";" & PuntiSorpresa & "§"
+
+						PuntiTotali += Punti
+
+						Jolly2 += Jolly
+						PuntiPartitaScelta2 += PuntiPartitaScelta
+						PuntiSorpresa2 += PuntiSorpresa
 					End If
-
-					If PronosticoCasa + PronosticoFuori = RisultatoCasa + RisultatoFuori Then
-						If idPartita = idPartitaScelta Then
-							PuntiPartitaScelta += 2
-						End If
-						If idPartita = PartitaJolly Then
-							Jolly += 1
-						End If
-						Punti += 2
-						SommaGoal += 1
-						SommaGoalPartita = 1
-					End If
-
-					If Math.Abs(PronosticoCasa - PronosticoFuori) = Math.Abs(RisultatoCasa - RisultatoFuori) Then
-						If idPartita = idPartitaScelta Then
-							PuntiPartitaScelta += 2
-						End If
-						If idPartita = PartitaJolly Then
-							Jolly += 1
-						End If
-						Punti += 2
-						DifferenzaGoal += 1
-						DifferenzaGoalPartita = 1
-					End If
-
-					Punti += Jolly
-					Punti += PuntiPartitaScelta
-
-					Ritorno &= idPartita & ";" & Squadra1 & ";" & Squadra2 & ";" & Risultato & ";" & RisultatoSegno & ";" & Pronostico2 & ";" & PronosticoSegno & ";" &
-						SegnoPreso & ";" & RisultatoEsattoPartita & ";" & RisultatoCasaPartita & ";" & RisultatoFuoriPartita & ";" & SommaGoalPartita & ";" &
-						DifferenzaGoalPartita & ";"
-					Ritorno &= Punti & ";" & Jolly & ";" & PuntiPartitaScelta & "§"
-
-					PuntiTotali += Punti
-
-					Jolly2 += Jolly
-					PuntiPartitaScelta2 += PuntiPartitaScelta
 				End If
 			Next
 
@@ -321,7 +359,7 @@ Module mdlGenerale
 
 			Sql = "Insert Into Risultati Values(" & idAnno & ", " & idConcorso & ", " & idUtente & ", " & PuntiTotali & "," &
 				" " & SegniPresi & ", " & RisultatoEsatto & ", " & RisultatoCasaTot & ", " & RisultatoFuoriTot & "," &
-				" " & SommaGoal & ", " & DifferenzaGoal & ", " & PuntiPartitaScelta2 & ")"
+				" " & SommaGoal & ", " & DifferenzaGoal & ", " & PuntiPartitaScelta2 & ", " & PuntiSorpresa2 & ")"
 			Ritorno2 = Conn.EsegueSql(MP, Sql, Connessione, False)
 			If Not Ritorno2.Contains("ERROR") Then
 				Sql = "Select * From RisultatiAltro Where idAnno=" & idAnno & " And idConcorso=" & idConcorso & " And idUtente=" & idUtente
@@ -363,7 +401,7 @@ Module mdlGenerale
 			"Sum(SegniPresi) As Segni, Sum(SommeGoal) As SommaGoal, Sum(DifferenzeGoal) As DifferenzeGoal, " &
 			"(SELECT Count(*) FROM Pronostici Where idAnno = A.idAnno And idUtente = A.idUtente And idPartita = 1 And idConcorso " & Confronto & " A.idConcorso) As Giocate, " &
 			"Coalesce(Sum(C.Vittorie),0) As Vittorie, Coalesce(Sum(C.Ultimo),0) As Ultimo, Coalesce(Sum(C.Jolly), 0) As Jolly, " &
-			"Coalesce(Sum(A.PuntiPartitaScelta), 0) As PuntiPartitaScelta, B.idTipologia " &
+			"Coalesce(Sum(A.PuntiPartitaScelta), 0) As PuntiPartitaScelta, B.idTipologia, Coalesce(Sum(A.PuntiSorpresa), 0) As PuntiSorpresa " &
 			"FROM Risultati A " &
 			"Left Join Utenti B On A.idUtente = B.idUtente And A.idAnno = B.idAnno " &
 			"Left Join RisultatiAltro C On A.idAnno = C.idAnno And A.idConcorso = C.idConcorso And A.idUtente = C.idUtente " &
@@ -373,11 +411,11 @@ Module mdlGenerale
 			"Select idUtente, NickName, 0 As Punti, 0 As RisultatiEsatti, " &
 			"0 As RisCasaTot, 0 As RisFuoriTot, " &
 			"0 As Segni, 0 As SommaGoal, 0 As DifferenzeGoal, 0 As Giocate, " &
-			"0 As Vittorie,0 As Ultimo, 0 As Jolly, 0 As PuntiPartitaScelta, idTipologia " &
+			"0 As Vittorie,0 As Ultimo, 0 As Jolly, 0 As PuntiPartitaScelta, idTipologia, 0 As PuntiSorpresa " &
 			"From Utenti Where idUtente Not In (Select idUtente From Risultati) " &
 			") As A " &
 			" " & Altro & " " &
-			"Order By 3 Desc, 4 Desc, 7 Desc, 5 Desc, 6 Desc, 8 Desc, 9 Desc, 10 Desc, 12 Desc, 13, 2, idTipologia"
+			"Order By 3 Desc, 4 Desc, 7 Desc, 5 Desc, 6 Desc, 8 Desc, 9 Desc, 10 Desc, 12 Desc, 13 Desc, 14 Desc, 16 Desc, 2, idTipologia"
 		Dim Rec As Object = CreaRecordset(Mp, Conn, sql, Connessione)
 		If TypeOf (Rec) Is String Then
 			Ritorno = Rec
@@ -389,7 +427,8 @@ Module mdlGenerale
 					Ritorno &= Rec("idUtente").Value & ";" & SistemaStringaPerRitorno(Rec("NickName").Value) & ";" & Rec("Punti").Value & ";" &
 						Rec("RisultatiEsatti").Value & ";" & Rec("RisCasaTot").Value & ";" & Rec("RisFuoriTot").Value & ";" &
 						Rec("Segni").Value & ";" & Rec("SommaGoal").Value & ";" & Rec("DifferenzeGoal").Value & ";" & Rec("Giocate").Value & ";" &
-						Rec("Vittorie").Value & ";" & Rec("Ultimo").Value & ";" & Rec("Jolly").Value & ";" & Rec("PuntiPartitaScelta").Value &
+						Rec("Vittorie").Value & ";" & Rec("Ultimo").Value & ";" & Rec("Jolly").Value & ";" & Rec("PuntiPartitaScelta").Value & ";" &
+						Rec("PuntiSorpresa").Value &
 						"§"
 
 					Rec.MoveNext
@@ -399,6 +438,34 @@ Module mdlGenerale
 		End If
 
 		Return Ritorno
+	End Function
+
+	Public Function PrendeSorprese(Mp As String, Conn As Object, Connessione As String, idAnno As String, idGiornata As String) As List(Of StrutturaSorprese)
+		Dim Lista As New List(Of StrutturaSorprese)
+		Dim Sql As String = "Select * From (Select idPartita, Prima, Seconda, Segno, Quanti, TotalePartite, Round((Quanti / TotalePartite) * 100) As Media From ( " &
+			"Select *, (Select Count(*) From Pronostici Where idAnno= " & idAnno & " And idConcorso = " & idGiornata & " And idPartita=1) As TotalePartite From ( " &
+			"Select A.idPartita, B.Prima, B.Seconda, A.Segno, Count(*) As Quanti From Pronostici As A " &
+			"Left Join Concorsi B On A.idAnno = B.idAnno And A.idConcorso = B.idConcorso And A.idPartita = B.idPartita " &
+			"Where A.idAnno = " & idAnno & " And A.idConcorso=" & idGiornata & " " &
+			"Group By A.idPartita, A.Segno " &
+			") As A " &
+			") As B " &
+			") As C Where Media < 10"
+		Dim Rec As Object = CreaRecordset(Mp, Conn, Sql, Connessione)
+		Do Until Rec.Eof
+			Dim s As New StrutturaSorprese
+			s.idPartita = Rec("idPartita").Value
+			s.Casa = Rec("Prima").Value
+			s.Fuori = Rec("Seconda").Value
+			s.Segno = Rec("Segno").Value
+			s.Percentuale = Rec("Media").Value
+			Lista.Add(s)
+
+			Rec.MoveNext
+		Loop
+		Rec.Close
+
+		Return Lista
 	End Function
 
 	Public Function CreaColonnaUtenteFinto(Mp As String, idAnno As String, idGiornata As String, Conn As Object, Connessione As String) As String

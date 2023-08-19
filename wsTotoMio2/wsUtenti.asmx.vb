@@ -664,7 +664,7 @@ Public Class wsUtenti
 			"Coalesce(Sum(Punti), 0) As SommaPunti, Coalesce(Sum(SegniPresi), 0) As SommaSegni, " &
 			"Coalesce(Sum(RisultatiEsatti), 0) As SommaRisEsatti, Coalesce(Sum(RisultatiCasaTot), 0) As SommaRisCasa, " &
 			"Coalesce(Sum(RisultatiFuoriTot), 0) As SommaRisFuori, Coalesce(Sum(SommeGoal), 0) As SommaSomma, " &
-			"Coalesce(Sum(DifferenzeGoal), 0) As SommaDiff, Coalesce(Sum(PuntiPartitaScelta), 0) As SommaPuntiPS " &
+			"Coalesce(Sum(DifferenzeGoal), 0) As SommaDiff, Coalesce(Sum(PuntiPartitaScelta), 0) As SommaPuntiPS, Coalesce(Sum(PuntiSorpresa), 0) As PuntiSorpresa " &
 			"FROM Risultati As A " &
 			"Left Join Utenti B On A.idAnno = B.idAnno And A.idUtente = B.idUtente " &
 			Altro & " " &
@@ -699,7 +699,8 @@ Public Class wsUtenti
 				StatisticheRisultati &= "" & Chr(34) & "MediaSomma" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("MediaSomma").Value, True) & ", "
 				StatisticheRisultati &= "" & Chr(34) & "MediaDiff" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("MediaDiff").Value, True) & ", "
 				StatisticheRisultati &= "" & Chr(34) & "MediaPuntiPS" & Chr(34) & ": " & SistemaNumeroDaDB(Rec("MediaPuntiPS").Value, True) & ", "
-				StatisticheRisultati &= "" & Chr(34) & "Pari" & Chr(34) & ": " & Chr(34) & Riga & Chr(34) & " "
+				StatisticheRisultati &= "" & Chr(34) & "Pari" & Chr(34) & ": " & Chr(34) & Riga & Chr(34) & ", "
+				StatisticheRisultati &= "" & Chr(34) & "PuntiSorpresa" & Chr(34) & ": " & Chr(34) & SistemaNumeroDaDB(Rec("PuntiSorpresa").Value, True) & Chr(34) & " "
 				StatisticheRisultati &= "}, "
 				Riga = Not Riga
 
