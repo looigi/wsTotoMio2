@@ -859,6 +859,36 @@ Public Class wsConcorsi
 	End Function
 
 	<WebMethod()>
+	Public Function RitornaColonnaUtente(idAnno As String, idUtente As String, idGiornata As String) As String
+		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
+		Dim Conn As Object = New clsGestioneDB(TipoServer)
+		Dim Ritorno As String = ""
+		Dim sql As String = "Select A.idPartita, B.Prima, B.Seconda, A.Pronostico, A.Segno From Pronostici As A " &
+			"Left Join Concorsi B On A.idAnno = B.idAnno And A.idConcorso = B.idConcorso And A.idPartita = B.idPartita " &
+			"Where A.idAnno = " & idAnno & " And idUtente = " & idUtente & " And A.idConcorso = " & idGiornata & " " &
+			"Order By A.idPartita"
+		Dim Rec As Object = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
+		If TypeOf (Rec) Is String Then
+			Ritorno = Rec
+		Else
+			If Rec.Eof Then
+				Ritorno = "ERROR: Nessuna colonna rilevata"
+			Else
+				Do Until Rec.Eof
+					Ritorno &= Rec("idPartita").Value & ";" & SistemaStringaPerRitorno(Rec("Prima").Value) & ";" &
+						SistemaStringaPerRitorno(Rec("Seconda").Value) & ";" & Rec("Pronostico").Value & ";" &
+						Rec("Segno").Value & "§"
+
+					Rec.MoveNext
+				Loop
+				Rec.Close
+			End If
+		End If
+
+		Return Ritorno
+	End Function
+
+	<WebMethod()>
 	Public Function ImpostaConcorsoPerControllo(idAnno As String) As String
 		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
 		Dim Conn As Object = New clsGestioneDB(TipoServer)
