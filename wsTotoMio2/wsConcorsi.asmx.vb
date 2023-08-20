@@ -1086,13 +1086,17 @@ Public Class wsConcorsi
 	End Function
 
 	<WebMethod()>
-	Public Function ControllaConcorso(idAnno As String, idUtente As String, ModalitaConcorso As String) As String
+	Public Function ControllaConcorso(idAnno As String, idUtente As String, ModalitaConcorso As String, SoloControllo As String, InviaMailSoloControllo As String) As String
 		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
 		Dim Conn As Object = New clsGestioneDB(TipoServer)
 		Dim Ritorno As String = ""
 		Dim sql As String = "Select * From Globale Where idAnno=" & idAnno
 		Dim Rec As Object = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
 		Dim idGiornata As String = ""
+		Dim SquadreCasa As New List(Of String)
+		Dim SquadreFuori As New List(Of String)
+		Dim Risultati As New List(Of String)
+		Dim Segni As New List(Of String)
 
 		If TypeOf (Rec) Is String Then
 			Ritorno = Rec
@@ -1103,8 +1107,11 @@ Public Class wsConcorsi
 				idGiornata = Rec("idGiornata").Value
 				Rec.Close
 
-				sql = "Update RisultatiAltro Set Vittorie = 0, Ultimo = 0 Where idAnno=" & idAnno & " And idConcorso=" & idGiornata
-				Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+				If SoloControllo <> "SI" Then
+					sql = "Update RisultatiAltro Set Vittorie = 0, Ultimo = 0 Where idAnno=" & idAnno & " And idConcorso=" & idGiornata
+					Ritorno = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+				End If
+
 				Ritorno = ""
 
 				sql = "Select * From Concorsi Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " Order By idPartita"
@@ -1120,16 +1127,22 @@ Public Class wsConcorsi
 						Do Until Rec.Eof
 							If Rec("Sospesa").Value = "S" Then
 								Partite.Add(Rec("idPartita").Value & ";" & SistemaStringaPerRitorno(Rec("Prima").Value) & ";" &
-										SistemaStringaPerRitorno(Rec("Seconda").Value) & ";" &
-										";" & Rec("Segno").Value & ";" & Rec("Sospesa").Value)
+									SistemaStringaPerRitorno(Rec("Seconda").Value) & ";" &
+									";" & Rec("Segno").Value & ";" & Rec("Sospesa").Value)
 							Else
 								If Rec("Risultato").Value = "" Or Rec("Segno").Value = "" Then
 									Ritorno = "ERROR: Risultato della partita " & Rec("idPartita").Value & " vuoto"
 									Exit Do
 								End If
+
+								SquadreCasa.Add(Rec("Prima").Value)
+								SquadreFuori.Add(Rec("Seconda").Value)
+								Risultati.Add(Rec("Risultato").Value)
+								Segni.Add(Rec("Segno").Value)
+
 								Partite.Add(Rec("idPartita").Value & ";" & SistemaStringaPerRitorno(Rec("Prima").Value) & ";" &
-										SistemaStringaPerRitorno(Rec("Seconda").Value) & ";" &
-										Rec("Risultato").Value & ";" & Rec("Segno").Value & ";" & Rec("Sospesa").Value)
+									SistemaStringaPerRitorno(Rec("Seconda").Value) & ";" &
+									Rec("Risultato").Value & ";" & Rec("Segno").Value & ";" & Rec("Sospesa").Value)
 							End If
 
 							Rec.MoveNext
@@ -1221,8 +1234,9 @@ Public Class wsConcorsi
 													Else
 														If Rec.Eof Then
 															Dim Controllo As String = ControllaPunti(idAnno, id, idGiornata, NN,
-																								 Partite, New List(Of String), Conn, Connessione, Server.MapPath("."),
-																								 ModalitaConcorso, PartitaJolly, idPartitaScelta, Sorprese)
+																							 Partite, New List(Of String), Conn, Connessione, Server.MapPath("."),
+																							 ModalitaConcorso, PartitaJolly, idPartitaScelta, Sorprese,
+																				 SoloControllo)
 															Ritorno &= Controllo & "%"
 														Else
 															Dim Pronostici As New List(Of String)
@@ -1235,8 +1249,9 @@ Public Class wsConcorsi
 															Rec.Close
 
 															Dim Controllo As String = ControllaPunti(idAnno, id, idGiornata, NN,
-																								 Partite, Pronostici, Conn, Connessione, Server.MapPath("."),
-																								 ModalitaConcorso, PartitaJolly, idPartitaScelta, Sorprese)
+																							 Partite, Pronostici, Conn, Connessione, Server.MapPath("."),
+																							 ModalitaConcorso, PartitaJolly, idPartitaScelta, Sorprese,
+																				 SoloControllo)
 															Ritorno &= Controllo & "%"
 														End If
 													End If
@@ -1270,8 +1285,9 @@ Public Class wsConcorsi
 										Else
 											If Rec.Eof Then
 												Dim Controllo As String = ControllaPunti(idAnno, idUtente, idGiornata, NickName,
-																					Partite, New List(Of String), Conn, Connessione, Server.MapPath("."),
-																					ModalitaConcorso, PartitaJolly, idPartitaScelta, Sorprese)
+																				Partite, New List(Of String), Conn, Connessione, Server.MapPath("."),
+																				ModalitaConcorso, PartitaJolly, idPartitaScelta, Sorprese,
+																				 SoloControllo)
 												Ritorno &= Controllo & "%"
 											Else
 												Dim Pronostici As New List(Of String)
@@ -1284,8 +1300,9 @@ Public Class wsConcorsi
 												Rec.Close
 
 												Dim Controllo As String = ControllaPunti(idAnno, idUtente, idGiornata, NickName,
-																					 Partite, Pronostici, Conn, Connessione, Server.MapPath("."),
-																					 ModalitaConcorso, PartitaJolly, idPartitaScelta, Sorprese)
+																				 Partite, Pronostici, Conn, Connessione, Server.MapPath("."),
+																				 ModalitaConcorso, PartitaJolly, idPartitaScelta, Sorprese,
+																				 SoloControllo)
 												Ritorno &= Controllo & "%"
 											End If
 										End If
@@ -1366,9 +1383,11 @@ Public Class wsConcorsi
 											Punti = CInt(Punti)
 										End If
 
-										sql = "Update SquadreRandom Set Punti=" & Punti & " Where " &
-											"idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente=" & idUtente23
-										Dim Ritorno2 As String = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+										If SoloControllo <> "SI" Then
+											sql = "Update SquadreRandom Set Punti=" & Punti & " Where " &
+												"idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente=" & idUtente23
+											Dim Ritorno2 As String = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+										End If
 									End If
 
 									' Ritorno &= idUtente23 & ";" & Punti & "§"
@@ -1434,37 +1453,42 @@ Public Class wsConcorsi
 						Dim Progressivo As String = Rec("Progressivo").Value
 						Rec.Close
 
-						sql = "Delete From Bilancio Where idAnno=" & idAnno & " And Note = 'Vittoria TotoMIO Concorso N° " & idGiornata & "'"
-						Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+						If SoloControllo <> "SI" Then
+							sql = "Delete From Bilancio Where idAnno=" & idAnno & " And Note = 'Vittoria TotoMIO Concorso N° " & idGiornata & "'"
+							Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 
-						Premio += 1
-						Dim Datella As String = Format(Now.Day, "00") & "/" & Format(Now.Month, "00") & "/" & Now.Year
-						sql = "Insert Into Bilancio Values (" &
-							" " & idAnno & ", " &
-							" " & idUltimo & ", " &
-							" " & Progressivo & ", " &
-							"3, " &
-							" " & Premio & ", " &
-							"'" & Datella & "', " &
-							"'Vittoria TotoMIO Concorso N° " & idGiornata & "', " &
-							"'N', " &
-							"1 " &
-							")"
-						Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+							Premio += 1
+							Dim Datella As String = Format(Now.Day, "00") & "/" & Format(Now.Month, "00") & "/" & Now.Year
+							sql = "Insert Into Bilancio Values (" &
+								" " & idAnno & ", " &
+								" " & idUltimo & ", " &
+								" " & Progressivo & ", " &
+								"3, " &
+								" " & Premio & ", " &
+								"'" & Datella & "', " &
+								"'Vittoria TotoMIO Concorso N° " & idGiornata & "', " &
+								"'N', " &
+								"1 " &
+								")"
+							Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 
-						sql = "Update PremioPerFinto Set Importo = 0 Where idAnno = " & idAnno
-						Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+							sql = "Update PremioPerFinto Set Importo = 0 Where idAnno = " & idAnno
+							Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+						End If
 					End If
 				Else
-					sql = "Update PremioPerFinto Set Importo = Importo + 1 Where idAnno = " & idAnno
-					Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+					If SoloControllo <> "SI" Then
+						sql = "Update PremioPerFinto Set Importo = Importo + 1 Where idAnno = " & idAnno
+						Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
+					End If
 				End If
 
 				'If idPrimo <> idUtenteFinto Then
 
 				'End If
 
-				sql = "Select * From RisultatiAltro Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente=" & idPrimo
+				If SoloControllo <> "SI" Then
+					sql = "Select * From RisultatiAltro Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente=" & idPrimo
 					Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
 					If TypeOf (Rec) Is String Then
 						Ritorno = Rec
@@ -1477,7 +1501,9 @@ Public Class wsConcorsi
 							Ritorno2 = Conn.EsegueSql(Server.MapPath("."), sql, Connessione, False)
 						End If
 					End If
+				End If
 
+				If SoloControllo <> "SI" Then
 					sql = "Select * From RisultatiAltro Where idAnno=" & idAnno & " And idConcorso=" & idGiornata & " And idUtente=" & idUltimo
 					Rec = CreaRecordset(Server.MapPath("."), Conn, sql, Connessione)
 					If TypeOf (Rec) Is String Then
@@ -1493,6 +1519,86 @@ Public Class wsConcorsi
 					End If
 				End If
 			End If
+		End If
+
+		If SoloControllo = "SI" And InviaMailSoloControllo = "SI" Then
+			Dim Nomi As New List(Of String)
+			Dim Punti As New List(Of Integer)
+			Dim Splittone() As String = Ritorno.Split("%")
+			For Each s As String In Splittone
+				If s <> "" Then
+					Dim Campi() As String = s.Split("|")
+					If Campi.Length > 0 Then
+						Dim Campi2() As String = Campi(0).Split(";")
+						Dim NickName As String = Campi2(1)
+						Dim Punti2 As Integer = Campi2(2)
+						Nomi.Add(NickName)
+						Punti.Add(Punti2)
+					End If
+				End If
+			Next
+
+			For i As Integer = 0 To Nomi.Count - 1
+				For k As Integer = i + 1 To Nomi.Count - 1
+					If Punti.Item(i) < Punti.Item(k) Then
+						Dim Appo As String = Nomi.Item(i)
+						Nomi.Item(i) = Nomi.Item(k)
+						Nomi.Item(k) = Appo
+						Dim Appo2 As Integer = Punti.Item(i)
+						Punti.Item(i) = Punti.Item(k)
+						Punti.Item(k) = Appo2
+					End If
+				Next
+			Next
+
+			Dim Testo As String = ""
+			Testo = "Andamento concorso TotoMIO numero " & idGiornata & ".<br /><br />"
+
+			Testo &= "Risultati<hr /><table>"
+			Testo &= "<tr>"
+			Testo &= "<th>Casa</th>"
+			Testo &= "<th>Fuori</th>"
+			Testo &= "<th>Risultato</th>"
+			Testo &= "<th>Segno</th>"
+			Testo &= "</tr>"
+			Dim c2 As Integer = 0
+			For Each s As String In SquadreCasa
+				Testo &= "<tr>"
+				Testo &= "<td>" & s & "</td>"
+				Testo &= "<td>" & SquadreFuori.Item(c2) & "</td>"
+				Testo &= "<td style=""text-align: center"">" & Risultati.Item(c2) & "</td>"
+				Testo &= "<td style=""text-align: center"">" & Segni.Item(c2) & "</td>"
+				Testo &= "</tr>"
+				c2 += 1
+			Next
+			Testo &= "</table><br /><hr />Punteggi<hr />"
+
+			Testo &= "<table>"
+			Testo &= "<tr>"
+			Testo &= "<th></th>"
+			Testo &= "<th>Utente</th>"
+			Testo &= "<th>Punti</th>"
+			Testo &= "</tr>"
+			Dim c3 As Integer = 0
+			Dim Posiz As Integer = 1
+			Dim VecchioPunteggio As Integer = Punti.Item(0)
+			For Each s As String In Nomi
+				Testo &= "<tr>"
+				Testo &= "<td style=""text-align: center"">" & Posiz & "</td>"
+				Testo &= "<td>" & s & "</td>"
+				Testo &= "<td style=""text-align: center"">" & Punti.Item(c3) & "</td>"
+				Testo &= "</tr>"
+				If VecchioPunteggio <> Punti.Item(c3) Then
+					Posiz += 1
+					VecchioPunteggio = Punti.Item(c3)
+				End If
+				c3 += 1
+			Next
+			Testo &= "</table><br /><br />"
+
+			Testo &= "Per entrare nel sito: <a href=""" & IndirizzoSito & """>Click QUI</a>"
+			InvaMailATutti(Server.MapPath("."), idAnno, "TotoMIO: Andamento concorso " & idGiornata, Testo, Conn, Connessione, "Chiusura")
+		End If
 
 		Return Ritorno
 	End Function

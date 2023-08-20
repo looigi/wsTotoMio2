@@ -175,7 +175,7 @@ Module mdlGenerale
 
 	Public Function ControllaPunti(idAnno As String, idUtente As String, idConcorso As String, NickName As String, Partite As List(Of String), Pronostici As List(Of String),
 								   Conn As Object, Connessione As String, MP As String, Modalita As String, PartitaJolly As Integer, idPartitaScelta As Integer,
-								   ListaSorprese As List(Of StrutturaSorprese)) As String
+								   ListaSorprese As List(Of StrutturaSorprese), SoloControllo As String) As String
 		Dim PuntiTotali As Integer = 0
 		Dim Ritorno As String = ""
 		Dim SegniPresi As Integer = 0
@@ -354,25 +354,27 @@ Module mdlGenerale
 		Ritorno = idUtente & ";" & SistemaStringaPerRitorno(NickName) & ";" & PuntiTotali & "|" & Ritorno
 
 		If Modalita <> "Controllato" Then
-			Dim Sql As String = "Delete From Risultati Where idAnno=" & idAnno & " And idConcorso=" & idConcorso & " And idUtente=" & idUtente
-			Dim Ritorno2 As String = Conn.EsegueSql(MP, Sql, Connessione, False)
+			If SoloControllo <> "SI" Then
+				Dim Sql As String = "Delete From Risultati Where idAnno=" & idAnno & " And idConcorso=" & idConcorso & " And idUtente=" & idUtente
+				Dim Ritorno2 As String = Conn.EsegueSql(MP, Sql, Connessione, False)
 
-			Sql = "Insert Into Risultati Values(" & idAnno & ", " & idConcorso & ", " & idUtente & ", " & PuntiTotali & "," &
-				" " & SegniPresi & ", " & RisultatoEsatto & ", " & RisultatoCasaTot & ", " & RisultatoFuoriTot & "," &
-				" " & SommaGoal & ", " & DifferenzaGoal & ", " & PuntiPartitaScelta2 & ", " & PuntiSorpresa2 & ")"
-			Ritorno2 = Conn.EsegueSql(MP, Sql, Connessione, False)
-			If Not Ritorno2.Contains("ERROR") Then
-				Sql = "Select * From RisultatiAltro Where idAnno=" & idAnno & " And idConcorso=" & idConcorso & " And idUtente=" & idUtente
-				Dim Rec As Object = CreaRecordset(MP, Conn, Sql, Connessione)
-				If TypeOf (Rec) Is String Then
-					Ritorno = Rec
-				Else
-					If Rec.Eof Then
-						Sql = "Insert Into RisultatiAltro Values (" & idAnno & ", " & idConcorso & ", " & idUtente & ", 0, 0, " & Jolly2 & ")"
-						Ritorno2 = Conn.EsegueSql(MP, Sql, Connessione, False)
+				Sql = "Insert Into Risultati Values(" & idAnno & ", " & idConcorso & ", " & idUtente & ", " & PuntiTotali & "," &
+					" " & SegniPresi & ", " & RisultatoEsatto & ", " & RisultatoCasaTot & ", " & RisultatoFuoriTot & "," &
+					" " & SommaGoal & ", " & DifferenzaGoal & ", " & PuntiPartitaScelta2 & ", " & PuntiSorpresa2 & ")"
+				Ritorno2 = Conn.EsegueSql(MP, Sql, Connessione, False)
+				If Not Ritorno2.Contains("ERROR") Then
+					Sql = "Select * From RisultatiAltro Where idAnno=" & idAnno & " And idConcorso=" & idConcorso & " And idUtente=" & idUtente
+					Dim Rec As Object = CreaRecordset(MP, Conn, Sql, Connessione)
+					If TypeOf (Rec) Is String Then
+						Ritorno = Rec
 					Else
-						Sql = "Update RisultatiAltro Set Jolly = " & Jolly2 & " Where idAnno=" & idAnno & " And idConcorso=" & idConcorso & " And idUtente=" & idUtente
-						Ritorno2 = Conn.EsegueSql(MP, Sql, Connessione, False)
+						If Rec.Eof Then
+							Sql = "Insert Into RisultatiAltro Values (" & idAnno & ", " & idConcorso & ", " & idUtente & ", 0, 0, " & Jolly2 & ")"
+							Ritorno2 = Conn.EsegueSql(MP, Sql, Connessione, False)
+						Else
+							Sql = "Update RisultatiAltro Set Jolly = " & Jolly2 & " Where idAnno=" & idAnno & " And idConcorso=" & idConcorso & " And idUtente=" & idUtente
+							Ritorno2 = Conn.EsegueSql(MP, Sql, Connessione, False)
+						End If
 					End If
 				End If
 			End If
