@@ -50,9 +50,9 @@ Public Class wsTotoMIO2
 		Dim Ritorno As String = "*"
 
 		Dim Testo As String = ""
-		Testo = "Prova<br />"
-		Testo &= "Per entrare nel sito e vedere il resto: <a href=""" & IndirizzoSito & """>Click QUI</a>"
-		InvaMailATutti(Server.MapPath("."), 1, "TotoMIO:Mail di prova", Testo, Conn, Connessione, "Controllo")
+		Testo = "Prova di invio mail da parte di TotoMIO.<br />Mi serve per testare alcune funzionalità. Vi prego di non considerate questa mail.<br />Scusate per lo spam.<br /><br />"
+		Testo &= "Per entrare nel sito: <a href=""" & IndirizzoSito & """>Click QUI</a>"
+		InvaMailATutti(Server.MapPath("."), 1, "TotoMIO: Mail di prova", Testo, Conn, Connessione, "Controllo")
 
 		Return Ritorno
 	End Function

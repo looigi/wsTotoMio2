@@ -1,6 +1,7 @@
 ﻿Imports System.ComponentModel
 Imports System.Drawing.Drawing2D
 Imports System.Linq.Expressions
+Imports System.Net.Security
 Imports System.Runtime.CompilerServices
 Imports System.Security.Policy
 Imports System.Threading
@@ -382,6 +383,7 @@ Public Class wsConcorsi
 					"SELECT A.idUtente, B.NickName, Sum(A.Punti) As Punti FROM SquadreRandom As A " &
 					"Left Join Utenti B On A.idAnno = B.idAnno And A.idUtente = B.idUtente " &
 					"Where A.idAnno = " & idAnno & " " &
+					"Group By A.idUtente, B.NickName " &
 					"Union ALL " &
 					"Select idUtente, NickName, 0 As Punti From Utenti " &
 					"Where idUtente Not In (Select idUtente From SquadreRandom Where idAnno = " & idAnno & ") " &
@@ -556,7 +558,7 @@ Public Class wsConcorsi
 													If GiocataPartita <> "" Then
 														' Giocata partita
 														Dim Tabella As String = "<hr /><span style=""font-weight: bold;"">Giocata partita di Coppa '" & Rec("Torneo").Value & "': " & Rec("Dettaglio").Value & " Giornata " & Rec("Giornata").Value & ".</span><br />"
-														Tabella &= "<table style=""width: 100%; border: 1px solid #999;"">"
+														Tabella &= "<table style=""border: 1px solid #999;"">"
 														Tabella &= "<tr>"
 														Tabella &= "<th>Casa</th>"
 														Tabella &= "<th>Fuori</th>"
@@ -607,6 +609,7 @@ Public Class wsConcorsi
 								If TypeOf (Rec) Is String Then
 									'Ritorno = Rec
 								Else
+									Dim Partite As New List(Of String)
 									TestoRis = "<hr /><span style=""font-weight: bold;"">Risultati Concorso</span><br /><table style=""border: 1px solid #999;"">"
 									TestoRis &= "<tr style=""border-bottom: 1px solid #999"">"
 									TestoRis &= "<th>Casa</th>"
@@ -621,9 +624,40 @@ Public Class wsConcorsi
 										TestoRis &= "<td style=""text-align: center"">" & Rec("Risultato").Value & "</td>"
 										TestoRis &= "<td style=""text-align: center"">" & Rec("Segno").Value & "</td>"
 										TestoRis &= "</tr>"
+										Partite.Add(Rec("Prima").Value & ";" & Rec("Seconda").Value & ";" & Rec("Segno").Value)
 										Rec.MoveNext
 									Loop
 									Rec.Close
+									TestoRis &= "</table><br />"
+
+									Dim Sorprese As List(Of StrutturaSorprese) = PrendeSorprese(Server.MapPath("."), Conn, Connessione, idAnno, idGiornata)
+									TestoRis &= "<hr /><span style=""font-weight: bold;"">Risultati a sorpresa del concorso</span><br /><table style=""border: 1px solid #999;"">"
+									TestoRis &= "<tr style=""border-bottom: 1px solid #999"">"
+									TestoRis &= "<th>Casa</th>"
+									TestoRis &= "<th>Fuori</th>"
+									TestoRis &= "<th>Segno Pronosticato</th>"
+									TestoRis &= "<th>Percentuale</th>"
+									TestoRis &= "<th>Segno Finale</<th>"
+									TestoRis &= "<th>Realizzata</<th>"
+									TestoRis &= "</tr>"
+									For Each s As StrutturaSorprese In Sorprese
+										Dim Risultato As String = ""
+										For Each p As String In Partite
+											Dim pp() As String = p.Split(";")
+											If s.Casa.Trim.ToUpper = pp(0).Trim.ToUpper And s.Fuori.Trim.ToUpper = pp(1).Trim.ToUpper Then
+												Risultato = pp(2)
+												Exit For
+											End If
+										Next
+										TestoRis &= "<tr>"
+										TestoRis &= "<td>" & s.Casa & "</td>"
+										TestoRis &= "<td>" & s.Fuori & "</td>"
+										TestoRis &= "<td style=""text-align: center"">" & s.Segno & "</td>"
+										TestoRis &= "<td style=""text-align: center"">" & s.Percentuale & "%</td>"
+										TestoRis &= "<td style=""text-align: center"">" & Risultato & "</td>"
+										TestoRis &= "<td style=""text-align: center"">" & IIf(s.Segno = Risultato, "*", "-") & "</td>"
+										TestoRis &= "</tr>"
+									Next
 									TestoRis &= "</table><br />"
 								End If
 
@@ -647,6 +681,7 @@ Public Class wsConcorsi
 									TestoRis &= "<th>Diff. Goal</th>"
 									TestoRis &= "<th>Jolly</th>"
 									TestoRis &= "<th>P.P.Sc.</th>"
+									TestoRis &= "<th>Sorp.</th>"
 									TestoRis &= "</tr>"
 									Do Until Rec.Eof
 										TestoRis &= "<tr style=""border-bottom: 1px solid #999"">"
@@ -660,6 +695,7 @@ Public Class wsConcorsi
 										TestoRis &= "<td style=""text-align: center"">" & Rec("DifferenzeGoal").Value & "</td>"
 										TestoRis &= "<td style=""text-align: center"">" & Rec("Jolly").Value & "</td>"
 										TestoRis &= "<td style=""text-align: center"">" & Rec("PuntiPartitaScelta").Value & "</td>"
+										TestoRis &= "<td style=""text-align: center"">" & Rec("PuntiSorpresa").Value & "</td>"
 										TestoRis &= "<tr>"
 
 										Rec.MoveNext
@@ -752,18 +788,20 @@ Public Class wsConcorsi
 								Else
 									TestoRis &= "<hr />"
 									TestoRis &= "<span style=""font-weight: bold;"">23 Aiutame Te</span><br />"
-									TestoRis &= "<table style=""width: 100%; border: 1px solid #999;"">"
+									TestoRis &= "<table style=""border: 1px solid #999;"">"
 									TestoRis &= "<tr style=""border-bottom: 1px solid #999"">"
 									TestoRis &= "<th>Utente</th>"
 									TestoRis &= "<th>Squadra</th>"
 									TestoRis &= "<th>Punti</th>"
 									TestoRis &= "</tr>"
 									Do Until Rec.Eof
-										TestoRis &= "<tr style=""border-bottom: 1px solid #999"">"
-										TestoRis &= "<td>" & Rec("NickName").Value & "</td>"
-										TestoRis &= "<td>" & Rec("Squadra").Value & "</td>"
-										TestoRis &= "<td style=""text-align: center;"">" & Rec("Punti").Value & "</td>"
-										TestoRis &= "</tr>"
+										If Rec("NickName").Value <> "" Then
+											TestoRis &= "<tr style=""border-bottom: 1px solid #999"">"
+											TestoRis &= "<td>" & Rec("NickName").Value & "</td>"
+											TestoRis &= "<td>" & Rec("Squadra").Value & "</td>"
+											TestoRis &= "<td style=""text-align: center;"">" & Rec("Punti").Value & "</td>"
+											TestoRis &= "</tr>"
+										End If
 
 										Rec.MoveNext
 									Loop
@@ -1846,7 +1884,7 @@ Public Class wsConcorsi
 				Dim idUtente As String = Rec("idUtente").Value
 				Dim Segno As String = ""
 				If Casa > Fuori Then
-					segno = "1"
+					Segno = "1"
 				Else
 					If Casa < Fuori Then
 						Segno = "2"
@@ -1872,4 +1910,267 @@ Public Class wsConcorsi
 
 		Return Ritorno
 	End Function
+
+	<WebMethod()>
+	Public Function RitornaStatistiche(idAnno As String, idGiornata As String, Casa As String, Fuori As String) As String
+		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
+		Dim Conn As Object = New clsGestioneDB(TipoServer)
+		Dim Ritorno As String = ""
+
+		Dim Punti1 As Integer = 0
+		Dim PuntiCasa1 As Integer = 0
+		Dim PuntiFuori1 As Integer = 0
+		Dim Vittorie1 As Integer = 0
+		Dim Pareggi1 As Integer = 0
+		Dim Sconfitte1 As Integer = 0
+		Dim VittorieCasa1 As Integer = 0
+		Dim PareggiCasa1 As Integer = 0
+		Dim SconfitteCasa1 As Integer = 0
+		Dim VittorieFuori1 As Integer = 0
+		Dim PareggiFuori1 As Integer = 0
+		Dim SconfitteFuori1 As Integer = 0
+		Dim GoalFatti1 As Integer = 0
+		Dim GoalSubiti1 As Integer = 0
+		Dim GoalFattiCasa1 As Integer = 0
+		Dim GoalFattiFuori1 As Integer = 0
+		Dim GoalSubitiCasa1 As Integer = 0
+		Dim GoalSubitiFuori1 As Integer = 0
+		Dim Giocate1 As Integer = 0
+		Dim GiocateCasa1 As Integer = 0
+		Dim GiocateFuori1 As Integer = 0
+
+		Dim Punti2 As Integer = 0
+		Dim PuntiCasa2 As Integer = 0
+		Dim PuntiFuori2 As Integer = 0
+		Dim Vittorie2 As Integer = 0
+		Dim Pareggi2 As Integer = 0
+		Dim Sconfitte2 As Integer = 0
+		Dim VittorieCasa2 As Integer = 0
+		Dim PareggiCasa2 As Integer = 0
+		Dim SconfitteCasa2 As Integer = 0
+		Dim VittorieFuori2 As Integer = 0
+		Dim PareggiFuori2 As Integer = 0
+		Dim SconfitteFuori2 As Integer = 0
+		Dim GoalFatti2 As Integer = 0
+		Dim GoalSubiti2 As Integer = 0
+		Dim GoalFattiCasa2 As Integer = 0
+		Dim GoalFattiFuori2 As Integer = 0
+		Dim GoalSubitiCasa2 As Integer = 0
+		Dim GoalSubitiFuori2 As Integer = 0
+		Dim Giocate2 As Integer = 0
+		Dim GiocateCasa2 As Integer = 0
+		Dim GiocateFuori2 As Integer = 0
+
+		Dim Partite1 As New List(Of String)
+		Dim Partite2 As New List(Of String)
+		Dim Sql As String = "SELECT * FROM Concorsi Where idAnno = " & idAnno & " And idConcorso < " & idGiornata & " And (Prima = '" & Casa & "' Or Seconda = '" & Casa & "') And Sospesa = 'N' Order By idPartita Desc Limit 10"
+		Dim Rec As Object = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
+		If TypeOf (Rec) Is String Then
+			Ritorno = Rec
+		Else
+			If Rec.Eof Then
+				' Ritorno = "ERROR: Nessuna statistica rilevata per la squadra 1"
+			Else
+				Do Until Rec.Eof
+					Partite1.Add(Rec("idConcorso").Value & ";" & Rec("idPartita").Value & ";" & Rec("Prima").Value & ";" & Rec("Seconda").Value & ";" & Rec("Risultato").Value & ";" & Rec("Segno").Value)
+					Dim Prima As String = Rec("Prima").Value
+
+					Dim Ris() As String = Rec("Risultato").Value.split("-")
+					Dim GoalFatti As Integer = Ris(0)
+					Dim GoalSubiti As Integer = Ris(1)
+
+					Dim Segno As String = Rec("Segno").Value
+
+					Giocate1 += 1
+
+					If Casa = Prima Then
+						GoalFatti1 += GoalFatti
+						GoalSubiti1 += GoalSubiti
+						GoalFattiCasa1 += GoalFatti
+						GoalSubitiCasa1 += GoalSubiti
+						GiocateCasa1 += 1
+
+						Select Case Segno
+							Case "1"
+								Punti1 += 3
+								PuntiCasa1 += 3
+								Vittorie1 += 1
+								VittorieCasa1 += 1
+							Case "X"
+								Punti1 += 1
+								PuntiCasa1 += 1
+								Pareggi1 += 1
+								PareggiCasa1 += 1
+							Case "2"
+								Sconfitte1 += 1
+								SconfitteCasa1 += 1
+						End Select
+					Else
+						GiocateFuori1 += 1
+
+						GoalFatti1 += GoalSubiti
+						GoalSubiti1 += GoalFatti
+						GoalFattiFuori1 += GoalSubiti
+						GoalSubitiFuori1 += GoalFatti
+
+						Select Case Segno
+							Case "2"
+								Punti1 += 3
+								PuntiFuori1 += 3
+								Vittorie1 += 1
+								VittorieFuori1 += 1
+							Case "X"
+								Punti1 += 1
+								PuntiFuori1 += 1
+								Pareggi1 += 1
+								PareggiFuori1 += 1
+							Case "1"
+								Sconfitte1 += 1
+								SconfitteFuori1 += 1
+						End Select
+					End If
+
+					Rec.MoveNext
+				Loop
+				Rec.Close
+
+				Sql = "SELECT * FROM Concorsi Where idAnno = " & idAnno & " And idConcorso < " & idGiornata & " And (Prima = '" & Fuori & "' Or Seconda = '" & Fuori & "') And Sospesa = 'N' Order By idPartita Desc Limit 10"
+				Rec = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
+				If TypeOf (Rec) Is String Then
+					Ritorno = Rec
+				Else
+					If Rec.Eof Then
+						' Ritorno = "ERROR: Nessuna statistica rilevata per la squadra 1"
+					Else
+						Do Until Rec.Eof
+							Partite2.Add(Rec("idConcorso").Value & ";" & Rec("idPartita").Value & ";" & Rec("Prima").Value & ";" & Rec("Seconda").Value & ";" & Rec("Risultato").Value & ";" & Rec("Segno").Value)
+
+							Dim Prima As String = Rec("Prima").Value
+
+							Dim Ris() As String = Rec("Risultato").Value.split("-")
+							Dim GoalFatti As Integer = Ris(0)
+							Dim GoalSubiti As Integer = Ris(1)
+
+							Dim Segno As String = Rec("Segno").Value
+
+							Giocate2 += 1
+
+							If Casa = Prima Then
+								GiocateCasa2 += 1
+								GoalFatti2 += GoalFatti
+								GoalSubiti2 += GoalSubiti
+								GoalFattiCasa2 += GoalFatti
+								GoalSubitiCasa2 += GoalSubiti
+
+								Select Case Segno
+									Case "1"
+										Punti2 += 3
+										PuntiCasa2 += 3
+										Vittorie2 += 1
+										VittorieCasa2 += 1
+									Case "X"
+										Punti2 += 1
+										PuntiCasa2 += 1
+										Pareggi2 += 1
+										PareggiCasa2 += 1
+									Case "2"
+										Sconfitte2 += 1
+										SconfitteCasa2 += 1
+								End Select
+							Else
+								GiocateFuori2 += 1
+								GoalFatti2 += GoalSubiti
+								GoalSubiti2 += GoalFatti
+								GoalFattiFuori2 += GoalSubiti
+								GoalSubitiFuori2 += GoalFatti
+
+								Select Case Segno
+									Case "2"
+										Punti2 += 3
+										PuntiFuori2 += 3
+										Vittorie2 += 1
+										VittorieFuori2 += 1
+									Case "X"
+										Punti2 += 1
+										PuntiFuori2 += 1
+										Pareggi2 += 1
+										PareggiFuori2 += 1
+									Case "1"
+										Sconfitte2 += 1
+										SconfitteFuori2 += 1
+								End Select
+							End If
+
+							Rec.MoveNext
+						Loop
+						Rec.Close
+
+						Ritorno = ""
+						' Lista partite 1
+						For Each p As String In Partite1
+							Ritorno &= p & "§"
+						Next
+
+						Ritorno &= "|"
+						' Lista partite 2
+						For Each p As String In Partite2
+							Ritorno &= p & "§"
+						Next
+
+						Ritorno &= "|"
+						' Statistiche 1
+						Ritorno &= Punti1 & ";"
+						Ritorno &= PuntiCasa1 & ";"
+						Ritorno &= PuntiFuori1 & ";"
+						Ritorno &= Vittorie1 & ";"
+						Ritorno &= Pareggi1 & ";"
+						Ritorno &= Sconfitte1 & ";"
+						Ritorno &= VittorieCasa1 & ";"
+						Ritorno &= PareggiCasa1 & ";"
+						Ritorno &= SconfitteCasa1 & ";"
+						Ritorno &= VittorieFuori1 & ";"
+						Ritorno &= PareggiFuori1 & ";"
+						Ritorno &= SconfitteFuori1 & ";"
+						Ritorno &= GoalFatti1 & ";"
+						Ritorno &= GoalSubiti1 & ";"
+						Ritorno &= GoalFattiCasa1 & ";"
+						Ritorno &= GoalFattiFuori1 & ";"
+						Ritorno &= GoalSubitiCasa1 & ";"
+						Ritorno &= GoalSubitiFuori1 & ";"
+						Ritorno &= Giocate1 & ";"
+						Ritorno &= GiocateCasa1 & ";"
+						Ritorno &= giocatefuori1
+
+						Ritorno &= "|"
+						' Statistiche 2
+						Ritorno &= Punti2 & ";"
+						Ritorno &= PuntiCasa2 & ";"
+						Ritorno &= PuntiFuori2 & ";"
+						Ritorno &= Vittorie2 & ";"
+						Ritorno &= Pareggi2 & ";"
+						Ritorno &= Sconfitte2 & ";"
+						Ritorno &= VittorieCasa2 & ";"
+						Ritorno &= PareggiCasa2 & ";"
+						Ritorno &= SconfitteCasa2 & ";"
+						Ritorno &= VittorieFuori2 & ";"
+						Ritorno &= PareggiFuori2 & ";"
+						Ritorno &= SconfitteFuori2 & ";"
+						Ritorno &= GoalFatti2 & ";"
+						Ritorno &= GoalSubiti2 & ";"
+						Ritorno &= GoalFattiCasa2 & ";"
+						Ritorno &= GoalFattiFuori2 & ";"
+						Ritorno &= GoalSubitiCasa2 & ";"
+						Ritorno &= GoalSubitiFuori2 & ";"
+						Ritorno &= Giocate2 & ";"
+						Ritorno &= GiocateCasa2 & ";"
+						Ritorno &= GiocateFuori2
+
+					End If
+				End If
+			End If
+		End If
+
+		Return Ritorno
+	End Function
+
 End Class

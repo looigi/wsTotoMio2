@@ -29,7 +29,7 @@ Module mdlGenerale
 	Public timerMails As Timers.Timer = Nothing
 	Public path1 As String = ""
 	Public pathMail As String = ""
-	Public effettuaLogMail As Boolean = False
+	Public effettuaLogMail As Boolean = True
 	Public nomeFileLogmail As String = ""
 	Public StringaErrore As String = "ERROR: "
 	Public TipoServer As String = "MARIADB"
@@ -248,8 +248,10 @@ Module mdlGenerale
 
 						If PartitaSorpresa Then
 							If SegniSorpresa.Contains(PronosticoSegno & ";") Then
-								Punti += 15
-								PuntiSorpresa += 15
+								If RisultatoSegno = PronosticoSegno Then
+									Punti += 15
+									PuntiSorpresa += 15
+								End If
 							End If
 						End If
 

@@ -5,6 +5,7 @@ Imports System.Timers
 
 Public Class mail
 	Private inviaMail As Boolean = False
+	Private VecchiMessaggi As Integer = 0
 
 	Public Sub New(Mp As String)
 	End Sub
@@ -19,6 +20,18 @@ Public Class mail
 		End If
 
 		If Not inviaMail Then
+			If effettuaLogMail Then
+				Dim gf As New GestioneFilesDirectory
+				gf.CreaDirectoryDaPercorso(pathMail)
+				nomeFileLogmail = pathMail & "logMail_Globale_" & Now.Day & "_" & Now.Month & "_" & Now.Year & ".txt"
+
+				Dim Datella As String = Format(Now.Day, "00") & "/" & Format(Now.Month, "00") & "/" & Now.Year & " " & Format(Now.Hour, "00") & ":" & Format(Now.Minute, "00") & ":" & Format(Now.Second, "00")
+
+				gf.ApreFileDiTestoPerScrittura(nomeFileLogmail)
+				gf.ScriveTestoSuFileAperto(Datella & " - Mail arrivata da NON inviare: " & Destinatario & " " & oggetto)
+				gf.ChiudeFileDiTestoDopoScrittura()
+			End If
+
 			Return "*"
 		End If
 
@@ -37,12 +50,12 @@ Public Class mail
 		If effettuaLogMail Then
 			Dim gf As New GestioneFilesDirectory
 			gf.CreaDirectoryDaPercorso(pathMail)
-			nomeFileLogmail = pathMail & "logMail_" & Now.Day & "_" & Now.Month & "_" & Now.Year & ".txt"
+			nomeFileLogmail = pathMail & "logMail_Globale_" & Now.Day & "_" & Now.Month & "_" & Now.Year & ".txt"
 
 			Dim Datella As String = Format(Now.Day, "00") & "/" & Format(Now.Month, "00") & "/" & Now.Year & " " & Format(Now.Hour, "00") & ":" & Format(Now.Minute, "00") & ":" & Format(Now.Second, "00")
 
 			gf.ApreFileDiTestoPerScrittura(nomeFileLogmail)
-			gf.ScriveTestoSuFileAperto(Datella & " - Mail arrivata: " & Destinatario & " " & oggetto)
+			gf.ScriveTestoSuFileAperto(Datella & " - Mail arrivata da scodare: " & Destinatario & " " & oggetto)
 			gf.ChiudeFileDiTestoDopoScrittura()
 		End If
 
@@ -69,8 +82,14 @@ Public Class mail
 	End Sub
 
 	Private Sub scodaMessaggi()
+		If VecchiMessaggi <> listaMails.Count Then
+			VecchiMessaggi = listaMails.Count
+			Exit Sub
+		End If
+
 		timerMails.Enabled = False
 		Dim mail As strutturaMail = listaMails.Item(0)
+		Dim nomeFileLogmail As String = pathMail & "logMail_" & mail.Destinatario.Replace(".", "_").Replace("@", "_") & ".txt"
 
 		Dim gf As New GestioneFilesDirectory
 		If effettuaLogMail Then
@@ -81,19 +100,20 @@ Public Class mail
 			gf.ChiudeFileDiTestoDopoScrittura()
 		End If
 
-		Dim Ritorno As String = SendEmailAsincrona(mail.Destinatario, mail.Oggetto, mail.newBody, mail.Allegato, gf)
+		Dim Ritorno As String = SendEmailAsincrona(mail.Destinatario, mail.Oggetto, mail.newBody, mail.Allegato, gf, nomeFileLogmail)
 		listaMails.RemoveAt(0)
 		If listaMails.Count > 0 Then
 			timerMails.Enabled = True
 		Else
 			timerMails = Nothing
 			' listaMails = New List(Of strutturaMail)
+			VecchiMessaggi = 0
 		End If
 	End Sub
 
 	Private Function SendEmailAsincrona(Destinatario As String, ByVal oggetto As String, ByVal newBody As String,
 										ByVal Allegato() As String,
-										gf As GestioneFilesDirectory) As String
+										gf As GestioneFilesDirectory, nomeFileLogMail As String) As String
 		'Dim myStream As StreamReader = New StreamReader(Server.MapPath(ConfigurationManager.AppSettings("VirtualDir") & "mailresponsive.html"))
 		'Dim newBody As String = ""
 		'newBody = myStream.ReadToEnd()
@@ -107,7 +127,7 @@ Public Class mail
 		Dim Datella As String = Format(Now.Day, "00") & "/" & Format(Now.Month, "00") & "/" & Now.Year & " " & Format(Now.Hour, "00") & ":" & Format(Now.Minute, "00") & ":" & Format(Now.Second, "00")
 
 		If effettuaLogMail Then
-			gf.ApreFileDiTestoPerScrittura(nomeFileLogmail)
+			gf.ApreFileDiTestoPerScrittura(nomeFileLogMail)
 			gf.ScriveTestoSuFileAperto(Datella & " - Inizio")
 		End If
 
