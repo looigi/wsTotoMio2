@@ -2055,7 +2055,7 @@ Public Class wsConcorsi
 
 							Giocate2 += 1
 
-							If Casa = Prima Then
+							If Casa <> Prima Then
 								GiocateCasa2 += 1
 								GoalFatti2 += GoalFatti
 								GoalSubiti2 += GoalSubiti

@@ -942,11 +942,40 @@ Public Class wsUtenti
 
 								Dim SquadrePrese As String = GeneraSquadrePrese(Server.MapPath("."), idAnno, Conn, Connessione)
 
+								Dim PuntiPresi As String = RitornaRecord(Conn, Connessione, idAnno, "Punti")
+								Dim SegniPresi As String = RitornaRecord(Conn, Connessione, idAnno, "SegniPresi")
+								Dim RisultatiEsattiPresi As String = RitornaRecord(Conn, Connessione, idAnno, "RisultatiEsatti")
+								Dim RisultatiCasaTotPresi As String = RitornaRecord(Conn, Connessione, idAnno, "RisultatiCasaTot")
+								Dim RisultatiFuoriTotPresi As String = RitornaRecord(Conn, Connessione, idAnno, "RisultatiFuoriTot")
+								Dim SommeGoalPresi As String = RitornaRecord(Conn, Connessione, idAnno, "SommeGoal")
+								Dim DifferenzeGoalPresi As String = RitornaRecord(Conn, Connessione, idAnno, "DifferenzeGoal")
+								Dim PuntiPartitaSceltaPresi As String = RitornaRecord(Conn, Connessione, idAnno, "PuntiPartitaScelta")
+								Dim PuntiSorpresaPresi As String = RitornaRecord(Conn, Connessione, idAnno, "PuntiSorpresa")
+								Dim VittorePresi As String = RitornaRecordAltro(Conn, Connessione, idAnno, "Vittorie")
+								Dim UltimoPresi As String = RitornaRecordAltro(Conn, Connessione, idAnno, "Ultimo")
+								Dim JollyPresi As String = RitornaRecordAltro(Conn, Connessione, idAnno, "Jolly")
+
+								Dim StatistichePresi As String = "["
+								StatistichePresi &= PuntiPresi & ","
+								StatistichePresi &= SegniPresi & ","
+								StatistichePresi &= RisultatiEsattiPresi & ","
+								StatistichePresi &= RisultatiCasaTotPresi & ","
+								StatistichePresi &= RisultatiFuoriTotPresi & ","
+								StatistichePresi &= SommeGoalPresi & ","
+								StatistichePresi &= DifferenzeGoalPresi & ","
+								StatistichePresi &= PuntiPartitaSceltaPresi & ","
+								StatistichePresi &= PuntiSorpresaPresi & ","
+								StatistichePresi &= VittorePresi & ","
+								StatistichePresi &= UltimoPresi & ","
+								StatistichePresi &= JollyPresi
+								StatistichePresi &= "]"
+
 								Ritorno &= "{"
 								Ritorno &= "" & Chr(34) & "Anno" & Chr(34) & ": " & Chr(34) & Anno & Chr(34) & ", "
 								Ritorno &= "" & Chr(34) & "Anni" & Chr(34) & ": " & QuantiAnni & ", "
 								Ritorno &= "" & Chr(34) & "Giornata" & Chr(34) & ": " & Chr(34) & idGiornata & Chr(34) & ", "
 								Ritorno &= "" & Chr(34) & "ConcorsiAperti" & Chr(34) & ": " & Quanti & ", "
+								Ritorno &= "" & Chr(34) & "StatistichePresi" & Chr(34) & ": " & StatistichePresi & ", "
 								Ritorno &= "" & Chr(34) & "Risultati" & Chr(34) & ": " & StatisticheRisultati & ", "
 								Ritorno &= "" & Chr(34) & "RisultatiAltro" & Chr(34) & ": " & StatisticheRisultatiA & ", "
 								Ritorno &= "" & Chr(34) & "ScontriDiretti" & Chr(34) & ": " & StatisticheScontriDiretti & ", "
@@ -964,6 +993,126 @@ Public Class wsUtenti
 			End If
 			'End If
 		End If
+
+		Return Ritorno
+	End Function
+
+	Private Function RitornaRecord(Conn As Object, Connessione As String, idAnno As String, Campo As String) As String
+		Dim RisultatoMigliore As String = ""
+		Dim RisultatoPeggiore As String = ""
+		Dim Ritorno As String = ""
+		Dim P As Boolean = True
+
+		Dim Sql As String = "SELECT B.idUtente, A.idConcorso, B.NickName, " & Campo & " As Valore FROM Risultati A " &
+							"Left Join Utenti B On A.idAnno = B.idAnno And A.idUtente = B.idUtente " &
+							"Where " & Campo & " > 0 *** Order By " & Campo & " Desc, A.idConcorso Limit 1"
+		If idAnno <> "" Then
+			Sql = Sql.Replace("***", "And A.idAnno=" & idAnno & " ")
+		Else
+			Sql = Sql.Replace("***", "")
+		End If
+		Dim Rec As Object = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
+		If TypeOf (Rec) Is String Then
+			Ritorno = Rec
+		Else
+			If Not Rec.eof Then
+				RisultatoMigliore = "{" & Chr(34) & "Titolo" & Chr(34) & ": " & Chr(34) & Campo & "Max" & Chr(34) & "," &
+									Chr(34) & "idUtente" & Chr(34) & ": " & Chr(34) & Rec("idUtente").Value & Chr(34) & ", " &
+									Chr(34) & "NickName" & Chr(34) & ": " & Chr(34) & Rec("NickName").Value & Chr(34) & ", " &
+									Chr(34) & "Giornata" & Chr(34) & ": " & Rec("idConcorso").Value & ", " &
+									Chr(34) & "Valore" & Chr(34) & ": " & Rec("Valore").Value & "," &
+									Chr(34) & "Pari" & Chr(34) & ": " & Chr(34) & P & Chr(34) & " " &
+									"}"
+			End If
+			Rec.Close
+		End If
+		P = Not P
+
+		Sql = "SELECT B.idUtente, A.idConcorso, B.NickName, " & Campo & " As Valore FROM Risultati A " &
+							"Left Join Utenti B On A.idAnno = B.idAnno And A.idUtente = B.idUtente " &
+							"Where " & Campo & " > 0 *** Order By " & Campo & ", A.idConcorso Limit 1"
+		If idAnno <> "" Then
+			Sql = Sql.Replace("***", "And A.idAnno=" & idAnno & " ")
+		Else
+			Sql = Sql.Replace("***", "")
+		End If
+		Rec = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
+		If TypeOf (Rec) Is String Then
+			Ritorno = Rec
+		Else
+			If Not Rec.eof Then
+				RisultatoPeggiore = "{" & Chr(34) & "Titolo" & Chr(34) & ": " & Chr(34) & Campo & "Min" & Chr(34) & "," &
+									Chr(34) & "idUtente" & Chr(34) & ": " & Chr(34) & Rec("idUtente").Value & Chr(34) & ", " &
+									Chr(34) & "NickName" & Chr(34) & ": " & Chr(34) & Rec("NickName").Value & Chr(34) & ", " &
+									Chr(34) & "Giornata" & Chr(34) & ": " & Rec("idConcorso").Value & ", " &
+									Chr(34) & "Valore" & Chr(34) & ": " & Rec("Valore").Value & "," &
+									Chr(34) & "Pari" & Chr(34) & ": " & Chr(34) & P & Chr(34) & " " &
+									"}"
+			End If
+			Rec.Close
+		End If
+
+		Ritorno = RisultatoMigliore & "," & RisultatoPeggiore
+
+		Return Ritorno
+	End Function
+
+	Private Function RitornaRecordAltro(Conn As Object, Connessione As String, idAnno As String, Campo As String) As String
+		Dim RisultatoMigliore As String = ""
+		Dim RisultatoPeggiore As String = ""
+		Dim Ritorno As String = ""
+		Dim P As Boolean = True
+
+		Dim Sql As String = "SELECT B.idUtente, A.idConcorso, B.NickName, " & Campo & " As Valore FROM RisultatiAltro A " &
+							"Left Join Utenti B On A.idAnno = B.idAnno And A.idUtente = B.idUtente " &
+							"Where " & Campo & " > 0 *** Order By " & Campo & ", A.idConcorso Desc Limit 1"
+		If idAnno <> "" Then
+			Sql = Sql.Replace("***", "And A.idAnno=" & idAnno & " ")
+		Else
+			Sql = Sql.Replace("***", "")
+		End If
+		Dim Rec As Object = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
+		If TypeOf (Rec) Is String Then
+			Ritorno = Rec
+		Else
+			If Not Rec.eof Then
+				RisultatoMigliore = "{" & Chr(34) & "Titolo" & Chr(34) & ": " & Chr(34) & Campo & "Max" & Chr(34) & "," &
+									Chr(34) & "idUtente" & Chr(34) & ": " & Chr(34) & Rec("idUtente").Value & Chr(34) & ", " &
+									Chr(34) & "NickName" & Chr(34) & ": " & Chr(34) & Rec("NickName").Value & Chr(34) & ", " &
+									Chr(34) & "Giornata" & Chr(34) & ": " & Rec("idConcorso").Value & ", " &
+									Chr(34) & "Valore" & Chr(34) & ": " & Rec("Valore").Value & "," &
+									Chr(34) & "Pari" & Chr(34) & ": " & Chr(34) & P & Chr(34) & " " &
+									"}"
+			End If
+			Rec.Close
+		End If
+		P = Not P
+
+		Sql = "SELECT B.idUtente, A.idConcorso, B.NickName, " & Campo & " As Valore FROM RisultatiAltro A " &
+			"Left Join Utenti B On A.idAnno = B.idAnno And A.idUtente = B.idUtente " &
+			"Where " & Campo & " > 0 *** Order By " & Campo & ", A.idConcorso Limit 1"
+		If idAnno <> "" Then
+			Sql = Sql.Replace("***", "And A.idAnno=" & idAnno & " ")
+		Else
+			Sql = Sql.Replace("***", "")
+		End If
+		Rec = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
+		If TypeOf (Rec) Is String Then
+			Ritorno = Rec
+		Else
+			If Not Rec.eof Then
+				RisultatoPeggiore = "{" & Chr(34) & "Titolo" & Chr(34) & ": " & Chr(34) & Campo & "Min" & Chr(34) & "," &
+									Chr(34) & "idUtente" & Chr(34) & ": " & Chr(34) & Rec("idUtente").Value & Chr(34) & ", " &
+									Chr(34) & "NickName" & Chr(34) & ": " & Chr(34) & Rec("NickName").Value & Chr(34) & ", " &
+									Chr(34) & "Giornata" & Chr(34) & ": " & Rec("idConcorso").Value & ", " &
+									Chr(34) & "Valore" & Chr(34) & ": " & Rec("Valore").Value & "," &
+									Chr(34) & "Pari" & Chr(34) & ": " & Chr(34) & P & Chr(34) & " " &
+									"}"
+			End If
+			Rec.Close
+		End If
+
+		Ritorno = RisultatoMigliore & "," & RisultatoPeggiore
 
 		Return Ritorno
 	End Function
