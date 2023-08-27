@@ -387,7 +387,7 @@ Public Class wsUtenti
 		Dim Conn As Object = New clsGestioneDB(TipoServer)
 		Dim Ritorno As String = ""
 
-		Return RitornaClassificaGenerale(Server.MapPath("."), idAnno, idConcorso, Conn, Connessione, False, MostraFinto)
+		Return RitornaClassificaGenerale(Server.MapPath("."), idAnno, idConcorso, Conn, Connessione, False, MostraFinto, "NO")
 	End Function
 
 	<WebMethod()>

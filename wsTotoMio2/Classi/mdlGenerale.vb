@@ -356,27 +356,35 @@ Module mdlGenerale
 		Ritorno = idUtente & ";" & SistemaStringaPerRitorno(NickName) & ";" & PuntiTotali & "|" & Ritorno
 
 		If Modalita <> "Controllato" Then
-			If SoloControllo <> "SI" Then
-				Dim Sql As String = "Delete From Risultati Where idAnno=" & idAnno & " And idConcorso=" & idConcorso & " And idUtente=" & idUtente
-				Dim Ritorno2 As String = Conn.EsegueSql(MP, Sql, Connessione, False)
+			Dim Altro As String = ""
+			If SoloControllo = "SI" Then
+				Altro = "Sim"
+			End If
 
-				Sql = "Insert Into Risultati Values(" & idAnno & ", " & idConcorso & ", " & idUtente & ", " & PuntiTotali & "," &
+			Dim Sql As String = ""
+			If SoloControllo = "SI" Then
+				Sql = "Delete From Risultati" & Altro
+			Else
+				Sql = "Delete From Risultati Where idAnno=" & idAnno & " And idConcorso=" & idConcorso & " And idUtente=" & idUtente
+			End If
+			Dim Ritorno2 As String = Conn.EsegueSql(MP, Sql, Connessione, False)
+
+			Sql = "Insert Into Risultati" & Altro & " Values(" & idAnno & ", " & idConcorso & ", " & idUtente & ", " & PuntiTotali & "," &
 					" " & SegniPresi & ", " & RisultatoEsatto & ", " & RisultatoCasaTot & ", " & RisultatoFuoriTot & "," &
 					" " & SommaGoal & ", " & DifferenzaGoal & ", " & PuntiPartitaScelta2 & ", " & PuntiSorpresa2 & ")"
-				Ritorno2 = Conn.EsegueSql(MP, Sql, Connessione, False)
-				If Not Ritorno2.Contains("ERROR") Then
-					Sql = "Select * From RisultatiAltro Where idAnno=" & idAnno & " And idConcorso=" & idConcorso & " And idUtente=" & idUtente
-					Dim Rec As Object = CreaRecordset(MP, Conn, Sql, Connessione)
-					If TypeOf (Rec) Is String Then
-						Ritorno = Rec
+			Ritorno2 = Conn.EsegueSql(MP, Sql, Connessione, False)
+			If Not Ritorno2.Contains("ERROR") Then
+				Sql = "Select * From RisultatiAltro" & Altro & " Where idAnno=" & idAnno & " And idConcorso=" & idConcorso & " And idUtente=" & idUtente
+				Dim Rec As Object = CreaRecordset(MP, Conn, Sql, Connessione)
+				If TypeOf (Rec) Is String Then
+					Ritorno = Rec
+				Else
+					If Rec.Eof Then
+						Sql = "Insert Into RisultatiAltro" & Altro & " Values (" & idAnno & ", " & idConcorso & ", " & idUtente & ", 0, 0, " & Jolly2 & ")"
+						Ritorno2 = Conn.EsegueSql(MP, Sql, Connessione, False)
 					Else
-						If Rec.Eof Then
-							Sql = "Insert Into RisultatiAltro Values (" & idAnno & ", " & idConcorso & ", " & idUtente & ", 0, 0, " & Jolly2 & ")"
-							Ritorno2 = Conn.EsegueSql(MP, Sql, Connessione, False)
-						Else
-							Sql = "Update RisultatiAltro Set Jolly = " & Jolly2 & " Where idAnno=" & idAnno & " And idConcorso=" & idConcorso & " And idUtente=" & idUtente
-							Ritorno2 = Conn.EsegueSql(MP, Sql, Connessione, False)
-						End If
+						Sql = "Update RisultatiAltro" & Altro & " Set Jolly = " & Jolly2 & " Where idAnno=" & idAnno & " And idConcorso=" & idConcorso & " And idUtente=" & idUtente
+						Ritorno2 = Conn.EsegueSql(MP, Sql, Connessione, False)
 					End If
 				End If
 			End If
@@ -386,7 +394,7 @@ Module mdlGenerale
 	End Function
 
 	Public Function RitornaClassificaGenerale(Mp As String, idAnno As Integer, idGiornata As Integer, Conn As Object, Connessione As String, SoloUnaGiornata As Boolean,
-											  MostraFinto As String) As String
+											  MostraFinto As String, Simulazione As String) As String
 		Dim Ritorno As String = ""
 
 		Dim Confronto As String = "<="
@@ -399,6 +407,11 @@ Module mdlGenerale
 			Altro = "Where idTipologia <> 2 "
 		End If
 
+		Dim Altro2 As String = ""
+		If Simulazione = "SI" Then
+			Altro2 = "Sim"
+		End If
+
 		Dim sql As String = "Select * From (" &
 			"SELECT A.idUtente, NickName, Sum(Punti) As Punti, Sum(RisultatiEsatti) As RisultatiEsatti, " &
 			"Sum(RisultatiCasaTot) As RisCasaTot, Sum(RisultatiFuoriTot) As RisFuoriTot, " &
@@ -406,9 +419,9 @@ Module mdlGenerale
 			"(SELECT Count(*) FROM Pronostici Where idAnno = A.idAnno And idUtente = A.idUtente And idPartita = 1 And idConcorso " & Confronto & " A.idConcorso) As Giocate, " &
 			"Coalesce(Sum(C.Vittorie),0) As Vittorie, Coalesce(Sum(C.Ultimo),0) As Ultimo, Coalesce(Sum(C.Jolly), 0) As Jolly, " &
 			"Coalesce(Sum(A.PuntiPartitaScelta), 0) As PuntiPartitaScelta, B.idTipologia, Coalesce(Sum(A.PuntiSorpresa), 0) As PuntiSorpresa " &
-			"FROM Risultati A " &
+			"FROM Risultati" & Altro2 & " A " &
 			"Left Join Utenti B On A.idUtente = B.idUtente And A.idAnno = B.idAnno " &
-			"Left Join RisultatiAltro C On A.idAnno = C.idAnno And A.idConcorso = C.idConcorso And A.idUtente = C.idUtente " &
+			"Left Join RisultatiAltro" & Altro2 & " C On A.idAnno = C.idAnno And A.idConcorso = C.idConcorso And A.idUtente = C.idUtente " &
 			"Where A.idAnno=" & idAnno & " And A.idConcorso " & Confronto & " " & idGiornata & " " &
 			"Group By A.idUtente, NickName, B.idTipologia " &
 			"Union ALL " &
@@ -416,7 +429,7 @@ Module mdlGenerale
 			"0 As RisCasaTot, 0 As RisFuoriTot, " &
 			"0 As Segni, 0 As SommaGoal, 0 As DifferenzeGoal, 0 As Giocate, " &
 			"0 As Vittorie,0 As Ultimo, 0 As Jolly, 0 As PuntiPartitaScelta, idTipologia, 0 As PuntiSorpresa " &
-			"From Utenti Where idUtente Not In (Select idUtente From Risultati) " &
+			"From Utenti Where idUtente Not In (Select idUtente From Risultati" & Altro2 & ") " &
 			") As A " &
 			" " & Altro & " " &
 			"Order By 3 Desc, 4 Desc, 7 Desc, 5 Desc, 6 Desc, 8 Desc, 9 Desc, 10 Desc, 12 Desc, 13 Desc, 14 Desc, 16 Desc, 2, idTipologia"

@@ -1446,7 +1446,7 @@ Public Class wsConcorsi
 
 		If Not Ritorno.Contains("ERROR") Then
 			' Aggiorna primi ultimi
-			Dim Classifica As String = RitornaClassificaGenerale(Server.MapPath("."), idAnno, idGiornata, Conn, Connessione, True, "S")
+			Dim Classifica As String = RitornaClassificaGenerale(Server.MapPath("."), idAnno, idGiornata, Conn, Connessione, True, "S", SoloControllo)
 
 			If Classifica <> "" Then
 				Dim c() As String = Classifica.Split("§")
