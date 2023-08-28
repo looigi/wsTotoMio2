@@ -25,6 +25,11 @@ Module mdlGenerale
 		Dim Percentuale As Integer
 	End Structure
 
+	Public Structure StrutturaPosizioni
+		Dim idUtente As Integer
+		Dim Posizione As Integer
+	End Structure
+
 	Public listaMails As New List(Of strutturaMail)
 	Public timerMails As Timers.Timer = Nothing
 	Public path1 As String = ""
@@ -418,7 +423,9 @@ Module mdlGenerale
 			"Sum(SegniPresi) As Segni, Sum(SommeGoal) As SommaGoal, Sum(DifferenzeGoal) As DifferenzeGoal, " &
 			"(SELECT Count(*) FROM Pronostici Where idAnno = A.idAnno And idUtente = A.idUtente And idPartita = 1 And idConcorso " & Confronto & " A.idConcorso) As Giocate, " &
 			"Coalesce(Sum(C.Vittorie),0) As Vittorie, Coalesce(Sum(C.Ultimo),0) As Ultimo, Coalesce(Sum(C.Jolly), 0) As Jolly, " &
-			"Coalesce(Sum(A.PuntiPartitaScelta), 0) As PuntiPartitaScelta, B.idTipologia, Coalesce(Sum(A.PuntiSorpresa), 0) As PuntiSorpresa " &
+			"Coalesce(Sum(A.PuntiPartitaScelta), 0) As PuntiPartitaScelta, B.idTipologia, Coalesce(Sum(A.PuntiSorpresa), 0) As PuntiSorpresa, " &
+			"(Select Posizione From PosizioniClassifica Where idAnno=1 And idUtente=A.idUtente And idConcorso=2) As PosAttuale, " &
+			"(Select Posizione From PosizioniClassifica Where idAnno=1 And idUtente=A.idUtente And idConcorso=1) As PosPrecedente " &
 			"FROM Risultati" & Altro2 & " A " &
 			"Left Join Utenti B On A.idUtente = B.idUtente And A.idAnno = B.idAnno " &
 			"Left Join RisultatiAltro" & Altro2 & " C On A.idAnno = C.idAnno And A.idConcorso = C.idConcorso And A.idUtente = C.idUtente " &
@@ -428,7 +435,8 @@ Module mdlGenerale
 			"Select idUtente, NickName, 0 As Punti, 0 As RisultatiEsatti, " &
 			"0 As RisCasaTot, 0 As RisFuoriTot, " &
 			"0 As Segni, 0 As SommaGoal, 0 As DifferenzeGoal, 0 As Giocate, " &
-			"0 As Vittorie,0 As Ultimo, 0 As Jolly, 0 As PuntiPartitaScelta, idTipologia, 0 As PuntiSorpresa " &
+			"0 As Vittorie,0 As Ultimo, 0 As Jolly, 0 As PuntiPartitaScelta, idTipologia, 0 As PuntiSorpresa, " &
+			"0 As PosAttuale, 0 As PosPrecedente " &
 			"From Utenti Where idUtente Not In (Select idUtente From Risultati" & Altro2 & ") " &
 			") As A " &
 			" " & Altro & " " &
@@ -440,18 +448,49 @@ Module mdlGenerale
 			If Rec.Eof Then
 				Ritorno = "ERROR: Nessun utente rilevato"
 			Else
+				Dim Posizioni As New List(Of StrutturaPosizioni)
+				Dim Pos As Integer = 1
+				Dim VecchiPunti As Integer = -1
+
 				Do Until Rec.Eof
 					Ritorno &= Rec("idUtente").Value & ";" & SistemaStringaPerRitorno(Rec("NickName").Value) & ";" & Rec("Punti").Value & ";" &
 						Rec("RisultatiEsatti").Value & ";" & Rec("RisCasaTot").Value & ";" & Rec("RisFuoriTot").Value & ";" &
 						Rec("Segni").Value & ";" & Rec("SommaGoal").Value & ";" & Rec("DifferenzeGoal").Value & ";" & Rec("Giocate").Value & ";" &
 						Rec("Vittorie").Value & ";" & Rec("Ultimo").Value & ";" & Rec("Jolly").Value & ";" & Rec("PuntiPartitaScelta").Value & ";" &
-						Rec("PuntiSorpresa").Value &
+						Rec("PuntiSorpresa").Value & ";" & Rec("PosAttuale").Value & ";" & Rec("PosPrecedente").Value &
 						"§"
+
+					Dim s As New StrutturaPosizioni
+					s.idUtente = Rec("idUtente").Value
+					s.Posizione = Pos
+					Posizioni.Add(s)
+
+					If VecchiPunti <> Rec("Punti").Value Then
+						VecchiPunti = Rec("Punti").Value
+						Pos += 1
+					End If
 
 					Rec.MoveNext
 				Loop
 				Rec.Close
+
+				If Not SoloUnaGiornata And MostraFinto = "S" And Simulazione <> "SI" Then
+					sql = "Select * From PosizioniClassifica Where idAnno=" & idAnno & " And idConcorso=" & idGiornata
+					Rec = CreaRecordset(Mp, Conn, sql, Connessione)
+					If TypeOf (Rec) Is String Then
+						Ritorno = Rec
+					Else
+						If Rec.Eof Then
+							For Each s As StrutturaPosizioni In Posizioni
+								sql = "Insert Into PosizioniClassifica Values(" & idAnno & ", " & idGiornata & ", " & s.idUtente & ", " & s.Posizione & ")"
+								Dim Ritorno2 As String = Conn.EsegueSql(Mp, sql, Connessione, False)
+							Next
+						Else
+						End If
+					End If
+				End If
 			End If
+
 		End If
 
 		Return Ritorno
