@@ -122,6 +122,7 @@
     <Content Include="wsConcorsi.asmx" />
     <Content Include="wsDB.asmx" />
     <Content Include="wsEventi.asmx" />
+    <Content Include="wsStatistiche.asmx" />
     <Content Include="wsTotoMIO2.asmx" />
     <Content Include="wsUtenti.asmx" />
   </ItemGroup>
@@ -182,6 +183,10 @@
     </Compile>
     <Compile Include="wsEventi.asmx.vb">
       <DependentUpon>wsEventi.asmx</DependentUpon>
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="wsStatistiche.asmx.vb">
+      <DependentUpon>wsStatistiche.asmx</DependentUpon>
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="wsTotoMIO2.asmx.vb">
