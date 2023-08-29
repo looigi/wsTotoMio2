@@ -377,7 +377,7 @@ Public Class wsStatistiche
 	End Function
 
 	<WebMethod()>
-	Public Function PrendeGrafici(idUtente As String, idAnno As String, idGiornata As String, Cosa As String) As String
+	Public Function PrendeGrafici(idUtente As String, idAnno As String, idGiornata As String, Cosa As String, Altro As String) As String
 		Dim Connessione As String = RitornaPercorso(Server.MapPath("."), 5)
 		Dim Conn As Object = New clsGestioneDB(TipoServer)
 		Dim Ritorno As String = ""
@@ -396,7 +396,7 @@ Public Class wsStatistiche
 				Loop
 				Rec.Close
 
-				Ritorno &= "{""Punti"": " & PrendeGraficiPunti(Conn, Connessione, idUtente, idAnno, idGiornata, idUtenti, Cosa) & "}"
+				Ritorno &= "{""DatiGrafico"": " & PrendeGraficiPunti(Conn, Connessione, idUtente, idAnno, idGiornata, idUtenti, Cosa, Altro) & "}"
 			End If
 		Else
 			Ritorno = "[{}]"
@@ -406,7 +406,7 @@ Public Class wsStatistiche
 	End Function
 
 	Private Function PrendeGraficiPunti(Conn As Object, Connessione As String, idUtente As String, idAnno As String, idGiornata As String, idUtenti As List(Of String),
-										Cosa As String) As String
+										Cosa As String, Altro As String) As String
 		Dim Ritorno As String = "{"
 		Ritorno &= """Tipologia"": """ & Cosa & """, "
 		Ritorno &= """data"": ["
@@ -417,10 +417,19 @@ Public Class wsStatistiche
 		For Each id As String In idUtenti
 			Dim iid() As String = id.Split(";")
 			If Cosa = "Posizioni" Then
-				Sql = "Select A.idUtente, A.idConcorso, A.Posizione From PosizioniClassifica A " &
+				Sql = "Select A.idUtente, A.idConcorso, A.Posizione As Valore From PosizioniClassifica A " &
 					"Where A.idAnno = " & idAnno & " And A.idUtente=" & iid(0) & " And A.idConcorso <=" & idGiornata & " " &
 					"Order By A.idConcorso"
 			Else
+				If Cosa = "Classifica" Then
+					Sql = "Select A.idUtente, A.idConcorso, A.Punti As Valore From Risultati A " &
+						"Where A.idAnno = " & idAnno & " And A.idUtente=" & iid(0) & " And A.idConcorso <=" & idGiornata & " " &
+						"Order By A.idConcorso"
+				Else
+					Sql = "Select A.idUtente, A.idConcorso, A." & Cosa & " As Valore From Risultati" & Altro & " A " &
+						"Where A.idAnno = " & idAnno & " And A.idUtente=" & iid(0) & " And A.idConcorso <=" & idGiornata & " " &
+						"Order By A.idConcorso"
+				End If
 			End If
 			Rec = CreaRecordset(Server.MapPath("."), Conn, Sql, Connessione)
 			If TypeOf (Rec) Is String Then
@@ -439,10 +448,18 @@ Public Class wsStatistiche
 				Ritorno3 &= """dataPoints"": ["
 
 				Dim Ritorno2 As String = ""
+				Dim Quanto As Integer = 0
+
 				Do Until Rec.Eof
+					If Cosa = "Classifica" Then
+						Quanto += Rec("Valore").Value
+					Else
+						Quanto = Rec("Valore").Value
+					End If
+
 					Ritorno2 &= "{"
 					Ritorno2 &= Chr(34) & "x" & Chr(34) & ": " & Rec("idConcorso").Value & ","
-					Ritorno2 &= Chr(34) & "y" & Chr(34) & ": " & Rec("Posizione").Value
+					Ritorno2 &= Chr(34) & "y" & Chr(34) & ": " & Quanto
 					Ritorno2 &= "},"
 
 					Rec.MoveNext
